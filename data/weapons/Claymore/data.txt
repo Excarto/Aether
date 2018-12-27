@@ -1,0 +1,31 @@
+class = Particle Beam Weapon
+description = An extremely powerful, short range weapon. It consumes an immense amount of power, but will quickly destroy anything it touches.
+
+type = beam
+cost = 65
+weapon_scale= 0.62
+projectile_scale = 0.84
+mass = 90
+hull = 800
+inaccuracy= 3.3
+beam_length = 900
+explosive_damage_per_sec = 9500
+EM_damage_per_sec = 450
+reload_time = 7.6
+duration = 1.0
+energy_per_shot = 660E3
+tracking_rate = 50
+impact_explosion_force = 10
+arc_resource_base = 0.2
+arc_resource_exponent = 0.5
+repair_per_material = 10
+ammo_type = 6
+ammo_mass = 3
+default_fire_mode= automatic
+default_auto_ships= true
+default_auto_craft= false
+default_auto_missiles= false
+
+death_explosion1 = flash
+debris_size = 200
+impact_explosion = 11

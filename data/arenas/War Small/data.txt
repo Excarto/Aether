@@ -1,0 +1,54 @@
+description = its a map
+
+default_budget = 5000
+max_score = 1300.0
+start_budget = 0.30
+income_time = 720
+decap_multiplier = 2
+
+# background_object1_image= planet1
+# background_object1_x_pos= -200
+# background_object1_y_pos= -100
+# background_object1_distance= 3000
+
+# background_object2_image= planet2
+# background_object2_x_pos= -100
+# background_object2_y_pos= 100
+# background_object2_distance= 1000
+
+foreground_object1_image= station
+foreground_object1_x_pos= 13000
+foreground_object1_y_pos= 0000
+foreground_object1_obj_type= normal
+foreground_object1_obj_value= 1
+foreground_object1_obj_capture_size= 1200
+
+foreground_object2_image= station
+foreground_object2_x_pos= -13000
+foreground_object2_y_pos= 0000
+foreground_object2_obj_type= normal
+foreground_object2_obj_value= 1
+foreground_object2_obj_capture_size= 1200
+
+foreground_object3_image= station
+foreground_object3_x_pos= 0000
+foreground_object3_y_pos= 13000
+foreground_object3_obj_type= normal
+foreground_object3_obj_value= 1
+foreground_object3_obj_capture_size= 1200
+
+foreground_object4_image= station
+foreground_object4_x_pos= 0000
+foreground_object4_y_pos= -13000
+foreground_object4_obj_type= normal
+foreground_object4_obj_value= 1
+foreground_object4_obj_capture_size= 1200
+
+player1_x_pos= 20000
+player1_y_pos= 20000
+player2_x_pos= 20000
+player2_y_pos= -20000
+player3_x_pos= -20000
+player3_y_pos= 20000
+player4_x_pos= -20000
+player4_y_pos= -20000

@@ -1,0 +1,21 @@
+class = Infared Sensor
+description = Unlike radars, it is not detectable by a passive radar detector. However, it has short range and struggles to detect stealthy units.
+
+type = sensor
+mass= 45
+cost= 45
+hull= 400
+stealth_resistance= 0.83
+range= 12000
+power_use= 1.6E3
+energy_to_engage= 50E3
+energy_per_refresh= 2E3
+detectability= 0.00
+refresh_time= 3
+ping_lifetime= 10
+position_accuracy= 0.79
+velocity_accuracy= 0.76
+repair_per_material= 15
+
+death_explosion1 = flash
+debris_size = 100

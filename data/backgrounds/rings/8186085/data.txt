@@ -1,0 +1,3 @@
+size= 316
+posx= 338
+posy= 54

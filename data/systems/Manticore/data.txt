@@ -1,0 +1,19 @@
+class = Engine Overdrive
+description = Provides a temporary boost to engine power when activated. Each overdrive unit can be activated only once, and contains a limited amount of fuel which cannot be replenished.
+
+type = booster
+cannot_reengage= 1
+mass= 100
+cost= 50
+hull= 500
+thrust= 10.0E3
+lifetime= 25.0
+
+energy_to_engage= 200E3
+repair_per_material= 20
+
+death_explosion1 = flash
+debris_size = 200
+red_scale = 2.0
+green_scale = 1.5
+blue_scale = 1.0

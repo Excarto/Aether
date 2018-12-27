@@ -1,0 +1,21 @@
+class = Deep Burst Scanner
+description = An extremely long range radar. It has poor accuracy and a slow refresh rate.
+
+type = sensor
+mass= 150
+cost= 85
+hull= 750
+stealth_resistance= 0.85
+range= 26000
+power_use= 0E3
+energy_to_engage= 800E3
+energy_per_refresh= 1100E3
+detectability= 1.0
+refresh_time= 30
+ping_lifetime= 45
+position_accuracy= 0.72
+velocity_accuracy= 0.72
+repair_per_material= 20
+
+death_explosion1 = flash
+debris_size = 400

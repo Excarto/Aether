@@ -1,0 +1,45 @@
+debris_vision_size = 0.03
+unit_render_angle = 15.0
+
+kinetic_shield_damage = 0.15
+explosive_shield_damage = 0.85
+
+armor_explosive_effectiveness = 1.0
+armor_kinetic_effectiveness = 1.0
+
+explosive_hit_subtarget_chance = 0.3
+explosive_hit_component_chance = 0.10
+explosive_hit_component_max_damage = 0.25
+kinetic_hit_subtarget_chance = 0.04
+kinetic_hit_component_chance = 0.01
+kinetic_hit_component_max_damage = 0.25
+EM_hit_component_chance = 0.4
+
+max_component_damage = -0.2
+
+energy_per_thrust_second= 22.0E3
+energy_per_turn_thrust_second = 7.0E3
+energy_per_shield= 210.0
+maneuver_thrust = 0.035
+
+targeting_accel_timeframe = 0.7
+
+craft_dock_distance = 125.0
+craft_dock_speed = 95.0
+repair_distance = 170.0
+repair_speed = 36.0
+capture_distance = 300.0
+capture_speed = 8.0
+
+mass_per_repair_material = 0.65
+scrap_return = 0.7
+max_scrap_damage = 0.1
+
+explosion_impulse_per_mass= 1.0
+impact_impulse_per_damage= 0.03
+
+net_update_adjust_time = 0.4
+
+unit_accel_multiplier = 1.3
+unit_turn_accel_multiplier = 0.8
+unit_vision_multiplier = 1.15

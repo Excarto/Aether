@@ -1,0 +1,21 @@
+vision_size = 1.15
+
+duration1= 0.58
+growth_time1= 0.85
+start_scale1= 0.1
+max_scale1= 0.45
+end_scale1= 0.35
+start_opacity1= 0.6
+max_opacity1= 1.0
+end_opacity1= 0.0
+time_power1= 1.9
+
+duration2= 0.40
+growth_time2= 0.55
+start_scale2= 0.1
+max_scale2= 0.45
+end_scale2= 0.35
+start_opacity2= 0.6
+max_opacity2= 1.0
+end_opacity2= 0.0
+time_power2= 1.3

@@ -1,0 +1,37 @@
+class = Light Rotary Cannon
+description = A light, medium-range weapon that consumes little ammunition and no power. It is useful agaist lightly armored targets, or as anti-missile point defense.
+
+type = gun
+cost= 15
+weapon_scale= 0.45
+projectile_scale= 0.9
+mass= 18
+hull = 400
+velocity= 580
+inaccuracy= 1.30
+explosive_damage= 0
+EM_damage= 0
+kinetic_damage= 320
+kinetic_damage_exponent = 0.7
+reload_time= 0.4
+energy_per_shot= 0
+tracking_rate= 64
+ammo_type= 4
+ammo_mass= 0.094
+projectile_mass= 0.04
+repair_per_material= 20
+arc_resource_base= 0.25
+arc_resource_exponent= 0.35
+lifespan= 14
+radar_signature = 0.5
+default_range= 5
+default_fire_mode= autonomous
+default_auto_ships= true
+default_auto_craft= true
+default_auto_missiles= true
+
+num_render_angles = 9
+death_explosion1 = flash
+debris_size = 80
+min_render_size = 1
+impact_explosion= 1

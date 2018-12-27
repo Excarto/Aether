@@ -1,0 +1,11 @@
+vision_size = 0.7
+
+duration1= 0.05
+growth_time1= 0.7
+start_scale1= 0.10
+max_scale1= 0.16
+end_scale1= 0.10
+start_opacity1= 0.5
+max_opacity1= 1.0
+end_opacity1= 0.4
+time_power1= 2.0

@@ -1,0 +1,37 @@
+<html>
+<b>Objective</b><br>
+A round is won by reaching the required number of victory points. Victory points are acquired by capturing map objectives, which can be done by any ship. Each objective owned by a team awards victory points at a fixed rate, and when one team reaches the required number of points, the round is over. Captured objectives can be de-captured, then re-captured by a different team. Objectives are de-captured at a fater rate than they are captured. The green and red bars at the top of the screen indicate how many victory points each team has. The green bar is for your team.<br>
+In some arenas, ships can be warped in mid-game. To warp in ships, click a point in space to deselect all units. The menu on the right shows your entire fleet. You can choose to warp in any ships which are not already in the arena, if you have enough command points. Command points are slowly acquired during the match.<br>
+<br><b>Interface</b><br>
+The view window can be zoomed in or out using the mouse wheel. This game has no fixed frame of refrence, and so even the view window has some velocity. Use the middle mouse button to set the view window position and velocity to that of any unit or objective. The position of the view window can also be changed using WSAD (by default) and the velicity by the arrow keys (by default). Units can be assigned to control groups by holding Ctrl and pressing any number key.<br>
+Below each of your units are two bars: ammunition on the left and energy on the right. The colored circle to the bottom right of each unit shows its hull status. In the case of capital ships, the ring around the circle represents the status of the front and rear shields.<br>
+<br><b>Commands</b><br>
+There are two command modes: Tactical and Strategic. In Tactical mode, a single unit can be precisely controlled. To enter Tactical mode, double left click on a unit. The unit can be ordered to face a direction in Tactical mode by right clicking a point in space, and to accelerate by hodling the W key.<br>
+In Strategic mode, commands are given to all selected units using the right mouse button. The following commands can be given:<br>
+<blockquote>
+<u>Single click a point in space</u> - Move to that point<br>
+<u>Double click a point in space</u> - Move past that point<br>
+<u>Click, hold, and drag a point in space</u> - Move multiple units in a line formation<br>
+<u>Single click an untargeted enemy unit</u> - Set that unit as the primary target of your selected units<br>
+<u>Single click a targeted enemy unit</u> - Attack the target<br>
+<u>Double click a targeted enemy unit</u> - Perform a fast attack run on the target<br>
+<u>Click, hold, and drag an enemy unit</u> - Orbit the unit at the specified distance<br>
+<u>Single click a friendly unit</u> - Escort the unit<br>
+<u>Double click a friendly unit</u> - Repair/rearm the unit if a ship is selected, OR return to the unit's docking bay if a craft is selected<br>
+<u>Click, hold, and drag a friendly unit</u> - Escort at the specified position<br>
+<u>Double click a map objective</u> - Capture the objective<br>
+<u>Click, hold, and drag a map objective</u> - Orbit the objective at the specified distance<br>
+</blockquote>
+Commands can be queued by holding shift (by default), and queued commands can be canceled by holding ctrl and right clicking on them.<br>
+A unit which has no other commands will automatically turn to put its weapons in arc. This is indicated by an "F" below the unit. To clear a selected unit's orders, press the E key (by default).<br>
+<br><b>Weapon Modes</b><br>
+Each unit has a single primary target, which can be set by right clicking an enemy unit. In addition, each weapon can be individually assigned a secondary target. A secondary target can be a different unit, or it can be a subcomponent of the primary target. If a subcomponent is targeted by a weapon, it is more likely to take damage from that weapon. Weapons can be used in one of three modes:<br>
+<blockquote>
+<u>Disabled</u> - The weapon will not function or be automatically repaired. This will save a small amount of power.<br>
+<u>Manual Targeting</u> - The weapon will ony fire at the ship's primary target when it is within range. The range is specified in seconds to impact.<br>
+<u>Prefer Manual Target</u> - The weapon will fire at the ship's primary target when it is within range. Otherwise, it will default to targets of opportunity.<br>
+<u>Fully Autonomous</u> - The weapon will choose both its target and when to fire autonomously, independent of the ship's primary target. This mode is useful when a weapon is used as point defence against incoming missiles or craft.<br>
+</blockquote>
+In addition, a weapon in any fire mode can be overriden by having the weapon selected and holding the Manual Fire button (default F). In this case, the weapon will attempt to point toward the mouse cursor, and the left mouse button can be used to fire.<br>
+Missiles have a special Volley Fire mode. When the volley size of a missile launcher is set to a value higher than 1, the launcher will deploy multiple missiles without attacking the target, and then the entire volley of missiles will attack the target simultaneously. This may be useful to overwhelm enemy point defence weapons.<br> 
+</html>

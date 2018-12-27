@@ -1,0 +1,21 @@
+class = Radar
+description = A radar with average range and low power consumption.
+
+type = sensor
+mass= 45
+cost= 40
+hull= 500
+stealth_resistance= 0.9
+range= 14000
+power_use= 1.0E3
+energy_to_engage= 40E3
+energy_per_refresh= 6.0E3
+detectability= 1.0
+refresh_time= 4
+ping_lifetime= 10
+position_accuracy= 0.84
+velocity_accuracy= 0.84
+repair_per_material= 18
+
+death_explosion1 = flash
+debris_size = 100

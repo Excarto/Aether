@@ -1,0 +1,75 @@
+class = Patrol Frigate
+description = A light, fast ship with good vision range and a system hardpoint.
+
+cost= 320
+scale= 0.31
+mass= 400
+forward_thrust= 9.5E3
+turning_thrust= 6.4E3
+power= 30E3
+capacitor= 480E3
+hull= 14.5E3
+armor= 140
+front_shield= 6000
+rear_shield= 4500
+shield_recharge= 28
+storage_space= 85
+vision_size= 7200
+radar_signature= 0.59
+repair_rate = 0.25
+self_repair_rate = 0.135
+repair_per_material= 100
+capture_rate = 18.0
+ammo_transfer_rate = 3.0
+
+weapon1_x_pos= 0.48
+weapon1_y_pos= 0.70
+weapon1_z_pos= 0.1
+weapon1_mass=  38
+weapon1_angle= 45
+weapon1_arc=   130
+weapon2_x_pos= -0.48
+weapon2_y_pos= 0.70
+weapon2_z_pos= 0.1
+weapon2_mass=  38
+weapon2_angle= -45
+weapon2_arc=   130
+
+system1_x_pos= 0.0
+system1_y_pos= -0.1
+system1_mass=  100
+
+num_render_angles= 72
+death_explosion1 = unit_med
+debris_size= 2200
+death_time= 1.25
+icon_size= 6
+icon_label= PF
+
+thruster1_type= 1
+thruster1_scale= 1.0
+thruster1_x_pos= 0.0
+thruster1_y_pos= -0.95
+thruster1_z_pos= 0.0
+thruster1_z_order= 0
+
+left_thruster1_type= 1
+left_thruster1_x_pos= 0.576
+left_thruster1_y_pos= 0.77
+left_thruster1_z_pos= -0.12
+left_thruster1_z_order= -1
+left_thruster2_type= 1
+left_thruster2_x_pos= -0.26
+left_thruster2_y_pos= -0.871
+left_thruster2_z_pos= -0.02
+left_thruster2_z_order= -1
+right_thruster1_type= 1
+right_thruster1_x_pos= -0.576
+right_thruster1_y_pos= 0.77
+right_thruster1_z_pos= -0.12
+right_thruster1_z_order= -1
+right_thruster2_type= 1
+right_thruster2_x_pos= 0.26
+right_thruster2_y_pos= -0.871
+right_thruster2_z_pos= -0.02
+right_thruster2_z_order= -1

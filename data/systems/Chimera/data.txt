@@ -1,0 +1,14 @@
+class = Ship Scanner
+description = Reveals the hull and shield status of enemy ships within its range.
+
+type = scanner
+mass= 50
+cost= 30
+hull= 550
+range= 3400
+power_use= 6E3
+energy_to_engage= 200E3
+repair_per_material= 20
+
+death_explosion1 = flash
+debris_size = 200

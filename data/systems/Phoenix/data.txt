@@ -1,0 +1,21 @@
+class = Advanced Radar
+description = A radar with average range, moderate power draw, and which has some resistance to stealth and to enemy passive radar detectors.
+
+type = sensor
+mass= 90
+cost= 65
+hull= 600
+stealth_resistance= 1.2
+range= 14000
+power_use= 1.5E3
+energy_to_engage= 100E3
+energy_per_refresh= 12E3
+detectability= 0.82
+refresh_time= 3
+ping_lifetime= 10
+position_accuracy= 0.91
+velocity_accuracy= 0.91
+repair_per_material= 23
+
+death_explosion1 = flash
+debris_size = 300

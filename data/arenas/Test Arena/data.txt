@@ -1,0 +1,12 @@
+description = its a map
+
+default_budget = 3000
+
+player1_x_pos= 2000
+player1_y_pos= 2000
+player2_x_pos= -2000
+player2_y_pos= 2000
+player3_x_pos= -2000
+player3_y_pos= -2000
+player4_x_pos= 2000
+player4_y_pos= -2000

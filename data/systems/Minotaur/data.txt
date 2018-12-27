@@ -1,0 +1,15 @@
+class = Fleet Cloak
+description = Makes the ship on which it is installed and any nearby friendly units stealthier.
+
+type = cloak
+mass= 180
+cost= 60
+hull= 800
+effectiveness= 0.45
+range= 950
+power_use= 55E3
+energy_to_engage= 1000E3
+repair_per_material= 13
+
+death_explosion1 = flash
+debris_size = 400

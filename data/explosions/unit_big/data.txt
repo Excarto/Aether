@@ -1,0 +1,42 @@
+vision_size = 1000000.0
+
+duration1= 2.2
+growth_time1= 0.8
+start_scale1= 0.01
+max_scale1= 0.9
+end_scale1= 0.85
+start_opacity1= 0.0
+max_opacity1= 0.75
+end_opacity1= 0.2
+time_power1= 1.8
+
+duration2= 1.38
+growth_time2= 0.65
+start_scale2= 0.01
+max_scale2= 0.83
+end_scale2= 0.65
+start_opacity2= 0.7
+max_opacity2= 0.88
+end_opacity2= 0.15
+time_power2= 2.0
+
+duration3= 0.6
+growth_time3= 1.0
+start_scale3= 0.1
+max_scale3= 0.78
+end_scale3= 0.78
+start_opacity3= 1.0
+max_opacity3= 0.2
+end_opacity3= 0.1
+time_power3= 1.2
+
+duration4= 0.9
+growth_time4= 0.60
+start_scale4= 0.01
+max_scale4= 0.70
+end_scale4= 0.25
+start_opacity4= 0.7
+max_opacity4= 0.85
+end_opacity4= 0.20
+time_power4= 1.6
+

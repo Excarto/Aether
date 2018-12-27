@@ -1,0 +1,17 @@
+class = Passive Radar Detector
+description = Detects enemy radars which are enabled within its range.
+
+type = detector
+mass= 50
+cost= 25
+hull= 550
+stealth_resistance= 0.95
+power_use= 1.3E3
+energy_to_engage= 10E3
+position_accuracy= 0.78
+velocity_accuracy= 0.74
+repair_per_material= 20
+ping_lifetime= 20
+
+death_explosion1 = flash
+debris_size = 200

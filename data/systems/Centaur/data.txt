@@ -1,0 +1,15 @@
+class = Cloak
+description = Makes the ship on which it is installed less visible to radar. Consumes a large amount of power.
+
+type = cloak
+mass= 120
+cost= 55
+hull= 700
+effectiveness= 0.50
+range= 0
+power_use= 40E3
+energy_to_engage= 800E3
+repair_per_material= 13
+
+death_explosion1 = flash
+debris_size = 300

@@ -1,0 +1,43 @@
+class = Bomber
+description = A craft with a large weapon harpoint and significant storage space, designed to destroy large ships.
+
+cost= 60
+scale= 0.25
+contact_scale= 0.62
+mass= 90
+hull= 3.7E3
+armor= 5
+capacitor= 420E3
+power= 2.63E3
+forward_thrust= 3.2E3
+turning_thrust= 2.1E3
+vision_size= 2900
+radar_signature= 0.4
+storage_space= 24
+repair_per_material= 150
+launch_time_multiplier= 1.5
+
+weapon1_x_pos= 0
+weapon1_y_pos= 0
+weapon1_mass=  35
+weapon1_angle= 0
+weapon1_arc=   0
+
+num_render_angles = 36
+death_explosion1 = unit_small
+debris_size = 450
+icon_size= 4
+icon_label= B
+
+thruster1_type= 1
+thruster1_scale= 1.0
+thruster1_x_pos= -0.274
+thruster1_y_pos= -0.81
+thruster1_z_pos= -0.20
+thruster1_z_order= 0
+thruster2_type= 1
+thruster2_scale= 1.0
+thruster2_x_pos= 0.274
+thruster2_y_pos= -0.81
+thruster2_z_pos= -0.20
+thruster2_z_order= 0

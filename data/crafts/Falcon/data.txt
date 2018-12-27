@@ -1,0 +1,38 @@
+class = Dropship
+description = An unarmed craft capable of capturing objectives.
+
+cost= 60
+scale= 0.175
+contact_scale= 0.65
+mass= 80
+hull= 2.75E3
+armor= 5
+capacitor= 310E3
+power= 1.15E3
+forward_thrust= 1.6E3
+turning_thrust= 1.1E3
+vision_size= 2300
+radar_signature= 0.42
+storage_space= 0
+repair_per_material= 150
+launch_time_multiplier= 2.1
+capture_rate = 17.0
+
+num_render_angles = 36
+death_explosion1 = unit_small
+debris_size = 450
+icon_size= 4
+icon_label= D
+
+thruster1_type= 1
+thruster1_scale= 1.0
+thruster1_x_pos= -0.56
+thruster1_y_pos= -0.228
+thruster1_z_pos= 0.25
+thruster1_z_order= 0
+thruster2_type= 1
+thruster2_scale= 1.0
+thruster2_x_pos= 0.56
+thruster2_y_pos= -0.228
+thruster2_z_pos= 0.25
+thruster2_z_order= 0

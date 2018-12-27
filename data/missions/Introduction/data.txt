@@ -1,0 +1,6 @@
+random_seed = 7
+budget = 0
+arena = kingofthehill
+player1_ship1 = ares1
+player1_ship2 = hermes1
+player2_ship1 = hyperion1

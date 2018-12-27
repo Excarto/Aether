@@ -1,0 +1,37 @@
+class = Heavy Cannon
+description = A short to medium range, general purpose weapon. Its slow-moving, inaccurate projectiles have a difficult time hitting small, fast-moving targets.
+
+type = gun
+cost= 35
+weapon_scale= 0.77
+projectile_scale= 0.9
+mass= 50
+hull = 800
+velocity= 380
+inaccuracy= 2.55
+explosive_damage= 2350
+EM_damage= 0
+kinetic_damage= 0
+kinetic_damage_exponent = 0.0
+reload_time= 3.96
+energy_per_shot= 25E3
+tracking_rate= 30
+ammo_mass= 2.4
+ammo_type= 10
+projectile_mass= 1.2
+repair_per_material= 20
+arc_resource_base= 0.22
+arc_resource_exponent= 0.41
+lifespan= 25
+radar_signature = 0.8
+default_range = 8
+default_fire_mode= automatic
+default_auto_ships= true
+default_auto_craft= false
+default_auto_missiles= false
+
+num_render_angles = 12
+death_explosion1 = flash
+debris_size = 200
+min_render_size = 3
+impact_explosion= 3

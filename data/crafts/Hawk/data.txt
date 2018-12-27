@@ -1,0 +1,43 @@
+class = Interceptor
+description = A light, extrmely fast craft desinged to catch and destroy enemy craft.
+
+cost= 25
+scale= 0.146
+contact_scale= 0.62
+mass= 60
+hull= 3.1E3
+armor= 5
+capacitor= 350E3
+power= 2.18E3
+forward_thrust= 2.65E3
+turning_thrust= 2.05E3
+vision_size= 3500
+radar_signature= 0.33
+storage_space= 9
+repair_per_material= 150
+launch_time_multiplier= 1.0
+
+weapon1_x_pos= 0
+weapon1_y_pos= 0
+weapon1_mass=  18
+weapon1_angle= 0
+weapon1_arc=   0
+
+num_render_angles = 36
+death_explosion1 = unit_small
+debris_size = 300
+icon_size= 4
+icon_label= I
+
+thruster1_type= 1
+thruster1_scale= 1.0
+thruster1_x_pos= -0.171
+thruster1_y_pos= -0.84
+thruster1_z_pos= 0.0
+thruster1_z_order= 0
+thruster2_type= 1
+thruster2_scale= 1.0
+thruster2_x_pos= 0.171
+thruster2_y_pos= -0.84
+thruster2_z_pos= 0.0
+thruster2_z_order= 0

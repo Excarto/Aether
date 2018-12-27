@@ -1,0 +1,36 @@
+class = Fusion Pulse Accellerator
+description = A short-range weapon which deals primarily EM damage. If used against a weakened shield, it can quickly destroy weapons and systems on whatever unit it hits. It requires no ammunition.
+
+type = gun
+cost= 25
+weapon_scale= 0.50
+projectile_scale= 0.9
+mass= 30
+hull = 420
+velocity= 400
+inaccuracy= 3.2
+projectiles_per_shot= 3
+explosive_damage= 450
+em_damage= 155
+kinetic_damage= 0
+kinetic_damage_exponent = 0.6
+reload_time= 10.0
+energy_per_shot= 150E3
+tracking_rate= 45
+projectile_mass= 0.01
+repair_per_material= 16
+arc_resource_base= 0.20
+arc_resource_exponent= 0.35
+lifespan= 3.5
+radar_signature = 0.8
+rotate_speed = 300
+default_fire_mode= automatic
+default_auto_ships= true
+default_auto_craft= false
+default_auto_missiles= false
+
+num_render_angles = 12
+death_explosion1 = flash
+debris_size = 200
+impact_explosion = 8
+min_render_size = 3

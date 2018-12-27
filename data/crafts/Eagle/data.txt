@@ -1,0 +1,36 @@
+class = Scout
+description = An unarmed craft with moderate speed, a large vision radius, and a single system hardpoint.
+
+cost= 45
+scale= 0.22
+contact_scale= 0.62
+mass= 70
+hull= 2.5E3
+armor= 5
+capacitor= 70E3
+power= 3.15E3
+forward_thrust= 2.2E3
+turning_thrust= 1.5E3
+vision_size= 4800
+radar_signature= 0.3
+storage_space= 0
+repair_per_material= 150
+launch_time_multiplier= 1.5
+
+system1_x_pos = 0
+system1_y_pos = -0.1
+system1_mass = 50
+
+num_render_angles = 36
+death_explosion1 = unit_small
+debris_size = 300
+icon_size= 4
+icon_label= S
+
+thruster1_type= 1
+thruster1_scale= 1.0
+thruster1_x_pos= 0.0
+thruster1_y_pos= -0.57
+thruster1_z_pos= -0.23
+thruster1_z_order= 0
+

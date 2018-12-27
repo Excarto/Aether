@@ -1,0 +1,28 @@
+class = Laser
+description = A fast-tracking, continuously-firing, short-range weapon which consumes a moderate amount of power and no ammunition. Its primary use is as anti-missile point defense, but it can also be used against lightly armored units.
+
+type = beam
+cost= 15
+weapon_scale= 0.45
+projectile_scale= 0.98
+mass= 22
+hull = 340
+inaccuracy= 0.60
+beam_length = 995
+explosive_damage_per_sec= 700
+EM_damage_per_sec= 0
+reload_time= 0.45
+duration = 0.3
+energy_per_shot= 14.0E3
+tracking_rate= 74
+repair_per_material= 20
+arc_resource_base= 0.25
+arc_resource_exponent= 0.28
+default_fire_mode= autonomous
+default_auto_ships= true
+default_auto_craft= true
+default_auto_missiles= true
+
+death_explosion1 = flash
+debris_size = 200
+impact_explosion = 10
