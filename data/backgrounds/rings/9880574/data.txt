@@ -1,3 +1,0 @@
-size= 183
-posx= 995
-posy= 14

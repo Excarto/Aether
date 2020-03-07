@@ -10,6 +10,7 @@ public final class ShipOutfitWindow extends OutfitWindow{
 	private final JList<Craft> craftList;
 	private final JSlider storageRatio;
 	private final JLabel ammoLabel, materialLabel;
+	private final JButton saveButton; 
 	
 	private final Ship ship;
 	
@@ -37,7 +38,7 @@ public final class ShipOutfitWindow extends OutfitWindow{
 		fleetPanel.setPreferredSize(new Dimension(177, 269));
 		fleetPanel.setBorder(BorderFactory.createEtchedBorder());
 		JLabel fleetLabel = new JLabel("Craft");
-		fleetLabel.setFont(new Font("Arial", Font.BOLD, 12));
+		fleetLabel.setFont(Main.getDefaultFont(12));
 		fleetPanel.add(fleetLabel);
 		fleetPanel.add(craftList);
 		fleetPanel.add(add);
@@ -62,8 +63,14 @@ public final class ShipOutfitWindow extends OutfitWindow{
 		materialLabel.setPreferredSize(new Dimension(108, 15));
 		storageRatio = new JSlider(0, 100, 0);
 		storageRatio.setPreferredSize(new Dimension(108, 20));
-		storageRatio.addChangeListener(new StorageRatioListener());
 		storageRatio.setValue((int)(ammoRatio*100));
+		storageRatio.addChangeListener(new ChangeListener(){
+			public void stateChanged(ChangeEvent e){
+				updateStorage();
+				updateLabels();
+			}
+		});
+		
 		JPanel storagePanel = new JPanel();
 		storagePanel.setPreferredSize(new Dimension(110, 80));
 		storagePanel.add(storageLabel);
@@ -71,21 +78,11 @@ public final class ShipOutfitWindow extends OutfitWindow{
 		storagePanel.add(ammoLabel);
 		storagePanel.add(materialLabel);
 		
-		JButton saveButton = new JButton("Save to file");
+		saveButton = new JButton("Save to file");
 		saveButton.setPreferredSize(new Dimension(100, 23));
 		saveButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				BufferedWriter out = null;
-				try{
-					File file = new File("data/saved/"+ship.getName()+".txt");
-					file.delete();
-					out = new BufferedWriter(new FileWriter(file));
-					ship.write(out);
-				}catch (IOException ex){}
-				try{
-					if (out != null)
-						out.close();
-				}catch (IOException ex){}
+				save();
 		}});
 		namePanel.add(saveButton);
 		
@@ -100,8 +97,9 @@ public final class ShipOutfitWindow extends OutfitWindow{
 		leftPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		leftPanel.add(ammoStoragePanel);
 		leftPanel.add(fleetPanel);
-		this.add(leftPanel, 1);
+		this.add(leftPanel, 2);
 		
+		updateStorage();
 		updateUnitList();
 	}
 	
@@ -120,18 +118,38 @@ public final class ShipOutfitWindow extends OutfitWindow{
 	}
 	
 	private void updateUnitList(){
-		/*String[] temp = new String[ship.crafts.size()];
-		for (int x = 0; x < ship.crafts.size(); x++)
-			temp[x] = ship.crafts.get(x).name;*/
 		Craft[] data = new Craft[ship.crafts.size()];
 		for (int x = 0; x < ship.crafts.size(); x++)
 			data[data.length-1-x] = ship.crafts.get(x);
 		craftList.setListData(data);
 	}
 	
+	private void updateStorage(){
+		ammoLabel.setText("Ammunition: " + storageRatio.getValue() + "%");
+		materialLabel.setText("Repair Parts: " + (100-storageRatio.getValue()) + "%");
+		ammoRatio = storageRatio.getValue()*0.01;
+		ship.ammoRatio = ammoRatio;
+	}
+	
 	protected void autoLoadout(){
 		super.autoLoadout();
 		updateUnitList();
+	}
+	
+	private void save(){
+		BufferedWriter out = null;
+		try{
+			File file = new File(Main.saveDir + "/ships/" + ship.getName().replace(" ","") + ".txt");
+			file.delete();
+			out = new BufferedWriter(new FileWriter(file));
+			ship.write(out);
+		}catch (IOException ex){
+			saveButton.setText("Cannot save!");
+		}
+		try{
+			if (out != null)
+				out.close();
+		}catch (IOException ex){}
 	}
 	
 	private class AddListener implements ActionListener{
@@ -174,15 +192,6 @@ public final class ShipOutfitWindow extends OutfitWindow{
 				ship.crafts.remove(craftList.getSelectedValue());
 				updateUnitList();
 			}
-		}
-	}
-	
-	private class StorageRatioListener implements ChangeListener{
-		public void stateChanged(ChangeEvent e){
-			ammoLabel.setText("Ammunition: " + storageRatio.getValue() + "%");
-			materialLabel.setText("Repair Parts: " + (100-storageRatio.getValue()) + "%");
-			ammoRatio = storageRatio.getValue()*0.01;
-			ship.ammoRatio = ammoRatio;
 		}
 	}
 }

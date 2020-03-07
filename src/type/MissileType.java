@@ -25,8 +25,8 @@ public class MissileType extends GunType{
 		thrust = getDouble("forward_thrust")/Main.TPS/Main.TPS;
 		turnThrust = getDouble("turn_thrust")/Main.TPS/Main.TPS;
 		missileHull = getInt("missile_hull");
-		capacitor = (int)(Main.energyPerThrust*getDouble("projectile_mass")*getDouble("delta_v")/Main.TPS);
-		deltaV = capacitor/Main.energyPerThrust/projectileMass;
+		capacitor = (int)(Main.config.energyPerThrust*getDouble("projectile_mass")*getDouble("delta_v")/Main.TPS);
+		deltaV = capacitor/Main.config.energyPerThrust/projectileMass;
 		visionRange = getInt("vision_size");
 		//cruiseSpeed = getDouble("cruise_speed")/Main.TPS;
 		closingFuel = getDouble("closing_fuel") == 0 ? 1.0 : getDouble("closing_fuel");
@@ -54,15 +54,18 @@ public class MissileType extends GunType{
 				{"Hull",					String.valueOf(missileHull)},
 				{"Launch Speed",			String.valueOf(velocity*Main.TPS)},
 					{"Damage", "CATEGORY"},
-				{"Explosive Damage",		String.valueOf(explosiveDamage)},
+				{"Explosive Damage",		String.valueOf(explosiveDamage),
+						"Explosive damage is effective against shields and hull, and does some damage to subsystems"},
 				{"Approx. Kinetic Damage",	String.valueOf(kineticMultiplier*
-						pow(0.6*capacitor/Main.energyPerThrust/projectileMass, kineticExponent))},
-				{"EM Damage",				String.valueOf(EMDamage)},
+						pow(0.6*capacitor/Main.config.energyPerThrust/projectileMass, kineticExponent)),
+						"Kinetic damage is dependent on the speed of impact and deals reduced damage to shields"},
+				{"EM Damage",				String.valueOf(EMDamage),
+						"EM damage is very effective against subsystems, but does nothing to a unit's hull"},
 				{"Rate of Fire (Shots/Min)",String.valueOf(projectilesPerShot*rateOfFire)},
 					{"Motor", "CATEGORY"},
 				{"Forward Acceleration",	String.valueOf(Main.TPS*Main.TPS*thrust/projectileMass)},
 				{"Turn Acceleration",		String.valueOf(Main.TPS*Main.TPS*turnThrust/projectileMass)},
-				{"Fuel (s)",				String.valueOf(capacitor/(thrust*Main.energyPerThrust)/Main.TPS)},
+				{"Fuel (s)",				String.valueOf(capacitor/(thrust*Main.config.energyPerThrust)/Main.TPS)},
 				{"Maximum Speed",			String.valueOf(deltaV*Main.TPS)},
 					{"Resources", "CATEGORY"},
 				{"Ammo Use (Mass/Min)",		String.valueOf(ammoType != -1 ? -Main.ammoMass[ammoType]*rateOfFire : 0)},
@@ -89,7 +92,7 @@ public class MissileType extends GunType{
 		double accel = thrust/projectileMass;
 		double launchSpeed = v0*(cos(toRadians(bearing)) - pow(sin(toRadians(abs(bearing)+inaccuracy)),2));
 		double turnTime = 0.2*Main.TPS + 1.2*sqrt(4*abs(bearing)*projectileMass/turnThrust);
-		double thrustTime = max(0, 0.85*(capacitor-turnTime*turnThrust*Main.energyPerTurnThrust)/(thrust*Main.energyPerThrust));
+		double thrustTime = max(0, 0.85*(capacitor-turnTime*turnThrust*Main.config.energyPerTurnThrust)/(thrust*Main.config.energyPerThrust));
 		
 		dx += vx*turnTime;
 		dy += vy*turnTime;

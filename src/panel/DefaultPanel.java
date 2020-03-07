@@ -23,7 +23,7 @@ public class DefaultPanel extends SidePanel{
 				GameWindow.MENU_WIDTH-24, 2+shipsPanel.getComponentCount()*(SHIP_PANEL_HEIGHT+2)));
 		
 		JScrollPane scrollPane = new JScrollPane(shipsPanel);
-		scrollPane.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, Main.RES_Y-3));
+		scrollPane.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, Main.resY-3));
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		

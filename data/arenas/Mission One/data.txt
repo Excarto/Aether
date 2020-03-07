@@ -1,0 +1,29 @@
+description = its a map
+
+default_budget = 3000
+max_score = 180.0
+start_budget = 1.0
+income_time = 0
+decap_multiplier = 3
+mission_only = true
+
+# background_object1_image= planet
+# background_object1_x_pos= 0
+# background_object1_y_pos= 0
+# background_object1_distance= 2400
+
+foreground_object1_image= station
+foreground_object1_x_pos= 0
+foreground_object1_y_pos= 0
+foreground_object1_obj_type= normal
+foreground_object1_obj_value= 1
+foreground_object1_obj_capture_size= 500
+
+player1_x_pos= 12000
+player1_y_pos= 12000
+player2_x_pos= 12000
+player2_y_pos= -12000
+player3_x_pos= -12000
+player3_y_pos= 12000
+player4_x_pos= -12000
+player4_y_pos= -12000

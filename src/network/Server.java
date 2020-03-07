@@ -88,12 +88,12 @@ public class Server{
 	
 	private void listenForClients(){
 		try{
-			Connection localhostConnection = new Connection(listenSocket.accept(), Main.forceTCP);
+			Connection localhostConnection = new Connection(listenSocket.accept(), Main.options.forceTCP);
 			localhost = new Client(false);
 			localhost.connection = localhostConnection;
 			
 			while (running){
-				final Connection connection = new Connection(listenSocket.accept(), Main.forceTCP);
+				final Connection connection = new Connection(listenSocket.accept(), Main.options.forceTCP);
 				connection.addListener(new JoinMsg(){
 					public void confirmed(){
 						if (clients.size()+computerPlayers.size()+1 >= Arena.MAX_PLAYERS){
@@ -179,7 +179,7 @@ public class Server{
 		DatagramSocket broadcastSocket = null;
 		try{
 			InetAddress broadcastAddress = getBroadcastAddress();
-			broadcastSocket = new DatagramSocket(Main.serverBroadcastPort);
+			broadcastSocket = new DatagramSocket(Main.options.serverBroadcastPort);
 			broadcastSocket.setBroadcast(true);
 			byte[] broadcastBuffer = new byte[Connection.PACKET_SIZE];
 			BroadcastMsg broadcastMsg = new BroadcastMsg();
@@ -194,7 +194,7 @@ public class Server{
 				broadcastMsg.numClients = 1+clients.size();
 				int length = broadcastMsg.write(broadcastBuffer);
 				DatagramPacket packet = new DatagramPacket(broadcastBuffer, length,
-							broadcastAddress, Main.clientBroadcastPort);
+							broadcastAddress, Main.options.clientBroadcastPort);
 				broadcastSocket.send(packet);
 			}
 		}catch (IOException e){
@@ -212,8 +212,8 @@ public class Server{
 		try{
 			lobbyServerSocket = new Socket();
 			lobbyServerSocket.setReuseAddress(true);
-			lobbyServerSocket.bind(new InetSocketAddress(Main.clientPort));
-			lobbyServerSocket.connect(new InetSocketAddress(Main.lobbyServer, Main.lobbyHostPort), 4000);
+			lobbyServerSocket.bind(new InetSocketAddress(Main.options.clientPort));
+			lobbyServerSocket.connect(new InetSocketAddress(Main.options.lobbyServer, Main.options.lobbyHostPort), 4000);
 			lobbyServer = new Connection(lobbyServerSocket, true);
 			sendInfoToLobbyServer();
 		}catch (IOException ex){
@@ -231,11 +231,11 @@ public class Server{
 	public Connection start(String name, List<Ship> ships){
 		Connection localClient = null;
 		try{
-			listenSocket = new ServerSocket(Main.serverPort);
+			listenSocket = new ServerSocket(Main.options.serverPort);
 			listenSocket.setReuseAddress(true);
 			
 			if (!isLAN)
-				Main.UPnPHandler.enableUPnP(Main.serverPort, Protocol.TCP);
+				Main.UPnPHandler.enableUPnP(Main.options.serverPort, Protocol.TCP);
 			
 			running = true;
 			new Thread("ServerListenThread"){
@@ -245,8 +245,8 @@ public class Server{
 			
 			Socket localClientSocket = new Socket();
 			localClientSocket.setReuseAddress(true);
-			localClientSocket.bind(new InetSocketAddress(Main.clientPort));
-			localClientSocket.connect(new InetSocketAddress("localhost", Main.serverPort));
+			localClientSocket.bind(new InetSocketAddress(Main.options.clientPort));
+			localClientSocket.connect(new InetSocketAddress("localhost", Main.options.serverPort));
 			
 			while (localhost == null){
 				try{
@@ -591,7 +591,7 @@ public class Server{
 			this.isAI = isAI;
 			budget = Server.this.budget;
 			int lowestTeam = 1, lowestNumPlayers = Integer.MAX_VALUE;
-			for (int x = 1; x <= arena.teamPositions.length; x++){
+			for (int x = 1; x <= arena.teamPos.length; x++){
 				int numPlayers = 0;
 				for (Client player : players)
 					if (player.team == x)

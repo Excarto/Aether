@@ -1,4 +1,3 @@
-import static java.lang.Math.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
@@ -32,14 +31,14 @@ public abstract class SetupWindow extends Window{
 	JButton backButton;
 	
 	public SetupWindow(){
-		super(true);
+		super(Size.NORMAL);
 		
 		final JMenu loadMenu = new JMenu();
 		loadMenu.setPreferredSize(new Dimension(0, 0));
 		loadMenu.addMenuListener(new MenuListener(){
 			public void menuSelected(MenuEvent e){
 				loadMenu.removeAll();
-				String[] savedShips = new File("data/saved").list();
+				String[] savedShips = new File(Main.saveDir + "/ships").list();
 				Arrays.sort(savedShips);
 				for (final String savedShip : savedShips){
 					final String savedShipName = savedShip.substring(0, savedShip.length()-4);
@@ -52,7 +51,7 @@ public abstract class SetupWindow extends Window{
 					JMenuItem deleteItem = new JMenuItem("delete");
 					deleteItem.addActionListener(new ActionListener(){
 						public void actionPerformed(ActionEvent e){
-							new File("data/saved/"+savedShip).delete();
+							new File(Main.saveDir + "/ships/" + savedShip).delete();
 					}});
 					subMenu.add(deleteItem);
 					loadMenu.add(subMenu);
@@ -150,7 +149,6 @@ public abstract class SetupWindow extends Window{
 		playersPanel.setBorder(BorderFactory.createEtchedBorder());
 		
 		bottomPanel = new JPanel(DEFAULT_LAYOUT);
-		//bottomPanel.setBackground(BACKGROUND_COLOR);
 		bottomPanel.setOpaque(false);
 		bottomPanel.setPreferredSize(new Dimension(800, 40));
 		backButton = new JButton("Back");
@@ -163,7 +161,7 @@ public abstract class SetupWindow extends Window{
 		
 		titleLabel = new Title("Game Setup", 550, 75);
 		
-		this.add(createSpacer(1000, 45));
+		//this.add(createSpacer(1000, 45));
 		this.add(titleLabel);
 		this.add(playersPanel);
 		this.add(fleetPanel);
@@ -192,7 +190,7 @@ public abstract class SetupWindow extends Window{
 		Ship ship = null;
 		BufferedReader in = null;
 		try{
-			File file = new File("data/saved/"+shipName+".txt");
+			File file = new File(Main.saveDir + "/ships/" + shipName + ".txt");
 			in = new BufferedReader(new FileReader(file));
 			ship = Ship.read(in);
 		}catch (IOException ex){}
@@ -209,10 +207,6 @@ public abstract class SetupWindow extends Window{
 	}
 	
 	protected void updateShipList(){
-		//String[] temp = new String[selectedPlayer.ships.size()];
-		//for (int x = 0; x < selectedPlayer.ships.size(); x++)
-		//	temp[x] = selectedPlayer.ships.get(x).name;
-		//shipList.setListData(temp);
 		shipList.setListData(selectedPlayer.ships);
 	}
 	
@@ -235,10 +229,11 @@ public abstract class SetupWindow extends Window{
 	
 	protected void start(final int randomSeed){
 		if (readyToStart()){
+			clickSound.play();
 			Game game = new Game(arena, null, 0.01*gameSpeed);
 			for (int x = 0; x < playersPanel.getComponentCount(); x++)
 				game.addPlayer(((PlayerPanel)playersPanel.getComponent(x)).getPlayer());
-			Main.startGame(game, randomSeed);
+			Main.startGame(game, randomSeed, randomSeed);
 		}
 	}
 	
@@ -266,7 +261,7 @@ public abstract class SetupWindow extends Window{
 				this.add(new JLabel("[AI]   "));
 			
 			nameField = new JTextField();
-			nameField.setPreferredSize(new Dimension(140, 25));
+			nameField.setPreferredSize(new Dimension(136, 25));
 			nameField.setEditable(false);
 			nameField.setText(name);
 			
@@ -275,7 +270,7 @@ public abstract class SetupWindow extends Window{
 			budgetLabel.setHorizontalAlignment(JLabel.RIGHT);
 			
 			JLabel budgetSpacer = new JLabel("");
-			budgetSpacer.setPreferredSize(new Dimension(7, 25));
+			budgetSpacer.setPreferredSize(new Dimension(9, 25));
 			
 			budgetField = new JTextField(univBudgetField.getText());
 			budgetField.setPreferredSize(new Dimension(40, 25));
@@ -297,7 +292,7 @@ public abstract class SetupWindow extends Window{
 				this.add(budgetLabel);
 				budgetSpacer.setText(" /");
 			}else
-				budgetSpacer.setPreferredSize(new Dimension(42, 25));
+				budgetSpacer.setPreferredSize(new Dimension(44, 25));
 			this.add(budgetSpacer);
 			this.add(budgetField);
 			this.add(teamLabel);
@@ -319,8 +314,8 @@ public abstract class SetupWindow extends Window{
 		
 		public void updateBudget(){
 			int cost = 0;
-			for (int x = 0; x < ships.size(); x++)
-				cost += ships.get(x).getCost();
+			for (Ship ship : ships)
+				cost += ship.getCost();
 			budgetLabel.setText(String.valueOf(cost));
 			if (cost > Integer.parseInt(budgetField.getText())){
 				budgetLabel.setForeground(Color.RED);
@@ -334,7 +329,7 @@ public abstract class SetupWindow extends Window{
 		}
 		
 		public void autoLoadout(){
-			for (int x = 0; x < 50; x++){
+			/*for (int x = 0; x < 50; x++){
 				ships.clear();
 				updateBudget();
 				
@@ -348,8 +343,10 @@ public abstract class SetupWindow extends Window{
 				}
 				if (getBudget() > getMaxBudget()-50)
 					break;
-			}
+			}*/
+			Player.makeFleet(ships, getMaxBudget(), 0);
 			updateShipList();
+			updateBudget();
 		}
 		
 		public void setToUnivBudget(){
@@ -358,9 +355,9 @@ public abstract class SetupWindow extends Window{
 		}
 		
 		public void setTeams(){
-			for (int x = teamBox.getItemCount()-1; x >= arena.teamPositions.length; x--)
+			for (int x = teamBox.getItemCount()-1; x >= arena.teamPos.length; x--)
 				teamBox.removeItemAt(x);
-			for (int x = teamBox.getItemCount(); x < arena.teamPositions.length; x++)
+			for (int x = teamBox.getItemCount(); x < arena.teamPos.length; x++)
 				teamBox.addItem(String.valueOf(x+1));
 		}
 		
@@ -380,14 +377,18 @@ public abstract class SetupWindow extends Window{
 			return nameField.getText();
 		}
 		
+		public Vector<Ship> getCopiedShips(){
+			Vector<Ship> cloned = new Vector<Ship>(ships.size());
+			for (Ship ship : ships)
+				cloned.add(ship.copy());
+			return cloned;
+		}
+		
 		public Player getPlayer(){
-			return new Player(getName(), getTeam(), ships, getMaxBudget(), arena);
+			return new Player(getName(), getTeam(), getCopiedShips(), getMaxBudget(), arena);
 		}
 		
 		public void select(){
-			//if (selectedPlayer != null)
-			//	selectedPlayer.setBackground(NEUTRAL_COLOR);
-			//PlayerPanel.this.setBackground(SELECTED_COLOR);
 			if (selectedPlayer != null)
 				selectedPlayer.setBorder(Window.UNSELECTED_BORDER);
 			PlayerPanel.this.setBorder(Window.SELECTED_BORDER);

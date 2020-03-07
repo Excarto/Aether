@@ -13,7 +13,7 @@ public class Gun extends Weapon{
 		this.type = type;
 		autoRange = type.defaultAutoRange;
 		
-		targetVels = new VelocityRecord(Main.targetAccelTimeframe, 0.85);
+		targetVels = new VelocityRecord(Main.config.targetAccelTimeframe, 0.85);
 	}
 	
 	public void act(){
@@ -34,7 +34,7 @@ public class Gun extends Weapon{
 		
 		for (int x = 0; x < type.projectilesPerShot; x++){
 			Projectile projectile = createProjectile();
-			double angle = Game.fixAngle(unit.getAngle()+getAngle()+type.inaccuracy*(2*random.nextDouble()-1.0));
+			double angle = Utility.fixAngle(unit.getAngle()+getAngle()+type.inaccuracy*(2*random.nextDouble()-1.0));
 			double velX = unit.getVelX()+type.velocity*sin(toRadians(angle));
 			double velY = unit.getVelY()-type.velocity*cos(toRadians(angle));
 			int dt = time-Main.game.turn;
@@ -75,14 +75,14 @@ public class Gun extends Weapon{
     	double a = 0.0;//type instanceof MissileType ? ((MissileType)type).thrust/((MissileType)type).mass : 0.0;
     	double v = getProjectileVelocity();
     	
-    	double time = Game.getZero(new double[]{
+    	double time = Utility.getZero(new double[]{
 				4*(Dx*Dx+Dy*Dy),
 				8*(Dx*Vx+Dy*Vy),
 				4*(Dx*Ax+Dy*Ay+Vx*Vx+Vy*Vy-v*v),
 				4*(Vx*Ax+Vy*Ay-a*v),
 				Ax*Ax+Ay*Ay-a*a
     	});
-    	return Game.fixAngle(toDegrees(atan2(
+    	return Utility.fixAngle(toDegrees(atan2(
     			(Dx/time+Vx+Ax*time/2), -(Dy/time+Vy+Ay*time/2)))-unit.getAngle());
 	}
 	
@@ -111,7 +111,7 @@ public class Gun extends Weapon{
 		double Dy = locatable.getPosY()-unit.getPosY();
 		double Vx = locatable.getVelX()-unit.getVelX();
 		double Vy = locatable.getVelY()-unit.getVelY();
-		return Game.fixAngle(toDegrees(atan2(Dx+Vx*time, -(Dy+Vy*time))));
+		return Utility.fixAngle(toDegrees(atan2(Dx+Vx*time, -(Dy+Vy*time))));
 	}
 	
 	protected boolean inRange(Locatable target){

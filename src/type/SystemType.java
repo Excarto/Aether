@@ -6,7 +6,7 @@ public abstract class SystemType extends ComponentType{
 	public SystemType(String type){
 		super(type, "systems");
 		
-		radius = getInt("range");
+		radius = (int)(getInt("range")*Main.config.systemRangeMultiplier);
 	}
 	
 	public String powerCategory(){

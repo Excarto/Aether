@@ -2,26 +2,14 @@
 public class MainMenu extends Menu{
 	
 	public MainMenu(){
-		this.addOption(new Option("Single Player"){
+		
+		this.addOption(new Option("Singleplayer"){
 			public void act(){
 				Menu menu = new Menu();
 				
 				menu.addOption(new Option("Missions"){
 					public void act(){
-						Menu menu = new Menu();
-						
-						for (final Mission mission : Main.missions){
-							menu.addOption(new Option(mission.name){
-								public void act(){
-									mission.start();
-							}});
-						}
-						
-						menu.addOption(new Option("Back"){
-							public void act(){
-								Main.removeWindow();
-						}});
-						
+						Menu menu = new CreatePilotMenu();
 						Main.addWindow(menu);
 						menu.start();
 				}});
@@ -67,7 +55,7 @@ public class MainMenu extends Menu{
 						menu.start();
 				}});
 				
-				menu.addOption(new Option("LAN"){
+				menu.addOption(new Option("Local Area Network"){
 					public void act(){
 						Menu menu = new Menu();
 				

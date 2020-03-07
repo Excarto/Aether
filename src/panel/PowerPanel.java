@@ -38,7 +38,7 @@ class PowerPanel extends SidePanel{
 		generalPanel.add(unreservedPanelGeneral);
 		
 		specificPanel = new JPanel();
-		specificPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-28, 258));
+		specificPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-28, 280));
 		specificPanel.setOpaque(false);
 		//specificPanel.setBorder(Window.SELECTED_BORDER);
 		
@@ -196,7 +196,7 @@ class PowerPanel extends SidePanel{
 	static final Dimension SETTING_SIZE = new Dimension(210, 38);
 	static final Dimension SLIDER_SIZE = new Dimension(BAR_WIDTH+12, 18);
 	static final Dimension TITLE_LABEL_SIZE = new Dimension(70, 13);
-	static final Font POWER_FONT = new Font("Arial", Font.PLAIN, 11);
+	//static final Font POWER_FONT = new Font("Arial", Font.PLAIN, 11);
 	static final Color BAR_COLOR_DARK = new Color(40, 140, 40);
 	static final Color BAR_COLOR_LIGHT = new Color(20, 190, 20);
 	
@@ -214,7 +214,7 @@ class PowerPanel extends SidePanel{
 			
 			percentLabel = new JLabel();
 			percentLabel.setPreferredSize(new Dimension(200, 13));
-			percentLabel.setFont(POWER_FONT);
+			percentLabel.setFont(Main.defaultFont);
 			percentLabel.setHorizontalAlignment(JLabel.CENTER);
 			
 			meter = new PowerMeter();
@@ -260,12 +260,12 @@ class PowerPanel extends SidePanel{
 			
 			percentLabel = new JLabel();
 			percentLabel.setPreferredSize(TITLE_LABEL_SIZE);
-			percentLabel.setFont(POWER_FONT);
+			percentLabel.setFont(Main.defaultFont);
 			
 			meter = new PowerMeter();
 			
 			JLabel titleLabel = new JLabel(title);
-			titleLabel.setFont(POWER_FONT);
+			titleLabel.setFont(Main.defaultFont);
 			titleLabel.setPreferredSize(TITLE_LABEL_SIZE);
 			
 			this.add(titleLabel);

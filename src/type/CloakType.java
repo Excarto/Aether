@@ -12,7 +12,8 @@ public class CloakType extends SystemType{
 	
 	public void genSpecs(){
 		specs = new String[][] {
-				{"Strength",				String.valueOf(effect)},
+				{"Strength",				String.valueOf(effect),
+						"How much this system reduces sensor signature"},
 				{"Range",					String.valueOf(radius)},
 					{"Resources", "CATEGORY"},
 				{"Energy Use (Per Second)",	String.valueOf(-powerUse*Main.TPS/1000)},

@@ -20,12 +20,12 @@ repair_rate = 1.4
 self_repair_rate = 0.16
 repair_per_material= 100
 capture_rate = 13.0
-ammo_transfer_rate = 5.0
+ammo_transfer_rate = 6.0
 
 weapon1_x_pos= 0.25
-weapon1_y_pos= 0.8
-weapon1_z_pos= 0.1
-weapon1_mass=  32
+weapon1_y_pos= 0.78
+weapon1_z_pos= 0.06
+weapon1_mass=  34
 weapon1_angle= 0
 weapon1_arc=   220
 

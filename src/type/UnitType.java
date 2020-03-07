@@ -47,17 +47,17 @@ public abstract class UnitType extends BuyType{
 		capacitor = getDouble("capacitor");
 		power = getDouble("power")/Main.TPS;
 		armor = getDouble("armor");
-		thrust = getDouble("forward_thrust")*Main.unitAccelMultiplier/Main.TPS/Main.TPS;
-		turnThrust = getDouble("turning_thrust")*Main.unitTurnAccelMultiplier/Main.TPS/Main.TPS;
-		visionRange = (int)(getInt("vision_size")*Main.unitVisionMultiplier);
+		thrust = getDouble("forward_thrust")*Main.config.unitAccelMultiplier/Main.TPS/Main.TPS;
+		turnThrust = getDouble("turning_thrust")*Main.config.unitTurnAccelMultiplier/Main.TPS/Main.TPS;
+		visionRange = (int)(getInt("vision_size")*Main.config.unitVisionMultiplier);
 		radarSize = getDouble("radar_signature");
 		storageSpace = getDouble("storage_space");
 		captureRate = getDouble("capture_rate")/Main.TPS;
 		contactScale = getDouble("contact_scale") > 0 ? getDouble("contact_scale") : 1.0;
 		iconLabel = getString("icon_label");
-		deathExplosionImpulse = mass*Main.explosionImpulsePerMass;
+		deathExplosionImpulse = mass*Main.config.explosionImpulsePerMass;
 		
-		iconLabelWidth = Main.getStringWidth(iconLabel, Target.UNIT_LABEL_FONT);
+		iconLabelWidth = Main.getStringWidth(iconLabel, Target.unitLabelFont);
 		
 		int hardpointCount = 0;
 		while (hasValue("weapon" + ++hardpointCount + "_mass"));
@@ -104,21 +104,16 @@ public abstract class UnitType extends BuyType{
 					Thruster.FORWARD,
 					getInt("thruster" + x + "_z_order"),
 					thrust*getDouble("thruster" + x + "_scale")/scaleSum,
-					Main.unitRenderAngle);
+					Main.config.unitRenderAngle);
 		}
 		
 		for (int direction : new int[]{Thruster.LEFT, Thruster.RIGHT}){
 			String label = (direction == Thruster.LEFT ? "left" : "right") + "_thruster";
 			thrusterCount = 0;
-			//double momentAvg = 0.0;
-			while (hasValue(label + (thrusterCount+1) + "_type")){
+			while (hasValue(label + (thrusterCount+1) + "_type"))
 				thrusterCount++;
-			//	momentAvg += hypot(getDouble(label + thrusterCount + "_x_pos"), getDouble(label + thrusterCount + "_y_pos"));
-			}
-			//momentAvg /= thrusterCount;
 			thrusters[direction] = new Thruster[thrusterCount];
 			for (int x = 1; x <= thrusterCount; x++){
-				//double moment = hypot(getDouble(label + thrusterCount + "_x_pos"), getDouble(label + thrusterCount + "_y_pos"));
 				thrusters[direction][x-1] = new Thruster(getInt(label + x + "_type")-1,
 						getDouble(label + x + "_x_pos"),
 						-getDouble(label + x + "_y_pos"),
@@ -127,8 +122,8 @@ public abstract class UnitType extends BuyType{
 						getDouble(label + x + "_z_angle"),
 						direction,
 						getInt(label + x + "_z_order"),
-						turnThrust*/*(momentAvg/moment)**/(Main.energyPerTurnThrust/Main.energyPerThrust)/thrusterCount,
-						Main.unitRenderAngle);
+						turnThrust*(Main.config.energyPerTurnThrust/Main.config.energyPerThrust)/thrusterCount,
+						Main.config.unitRenderAngle);
 			}
 		}
 		
@@ -141,7 +136,7 @@ public abstract class UnitType extends BuyType{
 		}
 		topImg = temp;
 		
-		int numRenderAngles = Main.renderAnglesMultiplier*getInt("num_render_angles");
+		int numRenderAngles = Main.options.renderAnglesMultiplier*getInt("num_render_angles");
 		maxNumRenderAngles = max(maxNumRenderAngles, numRenderAngles);
 		renderable = new Renderable(iconSize+1, numRenderAngles);
 		contactMap = new boolean[NUM_CONTACT_MAPS][][];

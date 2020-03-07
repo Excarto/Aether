@@ -1,0 +1,3 @@
+size= 298
+posx= 581
+posy= 98

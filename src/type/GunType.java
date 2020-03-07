@@ -34,10 +34,10 @@ public class GunType extends WeaponType{
 		rotateSpeed = getDouble("rotate_speed")/Main.TPS;
 		projectileMass = getDouble("projectile_mass");
 		defaultAutoRange = (int)(getDouble("default_range") == 0 ? 5*Main.TPS : getDouble("default_range")*Main.TPS);
-		impactExplosionForce = explosiveDamage*Main.impactImpulsePerDamage;//getDouble("impact_explosion_force")/Main.TPS;
+		impactExplosionForce = explosiveDamage*Main.config.impactImpulsePerDamage;//getDouble("impact_explosion_force")/Main.TPS;
 		goThroughMissiles = getInt("go_through_missiles") != 0;
 		
-		projectileRenderable = new Renderable(getInt("min_render_size"), Main.renderAnglesMultiplier*getInt("num_render_angles"));
+		projectileRenderable = new Renderable(getInt("min_render_size"), Main.options.renderAnglesMultiplier*getInt("num_render_angles"));
 	}
 	
 	public void load(){
@@ -60,9 +60,12 @@ public class GunType extends WeaponType{
 				{"Track Rate (Degrees/Sec)",String.valueOf((int)(Main.TPS*trackRate))},
 				{"Inaccuracy (+/- Degrees)",String.valueOf(-inaccuracy)},
 					{"Damage", "CATEGORY"},
-				{"Explosive Damage",		String.valueOf(explosiveDamage)},
-				{"Approx. Kinetic Damage",	String.valueOf(kineticMultiplier*pow(velocity, kineticExponent))},
-				{"EM Damage",				String.valueOf(EMDamage)},
+				{"Explosive Damage",		String.valueOf(explosiveDamage),
+						"Explosive damage is effective against shields and hull, and does some damage to subsystems"},
+				{"Approx. Kinetic Damage",	String.valueOf(kineticMultiplier*pow(velocity, kineticExponent)),
+						"Kinetic damage is dependent on the speed of impact and deals reduced damage to shields"},
+				{"EM Damage",				String.valueOf(EMDamage),
+						"EM damage is very effective against subsystems, but does nothing to a unit's hull"},
 				{"Rate of Fire (Shots/Min)",String.valueOf(60.0*rateOfFire*projectilesPerShot)},
 					{"Resources", "CATEGORY"},
 				{"Energy Use (Per Second)",	String.valueOf(-getAveragePowerUse()*Main.TPS/1000)},

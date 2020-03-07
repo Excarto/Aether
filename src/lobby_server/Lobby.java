@@ -11,7 +11,7 @@ public class Lobby{
 		creationTime = java.lang.System.currentTimeMillis();
 	}
 	
-	public int minutesAlive(){
-		return (int)((java.lang.System.currentTimeMillis() - creationTime)/(1000*60));
+	public int secondsAlive(){
+		return (int)((java.lang.System.currentTimeMillis() - creationTime)/(1000));
 	}
 }

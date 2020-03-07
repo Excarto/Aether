@@ -3,7 +3,7 @@ description = A short-range weapon which deals primarily EM damage. If used agai
 
 type = gun
 cost= 25
-weapon_scale= 0.50
+weapon_scale= 0.51
 projectile_scale= 0.9
 mass= 30
 hull = 420

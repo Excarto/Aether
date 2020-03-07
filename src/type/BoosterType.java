@@ -11,7 +11,7 @@ public class BoosterType extends SystemType{
 		super(type);
 		
 		lifetime = (int)(getDouble("lifetime")*Main.TPS);
-		thrust = getDouble("thrust")*Main.unitAccelMultiplier/Main.TPS/Main.TPS;
+		thrust = getDouble("thrust")*Main.config.unitAccelMultiplier/Main.TPS/Main.TPS;
 		cannotReengage = getInt("cannot_reengage") != 0;
 		thrusterOp = new RescaleOp(
 				new float[]{(float)getDouble("red_scale"), (float)getDouble("green_scale"), (float)getDouble("blue_scale"), 1.0f},
@@ -19,7 +19,7 @@ public class BoosterType extends SystemType{
 	}
 	
 	public double getAveragePowerUse(){
-		return thrust*Main.energyPerThrust + super.getAveragePowerUse();
+		return thrust*Main.config.energyPerThrust + super.getAveragePowerUse();
 	}
 	
 	public void genSpecs(){

@@ -13,13 +13,13 @@ public class SystemPanel extends JPanel{
 	JPanel conditionPanel;
 	
 	public SystemPanel(){
-		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, 285));
+		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, 308));
 		this.setOpaque(false);
 		this.setBorder(BorderFactory.createEtchedBorder());
 		
 		typeLabel = new JLabel();
 		typeLabel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-12, 13));
-		typeLabel.setFont(new Font("Arial", Font.BOLD, 12));
+		typeLabel.setFont(Main.getDefaultFont(12));
 		typeLabel.setHorizontalAlignment(JLabel.CENTER);
 		
 		conditionPanel = new JPanel(Window.DEFAULT_LAYOUT);
@@ -47,7 +47,7 @@ public class SystemPanel extends JPanel{
 	
 	public void setSystem(System system){
 		this.system = system;
-		typeLabel.setText(system.type.typeClass);
+		typeLabel.setText(system.type.className);
 		engaged.setSelected(system.isEngaged());
 		img.select(system.type);
 	}

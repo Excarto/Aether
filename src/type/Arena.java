@@ -15,21 +15,18 @@ public class Arena extends Type{
 	final static int OBJ_BAR_SIZE = 25;
 	final static int PREVIEW_SCALE_POS = 12, PREVIEW_SCALE_ARROW_SIZE = 6;
 	final static Color WARP_IN_COLOR = new Color(150, 150, 150, 40);
-	final static String CLOUD_DIR = "data/backgrounds/clouds/";
-	final static String PLANET_DIR = "data/backgrounds/planets/";
-	final static String RING_DIR = "data/backgrounds/rings/";
+	static Font previewFontSmall, previewFontLarge;
 	
-	static final Random rand = new Random();
-	private static Cloud[] clouds, renderClouds;
-	
-	public static BufferedImage starBig, starSmall;
+	public static BackgroundGenerator background = new BackgroundGenerator();
 	
 	public final String arenaName;
+	public final String shortName;
 	public final String description;
 	public final BackgroundObject[] backgroundObjects;
 	public final ForegroundObject[] foregroundObjects;
 	public final Objective[] objectives;
-	public final int[][] teamPositions;
+	public final int[][] teamPos;
+	public final double[][] teamVel;
 	public final int maxScore;
 	public final int arenaSize;
 	public final double startBudget;
@@ -37,14 +34,15 @@ public class Arena extends Type{
 	public final int defaultBudget;
 	public final int decapMultiplier;
 	public final double totalObjectiveValue;
+	public final boolean missionOnly;
+	public final boolean isDefault;
 	
 	private Map<String,Renderable> renderables;
-	private int backgroundSeed;
-	private BufferedImage background;
 	
 	public Arena(String arenaName){
 		super("arenas/" + arenaName);
 		this.arenaName = arenaName;
+		this.shortName = arenaName.replaceAll("\\s+","").replace("_","").toLowerCase();
 		renderables = new HashMap<String,Renderable>();
 		
 		description = getString("description");
@@ -86,27 +84,25 @@ public class Arena extends Type{
 		for (int x = 0; x < backgroundObjects.length; x++)
 			backgroundObjects[x] = new BackgroundObject(x+1);
 		
-		int numPlayers = 0;
-		while (hasValue("player" + (numPlayers+1) + "_x_pos") && numPlayers < MAX_PLAYERS)
-			numPlayers++;
-		teamPositions = new int[numPlayers][2];
-		for (int x = 0; x < teamPositions.length; x++){
-			teamPositions[x][0] = getInt("player" + (x+1) + "_x_pos");
-			teamPositions[x][1] = getInt("player" + (x+1) + "_y_pos");
+		int numTeams = 0;
+		while (hasValue("player" + (numTeams+1) + "_x_pos") && numTeams < MAX_PLAYERS)
+			numTeams++;
+		teamPos = new int[numTeams][2];
+		teamVel = new double[numTeams][2];
+		for (int x = 0; x < teamPos.length; x++){
+			teamPos[x][0] = getInt("player" + (x+1) + "_x_pos");
+			teamPos[x][1] = getInt("player" + (x+1) + "_y_pos");
+			teamVel[x][0] = getInt("player" + (x+1) + "_x_vel")/Main.TPS;
+			teamVel[x][1] = getInt("player" + (x+1) + "_y_vel")/Main.TPS;
 		}
 		
 		defaultBudget = getInt("default_budget");
 		maxScore = getInt("max_score");
-		startBudget = getDouble("start_budget") <= 0 ? 1.0 : getDouble("start_budget");
+		startBudget = !hasValue("start_budget") ? 1.0 : getDouble("start_budget");
 		incomeTime = getInt("income_time")*Main.TPS;
 		decapMultiplier = getInt("decap_multiplier") == 0 ? 1 : getInt("decap_multiplier");
-		
-		String[] cloudFiles = new File(CLOUD_DIR).list();
-		Arrays.sort(cloudFiles);
-		clouds = new Cloud[cloudFiles.length];
-		for (int x = 0; x < clouds.length; x++)
-			clouds[x] = new Cloud(CLOUD_DIR + cloudFiles[x]);
-		renderClouds = new Cloud[2];
+		missionOnly = getBoolean("mission_only");
+		isDefault = getBoolean("default_arena");
 		
 		int minY = 0, maxY = 0, minX = 0, maxX = 0;
 		for (ForegroundObject object : foregroundObjects){
@@ -115,7 +111,7 @@ public class Arena extends Type{
 			minX = min(minX, (int)object.getPosX());
 			maxX = max(maxX, (int)object.getPosX());
 		}
-		for (int[] position : teamPositions){
+		for (int[] position : teamPos){
 			minY = min(minY, position[1]);
 			maxY = max(maxY, position[1]);
 			minX = min(minX, position[0]);
@@ -134,10 +130,7 @@ public class Arena extends Type{
 			object.act();
 	}
 	
-	public void initialize(int randomSeed){
-		rand.setSeed(randomSeed);
-		
-		backgroundSeed = randomSeed;
+	public void initialize(){
 		for (ForegroundObject object : foregroundObjects){
 			object.place(getInt("foreground_object" + object.index + "_x_pos"),
 					getInt("foreground_object" + object.index + "_y_pos"),
@@ -150,28 +143,6 @@ public class Arena extends Type{
 				((Objective)object).isCaptured = false;
 			}
 		}
-		
-		if (randomSeed != 0){
-			if (renderClouds[0] != null){
-				renderClouds[0].unloadImg();
-				renderClouds[1].unloadImg();
-			}
-			do{
-				renderClouds[0] = clouds[rand.nextInt(clouds.length)];
-				renderClouds[1] = clouds[rand.nextInt(clouds.length)];
-			}while (renderClouds[0] == renderClouds[1] ||
-					max(renderClouds[0].distance, renderClouds[1].distance)/min(renderClouds[0].distance, renderClouds[1].distance) < 1.5);
-			for (int x = 0; x < renderClouds.length; x++){
-				renderClouds[x].loadImg();
-				renderClouds[x].setPos(rand);
-			}
-			
-			if (background != null){
-				background.flush();
-				background = null;
-			}
-		}
-		//java.lang.System.out.println(renderClouds[0].file+" "+renderClouds[1].file);
 	}
 	
 	private BufferedImage getImage(String name){
@@ -191,45 +162,37 @@ public class Arena extends Type{
 		return renderables.get(imageName);
 	}
 	
-	public void draw(Graphics2D g, GameWindow window){
-		//g.drawImage(getBackground(window), 0, 0, null);
+	public void draw(Graphics2D g, GameWindow window, boolean isWarpGame){
 		
-		for (Arena.Cloud cloud : renderClouds){
-			VolatileImage cloudImg = cloud.getImage();
-			int dist = (int)(cloud.distance + 1.0/window.getZoom());
-			g.drawImage(cloudImg,
-					cloud.posX-window.getPosX()/dist+window.windowResX/2-cloudImg.getWidth()/2,
-					cloud.posY-window.getPosY()/dist+GameWindow.WINDOW_RES_Y/2-cloudImg.getHeight()/2,
-					null);
-		}
+		background.drawForegroundClouds(g, window);
 		
 		for (Arena.BackgroundObject object : backgroundObjects){
 			g.drawImage(object.getImg(),
 					object.posX-window.getPosX()/object.distance+window.windowResX/2-object.getImg().getWidth()/2,
-					object.posY-window.getPosY()/object.distance+GameWindow.WINDOW_RES_Y/2-object.getImg().getHeight()/2,
+					object.posY-window.getPosY()/object.distance+window.windowResY/2-object.getImg().getHeight()/2,
 					null);
 		}
 		
 		for (ForegroundObject object : foregroundObjects)
 			object.draw(g, window);
 		
-		if (startBudget < 1.0){
+		if (isWarpGame){
 			g.setColor(WARP_IN_COLOR);
 			int size = (int)(Ship.WARP_POS_RADIUS*window.getZoom());
-			int[] position = teamPositions[window.player.position];
+			int[] position = teamPos[window.player.position];
 			g.fillOval(window.posXOnScreen(position[0])-size, window.posYOnScreen(position[1])-size, 2*size, 2*size);
 		}
 	}
 	
-	public void drawBackground(Graphics2D g, GameWindow window){
-		if (background == null)
-			background = generateBackground(backgroundSeed);
-		g.drawImage(background, 0, 0, null);
-		background.flush();
-	}
+	/*public void drawBackground(Graphics2D g, GameWindow window){
+		//BufferedImage backgroundImg = background.generateBackground();
+		//g.drawImage(backgroundImg, 0, 0, null);
+		//backgroundImg.flush();
+		 background.drawBackground(g);
+	}*/
 	
 	public void drawPreview(Graphics2D g, int size){
-		initialize(0);
+		initialize();
 		double scale = size/(1.25*arenaSize);
 		
 		g.setColor(Color.BLACK);
@@ -241,13 +204,12 @@ public class Arena extends Type{
 			object.drawPreview(g, posX, posY);
 		}
 		
-		for (int x = 0; x < teamPositions.length; x++){
-			Font font = new Font("Arial", Font.BOLD, 15);
-			FontMetrics metrics = g.getFontMetrics(font);
+		for (int x = 0; x < teamPos.length; x++){
+			FontMetrics metrics = g.getFontMetrics(previewFontLarge);
 			String label = String.valueOf(x+1);
-			int posX = size/2 + (int)(scale*teamPositions[x][0]);
-			int posY = size/2 + (int)(scale*teamPositions[x][1]);
-			g.setFont(font);
+			int posX = size/2 + (int)(scale*teamPos[x][0]);
+			int posY = size/2 + (int)(scale*teamPos[x][1]);
+			g.setFont(previewFontLarge);
 			g.setColor(Color.WHITE);
 			g.drawString(label, posX-metrics.stringWidth(label)/2, posY+metrics.getHeight()/2);
 		}
@@ -276,191 +238,6 @@ public class Arena extends Type{
 		renderables = null;
 		for (BackgroundObject object : backgroundObjects)
 			object.load();
-	}
-	
-	private BufferedImage generateBackground(int randomSeed){
-		rand.setSeed(randomSeed);
-		
-		BufferedImage background = new BufferedImage(
-				Main.resX-GameWindow.MENU_WIDTH-GameWindow.DIVIDER_WIDTH, GameWindow.WINDOW_RES_Y, BufferedImage.TYPE_INT_RGB);
-		Graphics2D g = (Graphics2D)background.getGraphics();
-		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, background.getWidth(), background.getHeight());
-		
-		drawStars(g, background.getWidth(), background.getHeight());
-		drawClouds(g, background.getWidth(), background.getHeight());
-		drawPlanets(g, background.getWidth(), background.getHeight());
-		
-		g.dispose();
-		return background;
-	}
-	
-	private void drawStars(Graphics2D g, int width, int height){
-		double[] colorMult = new double[3];
-		int[] pixel = new int[4];
-		BufferedImage coloredBig = new BufferedImage(
-					starBig.getWidth(), starBig.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		BufferedImage coloredSmall = new BufferedImage(
-					starSmall.getWidth(), starSmall.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		
-		for (int i = 0; i < 7000; i++){
-			colorMult[0] = 1.0-0.25*rand.nextDouble();
-			colorMult[1] = 1.0-0.12*rand.nextDouble();
-			colorMult[2] = 1.0-0.15*rand.nextDouble();
-			
-			double scale = pow(rand.nextDouble(), 45.0);
-			int size = (int)(scale*min(starBig.getWidth(), starBig.getHeight()));
-			int posX = (int)(width*rand.nextDouble());
-			int posY = (int)(height*rand.nextDouble());
-			if (size <= 1){
-				int alpha = (int)(255*0.6*pow(rand.nextDouble(), 2.0));
-				g.setColor(new Color((int)(255*colorMult[0]), (int)(255*colorMult[1]), (int)(255*colorMult[2]), alpha));
-				g.drawLine(posX, posY, posX, posY);
-			}else{
-				BufferedImage original, colored;
-				if (size > starSmall.getWidth()){
-					original = starBig;
-					colored = coloredBig;
-				}else{
-					original = starSmall;
-					colored = coloredSmall;
-					scale *= (double)starBig.getWidth()/starSmall.getWidth();
-				}
-				
-				WritableRaster coloredRaster = colored.getRaster();
-				WritableRaster raster = original.getRaster();
-				for (int x = 0; x < raster.getWidth(); x++){
-					for (int y = 0; y < raster.getHeight(); y++){
-						raster.getPixel(x, y, pixel);
-						for (int z = 0; z < 3; z++)
-							pixel[z] = (int)(pixel[z]*colorMult[z]);
-						coloredRaster.setPixel(x, y, pixel);
-					}
-				}
-				
-				BufferedImage scaled = Scalr.resize(colored, Scalr.Method.BALANCED,
-						(int)max(1, scale*colored.getWidth()), (int)max(1, scale*colored.getHeight()));
-				g.drawImage(scaled, posX, posY, null);
-				scaled.flush();
-			}
-		}
-	}
-	
-	private void drawClouds(Graphics2D g, int width, int height){
-		for (int i = 0; i <= 2; i++){
-			Cloud cloud = null;
-			boolean cloudDuplicate;
-			do{
-				cloud = clouds[rand.nextInt(clouds.length)];
-				cloudDuplicate = false;
-				for (int x = 0; x < renderClouds.length; x++)
-					cloudDuplicate = cloudDuplicate || renderClouds[x] == cloud;
-			}while (cloudDuplicate);
-			
-			int cloudPosX, cloudPosY;
-			do{
-				cloudPosX = rand.nextInt(width);
-				cloudPosY = rand.nextInt(height);
-			}while (abs(cloudPosX - width/2) < width/6 || abs(cloudPosY - height/2) < height/6);
-			
-			g.setComposite(AlphaComposite.SrcOver.derive(0.32f));
-			VolatileImage cloudImg = cloud.getImage();
-			g.drawImage(cloudImg, cloudPosX-cloudImg.getWidth()/2, cloudPosY-cloudImg.getHeight()/2, null);
-			g.setComposite(AlphaComposite.SrcOver);
-			cloud.unloadImg();
-		}
-	}
-	
-	private void drawPlanets(Graphics2D g, int width, int height){
-		String[] planets = new File("data/backgrounds/planets").list();
-		Arrays.sort(planets);
-		int numPlanets = rand.nextInt(5);
-		if (numPlanets == 0 || numPlanets == 1 || numPlanets == 2){
-			numPlanets = 1;
-		}else if (numPlanets == 3){
-			numPlanets = 2;
-		}else
-			numPlanets = 0;
-		numPlanets = min(numPlanets, planets.length);
-		
-		if (numPlanets == 1 && rand.nextDouble() < 0.81){
-			String planetName = planets[rand.nextInt(planets.length)];
-			BufferedImage planetImg = null;
-			try{
-				planetImg = ImageIO.read(new File(PLANET_DIR+planetName));
-			}catch(IOException e){
-				Main.crash(PLANET_DIR+planetName);
-			}
-			
-			String[] rings = new File(RING_DIR).list();
-			Arrays.sort(rings);
-			String ringName = rings[rand.nextInt(rings.length)];
-			
-			BufferedImage ringImg = null, shadowImg = null;
-			int size = 0, planetPosX = 0, planetPosY = 0;
-			try{
-				Map<String,String> data = Main.readDataFile(RING_DIR + ringName + "/data.txt");
-				ringImg = ImageIO.read(new File(RING_DIR + ringName + "/ring.png"));
-				shadowImg = ImageIO.read(new File(RING_DIR + ringName + "/shadow.png"));
-				size = Integer.parseInt(data.get("size"));
-				planetPosX = Integer.parseInt(data.get("posx"));
-				planetPosY = Integer.parseInt(data.get("posy"));
-			}catch(Exception e){
-				e.printStackTrace();
-				Main.crash(RING_DIR+ringName);
-			}
-			
-			BufferedImage scaledPlanetImg = Scalr.resize(planetImg, Scalr.Method.ULTRA_QUALITY, size, size);
-			planetImg.flush();
-			Graphics2D gPlanet = scaledPlanetImg.createGraphics();
-			gPlanet.setComposite(AlphaComposite.SrcAtop);
-			gPlanet.drawImage(shadowImg, -planetPosX, -planetPosY, null);
-			gPlanet.dispose();
-			
-			int ringPosX = width/2 - ringImg.getWidth()/2;
-			int ringPosY = height/2 - ringImg.getHeight()/2;
-			g.drawImage(scaledPlanetImg, ringPosX+planetPosX, ringPosY+planetPosY, null);
-			g.drawImage(ringImg, ringPosX, ringPosY, null);
-		}else{
-			double maxScale = 0.65;
-			boolean[] chosen = new boolean[planets.length];
-			int[][] positions = new int[numPlanets][2];
-			for (int x = 0; x < numPlanets; x++){
-				int index;
-				do{
-					index = rand.nextInt(planets.length);
-				}while (chosen[index]);
-				chosen[index] = true;
-				BufferedImage planetImg = null;
-				try{
-					planetImg = ImageIO.read(new File(PLANET_DIR+planets[index]));
-				}catch(IOException e){
-					Main.crash(PLANET_DIR+planets[index]);
-				}
-				
-				double scale = /*0.09+0.91*/0.09+0.6*maxScale*pow(rand.nextDouble(), 0.65);
-				maxScale *= 1.0 - scale;
-				BufferedImage scaled = Scalr.resize(planetImg, Scalr.Method.ULTRA_QUALITY,
-						(int)(scale*planetImg.getWidth()), (int)(scale*planetImg.getHeight()));
-				
-				int radius = max(scaled.getWidth(), scaled.getHeight())/2;
-				int bound = radius/2;
-				boolean intersects;
-				do{
-					positions[x][0] = rand.nextInt(Main.RES_X_NARROW-scaled.getWidth()+2*bound)-bound;
-					positions[x][1] = rand.nextInt(Main.RES_Y-scaled.getHeight()+2*bound)-bound;
-					intersects = false;
-					for (int y = 0; y < x; y++)
-						intersects = intersects || hypot(positions[x][0]-positions[y][0], positions[x][1]-positions[y][1]) < 1.3*radius;
-				}while (intersects);
-				g.drawImage(scaled, positions[x][0], positions[x][1], null);
-			}
-		}
-	}
-	
-	public static void loadClouds(){
-		for (Cloud cloud : clouds)
-			cloud.load();
 	}
 	
 	public class ForegroundObject extends Sprite{
@@ -523,7 +300,7 @@ public class Arena extends Type{
 		
 		public Objective(int index, boolean isPermanant, boolean isTransient){
 			super(index);
-			value = getInt("foreground_object" + index + "_obj_value")/(double)Main.TPS;
+			value = getDouble("foreground_object" + index + "_obj_value");
 			capSize = getInt("foreground_object" + index + "_obj_capture_size");
 			this.isPermanant = isPermanant;
 			this.isTransient = isTransient;
@@ -553,7 +330,7 @@ public class Arena extends Type{
 		public void draw(Graphics2D g, GameWindow window){
 			super.draw(g, window);
 			
-			Image img = getImage(window.getRenderZoom(), window.renderTimeLeft());
+			Image img = getImage(window.getRenderZoom());
 			if (img != null){
 				int posX = (int)window.posXOnScreen(getPosX()), posY = (int)window.posYOnScreen(getPosY());
 				
@@ -573,8 +350,8 @@ public class Arena extends Type{
 		public void drawPreview(Graphics2D g, int posX, int posY){
 			super.drawPreview(g, posX, posY);
 			g.setColor(Color.WHITE);
-			g.setFont(new Font("Arial", Font.PLAIN, 10));
-			g.drawString(String.valueOf((int)round(value*Main.TPS)), posX-PREVIEW_SIZE/5, posY+PREVIEW_SIZE);
+			g.setFont(previewFontSmall);
+			g.drawString(String.valueOf((int)round(value)), posX-PREVIEW_SIZE/5, posY+PREVIEW_SIZE);
 		}
 		
 		public CaptureMsg getCapMsg(Player player, int amount){
@@ -625,50 +402,5 @@ public class Arena extends Type{
 		}
 	}
 	
-	private class Cloud{
-		public int posX, posY;
-		public int distance;
-		
-		private VolatileImage img;
-		private final String file;
-		
-		public Cloud(String file){
-			posX = 0;
-			posY = 0;
-			this.file = file;
-		}
-		
-		public void load(){
-			loadImg();
-			distance = 800000/(img.getWidth() + img.getHeight());
-			unloadImg();
-		}
-		
-		public void setPos(Random random){
-			posX = (int)(100*(2*random.nextDouble() - 1));
-			posY = (int)(100*(2*random.nextDouble() - 1));
-		}
-		
-		public VolatileImage getImage(){
-			if (img == null || img.contentsLost())
-				loadImg();
-			return img;
-		}
-		
-		public void loadImg(){
-			try{
-				//img = Main.convert(ImageIO.read(new File(file)));
-				img = Main.convertVolatile(ImageIO.read(new File(file)));
-			}catch(IOException e){
-				e.printStackTrace();
-				Main.crash(file);
-			}
-		}
-		
-		public void unloadImg(){
-			img.flush();
-			img = null;
-		}
-	}
 	
 }

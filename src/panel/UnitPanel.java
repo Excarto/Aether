@@ -25,8 +25,8 @@ public abstract class UnitPanel extends JPanel{
 	JCheckBox showArcs;
 	
 	public UnitPanel(int size, boolean incSelector, boolean isWeapons){
-		this.setPreferredSize(new Dimension(size, size+(incSelector ? 38 : 20)));
-		this.setLayout(Window.DEFAULT_LAYOUT);
+		this.setPreferredSize(new Dimension(size, size+(incSelector ? 58 : 30)));
+		//this.setLayout(Window.DEFAULT_LAYOUT);
 		this.size = size;
 		circleRadius = 15;
 		this.isWeapons = isWeapons;
@@ -65,9 +65,8 @@ public abstract class UnitPanel extends JPanel{
 			}
 		});
 		
-		optionsPanel = new JPanel();
-		optionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, 38));
-		optionsPanel.setLayout(Window.DEFAULT_LAYOUT);
+		optionsPanel = new JPanel(Window.DEFAULT_LAYOUT);
+		optionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, 34));
 		if (incSelector){
 			JPanel typePanel = new JPanel(Window.DEFAULT_LAYOUT);
 			typePanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH/2-5, 38));
@@ -87,10 +86,6 @@ public abstract class UnitPanel extends JPanel{
 			if (img != null)
 				img.flush();
 			img = Scalr.resize(newUnit.type.topImg, Scalr.Method.QUALITY, size, size);
-			/*img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D g2d = (Graphics2D)img.getGraphics();
-			g2d.scale((double)size/unit.type.topImg.getWidth(), (double)size/unit.type.topImg.getHeight());
-			g2d.drawImage(unit.type.topImg, 0, 0, null);*/
 		}
 		unit = newUnit;
 		repaint();
@@ -119,10 +114,6 @@ public abstract class UnitPanel extends JPanel{
 	protected void paintWindow(Graphics g){
 		if (unit != null){
 			((Graphics2D)g).setRenderingHints(Main.inGameHints);
-			
-			//g.setColor(Color.BLACK);
-			//g.fillRect(0, 0, img.getWidth(), img.getHeight());
-			//g.drawImage(img, 0, 0, null);
 			
 			for (Component component : (isWeapons ? unit.weapons : unit.systems)){
 				int posX = (int)(component.hardpoint.posX*size);

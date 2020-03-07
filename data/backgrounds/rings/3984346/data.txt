@@ -1,3 +1,0 @@
-size= 334
-posx= 97
-posy= 754

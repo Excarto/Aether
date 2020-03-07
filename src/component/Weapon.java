@@ -83,7 +83,7 @@ public abstract class Weapon extends Component{
 					GameWindow window = ((HumanPlayer)unit.player).getWindow();
 					double dx = getPosX()-window.getMousePosX();
 					double dy = getPosY()-window.getMousePosY();
-					targetAngle = Game.fixAngle(-unit.getAngle()+toDegrees(atan2(dy, dx))-90);
+					targetAngle = Utility.fixAngle(-unit.getAngle()+toDegrees(atan2(dy, dx))-90);
 					targetDist = sqrt(dx*dx+dy*dy);
 					isInRange = inManualRange(targetDist);
 				}else{
@@ -170,7 +170,7 @@ public abstract class Weapon extends Component{
 				
 				double time = approxTime(controllable);
 				double angle = approxAngle(controllable, time);
-				time += abs(Game.fixAngle(this.angle+unit.getAngle()-angle))/(type.trackRate*2*(type instanceof MissileType ? 4 : 1));
+				time += abs(Utility.fixAngle(this.angle+unit.getAngle()-angle))/(type.trackRate*2*(type instanceof MissileType ? 4 : 1));
 				
 				double priority = time;
 				if (controllable instanceof Missile){
@@ -196,15 +196,15 @@ public abstract class Weapon extends Component{
 	}
 	
 	private void trackTarget(){
-		double deltaAngle = Game.fixAngle(targetAngle-angle);
+		double deltaAngle = Utility.fixAngle(targetAngle-angle);
 		if (this.arc >= 180){
 			if (abs(deltaAngle) > type.trackRate){
 				this.angle += (deltaAngle > 0 ? 1 : -1)*type.trackRate;
 			}else
 				angle = targetAngle;
 		}else{
-			angle = Game.centerAbout(angle, mountAngle);
-			targetAngle = Game.centerAbout(targetAngle, mountAngle);
+			angle = Utility.centerAbout(angle, mountAngle);
+			targetAngle = Utility.centerAbout(targetAngle, mountAngle);
 			
 			boolean rotateRight;
 			double leftBound = mountAngle-this.arc, rightBound = mountAngle+this.arc;
@@ -227,8 +227,8 @@ public abstract class Weapon extends Component{
 			}else if (angle < leftBound)
 				angle = leftBound;
 		}
-		angle = Game.fixAngle(angle);
-		targetAngle = Game.fixAngle(targetAngle);
+		angle = Utility.fixAngle(angle);
+		targetAngle = Utility.fixAngle(targetAngle);
 	}
 	
 	private boolean determineIfReady(){
@@ -277,7 +277,7 @@ public abstract class Weapon extends Component{
 	
 	public double getArcViolation(double angle){
 		double leftBound = mountAngle-this.arc, rightBound = mountAngle+this.arc;
-		angle = Game.centerAbout(angle-unit.getAngle(), mountAngle);
+		angle = Utility.centerAbout(angle-unit.getAngle(), mountAngle);
 		return max(0, max(angle-rightBound, leftBound-angle));
 	}
 	

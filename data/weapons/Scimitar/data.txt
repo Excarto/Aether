@@ -3,7 +3,7 @@ description = A short to medium range, general purpose weapon. Its slow-moving, 
 
 type = gun
 cost= 35
-weapon_scale= 0.77
+weapon_scale= 0.82
 projectile_scale= 0.9
 mass= 50
 hull = 800

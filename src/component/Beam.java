@@ -70,10 +70,12 @@ public class Beam extends Weapon{
 		renderAngle = getAngle()+unit.getAngle()+shotAngle;
 	}
 	
-	public void contact(Controllable controllable, double posX, double posY){
+	public boolean contact(Controllable controllable, double posX, double posY){
+		boolean alive = controllable.getHull() > 0;
+		
 		Sprite sprite = (Sprite)controllable;
 		controllable.takeHit(posX, posY, getSubTarget(),
-				Game.fixAngle(90-toDegrees(atan2(sprite.getPosY()-getPosY(), getPosX()-sprite.getPosX()))-sprite.getAngle()),
+				Utility.fixAngle(90-toDegrees(atan2(sprite.getPosY()-getPosY(), getPosX()-sprite.getPosX()))-sprite.getAngle()),
 				true, type.explosiveDamagePerTurn, 0, type.EMDamagePerTurn);
 		
 		if (Main.game.turn%3 != 0)
@@ -84,6 +86,8 @@ public class Beam extends Weapon{
 		contactTime = Main.game.turn;
 		double dx = posX-getPosX(), dy = posY-getPosY();
 		contactLength = sqrt(dx*dx+dy*dy)/type.imageLength;
+		
+		return alive && controllable.getHull() <= 0;
 	}
 	
 	public void fire(int time){
@@ -134,10 +138,10 @@ public class Beam extends Weapon{
 		int posX = window.posXOnScreen(renderPosX);
 		int posY = window.posYOnScreen(renderPosY);
 		int size = (int)(window.getZoom()*type.renderable.size);
-		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < GameWindow.WINDOW_RES_Y+size){
+		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){
 			Image img = type.renderable.getImage(window.getZoom(), 0, false, 0);
 			if (img != null){
-				if (posX > -size && posY > -size && posX < window.windowResX+size && posY < GameWindow.WINDOW_RES_Y+size){
+				if (posX > -size && posY > -size && posX < window.windowResX+size && posY < window.windowResY+size){
 					int width = img.getWidth(null);
 					int height = img.getHeight(null);
 					double angle = toRadians(renderAngle);

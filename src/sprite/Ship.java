@@ -18,7 +18,6 @@ public class Ship extends Unit{
 	static CraftPanel craftPanel;
 	static RepairPanel repairPanel;
 	static Sound warpSound;
-	//static BufferedImage shieldImg;
 	static Renderable shieldRenderable;
 	
 	public final ShipType type;
@@ -51,7 +50,7 @@ public class Ship extends Unit{
 		toLaunch = new ConcurrentLinkedQueue<QueuedCraft>();
 		effects = new ArrayList<Effect>(8);
 		ammoRatio = 0.75;
-		autoRepair = Main.defaultAutoRepair;
+		autoRepair = Main.options.defaultAutoRepair;
 		outOfArena = true;
 		
 		repairTargets = new ArrayList<RepairTarget>();
@@ -74,10 +73,10 @@ public class Ship extends Unit{
 		super.act();
 		
 		if (frontShield < type.frontShield && drainEnergy(
-				type.shieldRecharge*Main.energyPerShield, "Shields", "Front"))
+				type.shieldRecharge*Main.config.energyPerShield, "Shields", "Front"))
 			frontShield += type.shieldRecharge;
 		if (rearShield < type.rearShield && drainEnergy(
-				type.shieldRecharge*Main.energyPerShield, "Shields", "Rear"))
+				type.shieldRecharge*Main.config.energyPerShield, "Shields", "Rear"))
 			rearShield += type.shieldRecharge;
 		
 		if (!toLaunch.isEmpty() && toLaunch.peek().getReady()){
@@ -91,6 +90,8 @@ public class Ship extends Unit{
 					i.remove();
 		}
 		
+		if (turnsPassed%101 == 0)
+			refreshRepairQueue();
 		repairRearmRecap();
 	}
 	
@@ -135,140 +136,151 @@ public class Ship extends Unit{
 			weapon.reload();
 	}
 	
-	private void repairRearmRecap(){
+	private void refreshRepairQueue(){
+		if (repairQueue.size() == 1 && repairQueue.peek().repairable instanceof Ship && repairQueue.peek().isAuto)
+			repairQueue.poll();
+		if (repairQueue.size() > 1 && repairQueue.peek().repairable instanceof System && repairQueue.peek().isAuto
+				&& repairQueue.get(1).repairable instanceof Weapon)
+			repairQueue.poll();
 		
-		if (turnsPassed%200 == 0){
-			if (repairQueue.size() == 1 && repairQueue.peek().repairable instanceof Ship && repairQueue.peek().isAuto)
-				repairQueue.poll();
-			if (repairQueue.size() > 1 && repairQueue.peek().repairable instanceof System && repairQueue.peek().isAuto
-					&& repairQueue.get(1).repairable instanceof Weapon)
-				repairQueue.poll();
-			
-			if (repairQueue.isEmpty()){
-				int maxPriority = 0;
-				RepairTarget priorityTarget = null;
-				for (RepairTarget target : repairTargets){
-					
-					if (material <= 0){
-						target.doneRepair = true;
-					}else{
-						target.doneRepair = target.unit.getHull() == target.unit.type.hull;
+		for (RepairTarget target : repairTargets){
+			if (material <= 0){
+				target.doneRepair = true;
+			}else{
+				target.doneRepair = target.unit.getHull() == target.unit.type.hull;
+				for (Component component : target.unit)
+					target.doneRepair = target.doneRepair && component.getHull() >= component.type.hull;
+			}
+		}
+		
+		// Add auto repair items
+		if (repairQueue.isEmpty()){
+			int maxPriority = 0;
+			RepairTarget priorityTarget = null;
+			for (RepairTarget target : repairTargets){
+				
+				if (target.repair){
+					int priority = 0;
+					if (target.unit == this){
+						priority = 1;
+					}else if (target.isInCraftBay){
+						double totalMaterial = (target.unit.type.hull-target.unit.hull)/target.unit.type.hullPerMaterial;
 						for (Component component : target.unit)
-							target.doneRepair = target.doneRepair && component.getHull() >= component.type.hull;
-					}
+							totalMaterial += max(0, (component.type.hull*autoRepair/100.0-component.getHull()))/component.type.hullPerMaterial;
+						if (totalMaterial > 0)
+							priority = (int)(1000000/totalMaterial);
+					}else
+						priority = Integer.MAX_VALUE;
 					
-					if (target.repair){
-						int priority = 0;
-						if (target.unit == this){
-							priority = 1;
-						}else if (target.isInCraftBay){
-							double totalMaterial = (target.unit.type.hull-target.unit.hull)/target.unit.type.hullPerMaterial;
-							for (Component component : target.unit)
-								totalMaterial += max(0, (component.type.hull*autoRepair/100.0-component.getHull()))/component.type.hullPerMaterial;
-							if (totalMaterial > 0)
-								priority = (int)(1000000/totalMaterial);
-						}else
-							priority = Integer.MAX_VALUE;
-						
-						if (priority > maxPriority){
-							priorityTarget = target;
-							maxPriority = priority;
-						}
+					if (priority > maxPriority){
+						priorityTarget = target;
+						maxPriority = priority;
 					}
 				}
-				
-				if (priorityTarget != null){
-					if (autoRepair > 0){
-						boolean searching = true;
-						while (searching){
-							Component mostDamaged = null;
-							int minHealth = Integer.MAX_VALUE;
-							for (Component component : priorityTarget.unit){
-								if (component.isEngaged()){
-									boolean inQueue = false;
-									for (RepairQueueItem queueItem : repairQueue){
-										if (queueItem.repairable == component)
-											inQueue = true;
-									}
-									
-									if (!inQueue){
-										int health = (int)(component.getHull()*100.0/component.type.hull);
-										if (health < minHealth && health < autoRepair){
-											minHealth = health;
-											mostDamaged = component;
-										}
+			}
+			
+			if (priorityTarget != null){
+				if (autoRepair > 0){
+					boolean searching = true;
+					while (searching){
+						Component mostDamaged = null;
+						int minHealth = Integer.MAX_VALUE;
+						for (Component component : priorityTarget.unit){
+							if (component.isEngaged()){
+								boolean inQueue = false;
+								for (RepairQueueItem queueItem : repairQueue){
+									if (queueItem.repairable == component)
+										inQueue = true;
+								}
+								
+								if (!inQueue){
+									int health = (int)(component.getHull()*100.0/component.type.hull);
+									if (health < minHealth && health < autoRepair){
+										minHealth = health;
+										mostDamaged = component;
 									}
 								}
 							}
-							if (mostDamaged != null){
-								repairQueue.add(new RepairQueueItem(mostDamaged, priorityTarget,
-											autoRepair/100.0*mostDamaged.type.hull, priorityTarget.repairRate,
-											false, true));
-							}else
-								searching = false;
 						}
-					}
-					
-					if (priorityTarget.unit.hull < priorityTarget.unit.type.hull){
-						repairQueue.add(new RepairQueueItem(priorityTarget.unit, priorityTarget,
-										priorityTarget.unit.type.hull, priorityTarget.repairRate,
+						if (mostDamaged != null){
+							repairQueue.add(new RepairQueueItem(mostDamaged, priorityTarget,
+										autoRepair/100.0*mostDamaged.type.hull, priorityTarget.repairRate,
 										false, true));
+						}else
+							searching = false;
 					}
 				}
-			}
-		}
-		
-		if (!repairQueue.isEmpty()){
-			RepairQueueItem item = repairQueue.peek();
-			if (item.target.inRange){
-				if (item.scrap){
-					double materialScrapped = min(item.repairRate, item.repairable.getHull()-item.repairTo);
-					player.repair(item.repairable, materialScrapped, true);//item.repairable.scrap(materialScrapped);
-					material += materialScrapped*Main.scrapReturn;
-					if (item.repairable.getHull() <= item.repairTo)
-						repairQueue.poll();
-				}else{
-					double materialUsed = min(item.repairTo-item.repairable.getHull(), min(material, item.repairRate));
-					player.repair(item.repairable, materialUsed, false);//item.repairable.repair(materialUsed);
-					material -= materialUsed;
-					if (item.repairable.getHull() >= item.repairTo)
-						repairQueue.poll();
+				
+				if (priorityTarget.unit.hull < priorityTarget.unit.type.hull){
+					repairQueue.add(new RepairQueueItem(priorityTarget.unit, priorityTarget,
+									priorityTarget.unit.type.hull, priorityTarget.repairRate,
+									false, true));
 				}
 			}
 		}
 		
+	}
+	
+	private void repairRearmRecap(){
+		RepairQueueItem repairItem = repairQueue.peek();
+		
+		// Repair single target
+		if (repairItem != null && repairItem.target.inRange){
+			if (repairItem.scrap){
+				double materialScrapped = min(repairItem.repairRate, repairItem.repairable.getHull()-repairItem.repairTo);
+				player.repair(repairItem.repairable, materialScrapped, true);
+				material += materialScrapped*Main.config.scrapReturn;
+				if (repairItem.repairable.getHull() <= repairItem.repairTo)
+					repairQueue.poll();
+			}else{
+				double materialUsed = min(repairItem.repairTo-repairItem.repairable.getHull(), min(material, repairItem.repairRate));
+				player.repair(repairItem.repairable, materialUsed, false);
+				material -= materialUsed;
+				if (repairItem.repairable.getHull() >= repairItem.repairTo)
+					repairQueue.poll();
+			}
+		}
+		
+		// Recharge crafts in bay that aren't being repaired
 		for (RepairTarget target : repairTargets){
 			if (target.isInCraftBay && target.unit.getEnergy() < target.unit.type.capacitor){
 				target.doneRecharge = false;
-				double addEnergy = target.unit.type.power;
-				if (target.recharge && this.drainEnergy(type.craftRechargeRate, "Craft", target.unit.type.name))
-					addEnergy += type.craftRechargeRate;
-				target.unit.addEnergy(addEnergy);
+				boolean busy = repairItem != null && repairItem.target == target;
+				if (!busy){
+					double addEnergy = target.unit.type.power;
+					if (target.recharge && this.drainEnergy(type.craftRechargeRate, "Craft", target.unit.type.name))
+						addEnergy += type.craftRechargeRate;
+					target.unit.addEnergy(addEnergy);
+				}
 			}else
 				target.doneRecharge = true;
 		}
 		
+		// Rearm next unit in cycle, skip crafts being repaired or recharged
 		if (--timeToRearm <= 0){
 			rearmIndex++;
 			for (int end = rearmIndex+repairTargets.size(); rearmIndex < end; rearmIndex++){
 				RepairTarget target = repairTargets.get(rearmIndex%repairTargets.size());
 				Unit unit = target.unit;
 				
+				target.doneRearm = true;
 				if (target.rearm){
-					target.doneRearm = true;
 					for (int a = 0; a < unit.ammo.length; a++){
-						if (this.ammo[a] > 0 && unit.ammo[a]+1 <= unit.type.storageSpace*unit.ammoRatios[a]/Main.ammoMass[a]){
+						int targetAmmoCount = (int)((this.ammo[a] + unit.ammo[a])*unit.getWeaponCount(a)/(unit.getWeaponCount(a) + this.getWeaponCount(a)));
+						targetAmmoCount = min(targetAmmoCount, unit.getMaxAmmo(a));
+						if (this.ammo[a] > 0 && unit.ammo[a]+1 <= targetAmmoCount){
 							target.doneRearm = false;
-							if (target.inRange){
+							boolean busy = (repairItem != null && repairItem.target == target) || (target.recharge && !target.doneRecharge);
+							if (target.inRange && (!target.isInCraftBay || !busy)){
 								unit.changeAmmo(a, 1);
 								this.changeAmmo(a, -1);
+								timeToRearm = (int)round(Main.ammoMass[a]*type.ammoTransferTimePerMass);
+								return;
 							}
-							timeToRearm = (int)round(Main.ammoMass[a]*type.ammoTransferTimePerMass);
-							return;
 						}
 					}
-				}else
-					target.doneRearm = true;
+				}
+				
 			}
 		}
 		
@@ -284,11 +296,11 @@ public class Ship extends Unit{
 			
 			double explosiveShieldDamage = this.frontShield/type.frontShield*explosiveDamage;
 			explosiveDamage -= explosiveShieldDamage;
-			this.frontShield -= explosiveShieldDamage*Main.explosiveShieldDamage;
+			this.frontShield -= explosiveShieldDamage*Main.config.explosiveShieldDamage;
 			
 			double kineticShieldDamage = this.frontShield/type.frontShield*kineticDamage;
 			kineticDamage -= kineticShieldDamage;
-			this.frontShield -= kineticShieldDamage*Main.kineticShieldDamage;
+			this.frontShield -= kineticShieldDamage*Main.config.kineticShieldDamage;
 			
 			EMPDamage = EMPDamage*(this.frontShield/type.frontShield);
 			
@@ -298,11 +310,11 @@ public class Ship extends Unit{
 			
 			double explosiveShieldDamage = this.rearShield/type.rearShield*explosiveDamage;
 			explosiveDamage -= explosiveShieldDamage;
-			this.rearShield -= explosiveShieldDamage*Main.explosiveShieldDamage;
+			this.rearShield -= explosiveShieldDamage*Main.config.explosiveShieldDamage;
 			
 			double kineticShieldDamage = this.rearShield/type.rearShield*kineticDamage;
 			kineticDamage -= kineticShieldDamage;
-			this.rearShield -= kineticShieldDamage*Main.kineticShieldDamage;
+			this.rearShield -= kineticShieldDamage*Main.config.kineticShieldDamage;
 			
 			EMPDamage = EMPDamage*(this.rearShield/type.rearShield);
 			
@@ -402,19 +414,20 @@ public class Ship extends Unit{
 	public void warpIn(){
 		warpTime = WARP_TIME;
 		
+		double[] playerVel = Main.game.arena.teamVel[player.position];
 		double velRad = random.nextDouble()*WARP_VEL_RADIUS, velAngle = random.nextDouble()*360.0;
-		double warpVelX = velRad*cos(toRadians(velAngle));
-		double warpVelY = velRad*sin(toRadians(velAngle));
+		double warpVelX = velRad*cos(toRadians(velAngle)) + playerVel[0];
+		double warpVelY = velRad*sin(toRadians(velAngle)) + playerVel[1];
 		
-		int[] playerPosition = Main.game.arena.teamPositions[player.position];
-		double warpAngle = toDegrees(atan2(-playerPosition[0], playerPosition[1]));
+		int[] playerPos = Main.game.arena.teamPos[player.position];
+		double warpAngle = toDegrees(atan2(-playerPos[0], playerPos[1]));
 		
 		this.place(-WARP_DIST*sin(toRadians(warpAngle)), WARP_DIST*cos(toRadians(warpAngle)),
 				warpVelX, warpVelY, warpAngle, 0);
 		
 		double posRad = random.nextDouble()*WARP_POS_RADIUS, posAngle = random.nextDouble()*360.0;
-		warpPosX = playerPosition[0] + posRad*cos(toRadians(posAngle));
-		warpPosY = playerPosition[1] + posRad*sin(toRadians(posAngle));
+		warpPosX = playerPos[0] + posRad*cos(toRadians(posAngle));
+		warpPosY = playerPos[1] + posRad*sin(toRadians(posAngle));
 		
 		player.controllables.add(this);
 		for (Player otherPlayer : Main.game.players)
@@ -440,13 +453,14 @@ public class Ship extends Unit{
 	
 	public void initializeAmmoAndMass(){
 		super.initializeAmmoAndMass();
+		material = type.storageSpace*(1.0-ammoRatio)/Main.config.massPerMaterial;
 		if (crafts != null){
 			for (Craft craft : crafts){
 				craft.initializeAmmoAndMass();
 				mass += craft.mass;
 			}
 		}
-		mass += material*Main.massPerMaterial;
+		mass += material*Main.config.massPerMaterial;
 	}
 	
 	public void removeControllable(Controllable controllable){
@@ -491,8 +505,6 @@ public class Ship extends Unit{
 	}
 	
 	public void initialize(){
-		material = type.storageSpace*(1.0-ammoRatio)/Main.massPerMaterial;
-		
 		super.initialize();
 		
 		repairTargets.clear();
@@ -523,6 +535,7 @@ public class Ship extends Unit{
 			craft.initialize();
 		
 		effects.clear();
+		effects.add(new WarpEffect());
 	}
 	
 	public void explode(){
@@ -596,20 +609,22 @@ public class Ship extends Unit{
 		int posX = window.posXOnScreen(renderPosX), posY = window.posYOnScreen(renderPosY);
 		int size = getRenderSize(window.getRenderZoom());
 		
-		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < GameWindow.WINDOW_RES_Y+size){
+		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){
 			
-			if (getImage(window.getRenderZoom(), window.renderTimeLeft()) != null){
-				if (window.getPlayer().knowHealth(this)){
-					g.setColor(Main.getColor(1-(type.frontShield-frontShield)/(0.8*type.frontShield), 0.0));
-					g.fillArc(posX+size*4/11, posY+size*4/11,
-							Main.statusSize, Main.statusSize, -(int)getAngle(), 182);
-					g.setColor(Main.getColor(1-(type.rearShield-rearShield)/(0.8*type.rearShield), 0.0));
-					g.fillArc(posX+size*4/11, posY+size*4/11,
-							Main.statusSize, Main.statusSize, -(int)getAngle(), -182);
+			if (getImage(window.getRenderZoom()) != null){
+				if (warpTime <= 0){
+					if (window.getPlayer().knowHealth(this)){
+						g.setColor(Utility.getColor(1-(type.frontShield-frontShield)/(0.8*type.frontShield), 0.0));
+						g.fillArc(posX+size*4/11, posY+size*4/11,
+								Main.options.statusSize, Main.options.statusSize, -(int)getAngle(), 182);
+						g.setColor(Utility.getColor(1-(type.rearShield-rearShield)/(0.8*type.rearShield), 0.0));
+						g.fillArc(posX+size*4/11, posY+size*4/11,
+								Main.options.statusSize, Main.options.statusSize, -(int)getAngle(), -182);
+					}
 				}
-				
+					
 				if (player.team == window.getPlayer().team && type.totalCraftMass > 0){
-					g.setFont(STATUS_FONT);
+					g.setFont(statusFont);
 					g.setColor(STATUS_OUTLINE_COLOR);
 					g.drawString(String.valueOf(crafts.size()), posX-size*4/11-2, posY+size*4/11+8);
 				}
@@ -786,7 +801,7 @@ public class Ship extends Unit{
 				}
 			}
 			
-			lifetime = (int)(Main.TPS*(2.5 + 5.0*RANDOM.nextDouble()));
+			lifetime = (int)(Main.TPS*(2.5 + 6.0*RANDOM.nextDouble()));
 			age = 0;
 			
 			boolean[][] map = getContactMap();
@@ -807,8 +822,8 @@ public class Ship extends Unit{
 		public void act(){
 			int index = (age/2)%ventLength;
 			int previous = index == 0 ? ventLength-1 : index-1;
-			offset[index][0] = Game.maxAbs(offset[previous][0] + VENT_SPRAY_SIZE*(2*random() - 1)/4, VENT_SPRAY_SIZE);
-			offset[index][1] = Game.maxAbs(offset[previous][1] + VENT_SPRAY_SIZE*(2*random() - 1)/4, VENT_SPRAY_SIZE);
+			offset[index][0] = Utility.clamp(offset[previous][0] + VENT_SPRAY_SIZE*(2*random()-1)/4, VENT_SPRAY_SIZE);
+			offset[index][1] = Utility.clamp(offset[previous][1] + VENT_SPRAY_SIZE*(2*random()-1)/4, VENT_SPRAY_SIZE);
 			
 			age++;
 			lifetime--;
@@ -818,7 +833,6 @@ public class Ship extends Unit{
 		
 		public void draw(Graphics2D g, GameWindow window, int originX, int originY){
 			if (window.getZoom() > 0.15){
-				//double renderAngle = renderable.getRenderAngle(getAngle());
 				double posX = renderPosX + length*sin(toRadians(angle+renderAngle));
 				double posY = renderPosY - length*cos(toRadians(angle+renderAngle));
 				double deltaX = sin(toRadians(ventAngle+renderAngle));
@@ -849,9 +863,8 @@ public class Ship extends Unit{
 		}
 	}
 	
+	static final int MAX_SHIELD_EFFECT_LIFETIME = (int)(0.9*Main.TPS);
 	private class ShieldEffect implements Effect{
-		static final int MAX_SHIELD_EFFECT_LIFETIME = (int)(0.9*Main.TPS);
-		
 		int lifetime;
 		final double angle, length;
 		final double scale, strengthMult;
@@ -879,8 +892,6 @@ public class Ship extends Unit{
 				int posX = (int)(zoom*length*sin(toRadians(angle-renderAngle)));
 				int posY = (int)(zoom*length*cos(toRadians(angle-renderAngle)));
 				
-				Composite origComposite = g.getComposite();
-				
 				float opacity = (float)min(1.0, strengthMult*sqrt(lifetime));
 				if (opacity <= 0)
 					return;
@@ -891,7 +902,30 @@ public class Ship extends Unit{
 				
 				g.drawImage(shieldImg, originX-shieldSize+posX, originY-shieldSize+posY, null);
 				
-				g.setComposite(origComposite);
+				g.setComposite(Window.DEFAULT_COMPOSITE);
+			}
+		}
+		
+		public boolean drawToUnit(){
+			return true;
+		}
+	}
+	
+	static final Color WARP_COLOR = new Color(255, 255, 255);
+	private class WarpEffect implements Effect{
+		public void act(){
+			if (warpTime <= 0)
+				effects.remove(this);
+		}
+		
+		public void draw(Graphics2D g, GameWindow window, int originX, int originY){
+			if (warpTime > 0){
+				int size = getRenderSize(window.getRenderZoom());
+				double opacity = min(1.0, warpTime/(1.6*Main.TPS));
+				g.setComposite(AlphaComposite.SrcAtop.derive((float)opacity));
+				g.setColor(WARP_COLOR);
+				g.fillRect(originX-size/2, originY-size/2, size, size);
+				g.setComposite(Window.DEFAULT_COMPOSITE);
 			}
 		}
 		

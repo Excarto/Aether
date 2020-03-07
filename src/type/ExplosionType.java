@@ -39,7 +39,7 @@ public class ExplosionType extends Type{
 		int duration = 0;
 		componentDuration = new int[numComponents];
 		for (int component = 0; component < numComponents; component++){
-			componentDuration[component] = 1 + (int)(getDouble("duration" + (component+1))*Main.framesPerSec);
+			componentDuration[component] = 1 + (int)(getDouble("duration" + (component+1))*Main.options.framesPerSec);
 			duration = max(duration, componentDuration[component]);
 		}
 		this.duration = duration;
@@ -193,7 +193,7 @@ public class ExplosionType extends Type{
 		return img.length;
 	}
 	
-	public Image getImg(double zoom, int frame, boolean useApproximation){
+	public Image getImg(double zoom, int frame){
 		frame = min(frame, img.length-1);
 		
 		if (zoom >= 1.0)

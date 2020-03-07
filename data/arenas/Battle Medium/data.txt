@@ -1,49 +1,50 @@
 description = its a map
 
-default_budget = 4000
-max_score = 1000.0
+default_budget = 3000
+max_score = 900.0
 start_budget = 1.0
-income_time = 660
+income_time = 600
 decap_multiplier = 3
 
-# background_object1_image= 300299
+# background_object1_image= planet
 # background_object1_x_pos= 0
 # background_object1_y_pos= 0
-# background_object1_distance= 1500
+# background_object1_distance= 2400
+
+# inner equilateral triangle edge length = 24000
 
 foreground_object1_image= station
 foreground_object1_x_pos= 12000
-foreground_object1_y_pos= 0000
+foreground_object1_y_pos= -6928
+foreground_object1_x_vel= 0
+foreground_object1_y_vel= 0
 foreground_object1_obj_type= normal
 foreground_object1_obj_value= 1
-foreground_object1_obj_capture_size= 1300
+foreground_object1_obj_capture_size= 1200
 
 foreground_object2_image= station
 foreground_object2_x_pos= -12000
-foreground_object2_y_pos= 0000
+foreground_object2_y_pos= -6928
+foreground_object2_x_vel= 0
+foreground_object2_y_vel= 0
 foreground_object2_obj_type= normal
 foreground_object2_obj_value= 1
-foreground_object2_obj_capture_size= 1300
+foreground_object2_obj_capture_size= 1200
 
 foreground_object3_image= station
-foreground_object3_x_pos= 0000
-foreground_object3_y_pos= 12000
+foreground_object3_x_pos= 0
+foreground_object3_y_pos= 13856
+foreground_object3_x_vel= 0
+foreground_object3_y_vel= 0
 foreground_object3_obj_type= normal
 foreground_object3_obj_value= 1
-foreground_object3_obj_capture_size= 1300
+foreground_object3_obj_capture_size= 1200
 
-foreground_object4_image= station
-foreground_object4_x_pos= 0000
-foreground_object4_y_pos= -12000
-foreground_object4_obj_type= normal
-foreground_object4_obj_value= 1
-foreground_object4_obj_capture_size= 1300
+# outer equilateral triangle edge length = 32000
 
-player1_x_pos= 15000
-player1_y_pos= 15000
-player2_x_pos= 15000
-player2_y_pos= -15000
-player3_x_pos= -15000
-player3_y_pos= 15000
-player4_x_pos= -15000
-player4_y_pos= -15000
+player1_x_pos= 16000
+player1_y_pos= 9238
+player2_x_pos= -16000
+player2_y_pos= 9238
+player3_x_pos= 0
+player3_y_pos= -18475

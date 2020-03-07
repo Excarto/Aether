@@ -11,7 +11,7 @@ public class WeaponTypeWindow extends TypeWindow{
 		
 		ButtonGroup buttonGroup = new ButtonGroup();
 		JPanel groupPanel = new JPanel();
-		groupPanel.setPreferredSize(new Dimension(120, 85));
+		groupPanel.setPreferredSize(new Dimension(110, 85));
 		groupPanel.setBorder(BorderFactory.createEtchedBorder());
 		
 		boolean categorySelected = false;
@@ -22,23 +22,6 @@ public class WeaponTypeWindow extends TypeWindow{
 				if (type.getClass().getName().contains(typeName))
 					classTypes.add(type);
 			}
-			
-			/*final HashMap<String, Double> maxVals = new HashMap<String, Double>();
-			final HashMap<String, Double> minVals = new HashMap<String, Double>();
-			for (BuyType type : Main.buyTypes){
-				if (type.getClass().getName().contains(typeName)){
-					for (String[] spec : type.getSpecs()){
-						if (!spec[1].equals("CATEGORY") && !spec[1].equals("N/A")){
-							Double highVal = maxVals.get(spec[0]), lowVal = minVals.get(spec[0]);
-							double specVal = Double.parseDouble(spec[1]);
-							if (highVal == null || highVal < specVal)
-								maxVals.put(spec[0], specVal);
-							if (lowVal == null || lowVal > specVal)
-								minVals.put(spec[0], specVal);
-						}
-					}
-				}
-			}*/
 			
 			final JRadioButton button = new JRadioButton(typeName + "s");
 			button.setPreferredSize(new Dimension(100, 20));

@@ -51,7 +51,7 @@ public final class CraftType extends UnitType{
 			systemMass = "0";
 		
 		specs = new String[][] {
-				{"Vision Radius",			String.valueOf(visionRange)},
+				{"Vision Radius",			String.valueOf(10*(int)round(visionRange/10.0))},
 				{"Sensor Signature",		String.valueOf(-radarSize)},
 				{"Capture Rate",			String.valueOf(captureRate*Main.TPS)},
 					{"Armament", "CATEGORY"},
@@ -64,7 +64,7 @@ public final class CraftType extends UnitType{
 				{"Armor",					String.valueOf(armor)},
 					{"Engines", "CATEGORY"},
 				{"Forward Accel. (empty)",	String.valueOf(thrust/mass*Main.TPS*Main.TPS)},
-				{"Sustained Forward Accel.",String.valueOf(min(power/Main.energyPerThrust, thrust)/mass*Main.TPS*Main.TPS)},
+				{"Sustained Forward Accel.",String.valueOf(min(power/Main.config.energyPerThrust, thrust)/mass*Main.TPS*Main.TPS)},
 				{"Forward Accel. (loaded)",	String.valueOf(thrust/maxMass*Main.TPS*Main.TPS)},
 				{"Manuevering Accel.",      String.valueOf(turnThrust/((mass+maxMass)/2)*Main.TPS*Main.TPS)},
 					{"Energy", 	"CATEGORY"},

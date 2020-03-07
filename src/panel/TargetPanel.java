@@ -1,15 +1,20 @@
 import java.awt.*;
 
 public class TargetPanel extends UnitPanel{
-	static final int SIZE = GameWindow.MENU_WIDTH/2+2;
+	static final int SIZE_SMALL = GameWindow.MENU_WIDTH/2+2;
+	static final int SIZE_BIG = GameWindow.MENU_WIDTH-30;
 	
 	Unit owner;
 	
-	public TargetPanel(){
-		super(SIZE, true, true);
+	public TargetPanel(boolean big){
+		super(big ? SIZE_BIG : SIZE_SMALL, true, true);
 		circleRadius = 12;
-		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, SIZE));
-		optionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-SIZE-2, GameWindow.MENU_WIDTH/3));
+		if (big){
+			this.add(Window.createSpacer(GameWindow.MENU_WIDTH-20, 5), 0);
+		}else{
+			this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, size));
+			optionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-size-15, size-35));
+		}
 	}
 	
 	protected void select(Component component){
@@ -42,6 +47,13 @@ public class TargetPanel extends UnitPanel{
 			knowStatus = owner.player.knowHealth(unit);
 			super.paintWindow(g);
 			
+			g.setColor(Color.RED);
+			int length = size/10;
+			g.drawLine(0, length, length, 0);
+			g.drawLine(size-length, 0, size, length);
+			g.drawLine(size-length, size, size, size-length);
+			g.drawLine(0, size-length, length, size);
+			
 			for (Weapon weapon : owner.weapons){
 				Component subTarget = weapon.getSubTarget();
 				if (subTarget != null && subTarget.unit == unit){
@@ -70,7 +82,7 @@ public class TargetPanel extends UnitPanel{
 			g.fillRect(0, 0, this.getWidth(), this.getHeight());
 			g.setColor(Color.LIGHT_GRAY);
 			g.setFont(new Font("Courier", Font.BOLD, 14));
-			g.drawString("[No Target]", 23, SIZE/2);
+			g.drawString("[No Target]", size/2-42, size/2);
 		}
 	}
 }

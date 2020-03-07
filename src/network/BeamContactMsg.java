@@ -39,8 +39,8 @@ public class BeamContactMsg extends InGameMsg{
 	
 	public void confirmed(){
 		Unit.RANDOM.setSeed(randomSeed);
-		beam.contact(target, posX+((Sprite)target).getPosX(), posY+((Sprite)target).getPosY());
-		if (Main.server != null && target.getHull() <= 0)
+		if (beam.contact(target, posX+((Sprite)target).getPosX(), posY+((Sprite)target).getPosY())
+				&& Main.server != null)
 			explodes = true;
 		if (explodes)
 			target.explode();

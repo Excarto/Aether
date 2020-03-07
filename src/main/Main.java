@@ -5,99 +5,30 @@ import java.awt.image.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.math.*;
 import javax.imageio.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
-import java.security.*;
 import org.imgscalr.*;
 import com.pagosoft.plaf.*;
 import com.pagosoft.plaf.themes.*;
 
 public final class Main{
-	public static final int VERSION = 30, SUBVERSION = 0;
-	public static final int RES_X_NARROW = 1024, RES_Y = 768;
-	public static final int BIT_DEPTH = 16;
-	public static final int TPS = 100;
+	public static final int VERSION = 40, SUBVERSION = 0;
+	public static final int RES_X_NARROW = 1024, RES_Y_SHORT = 900, RES_Y_TALL = 1080;
+	public static final int BIT_DEPTH = 32;
+	public static final int TPS = 108;
 	public static final int MIN_MEMORY = 900+Renderable.MIN_CACHE_MEMORY;
 	public static final boolean DEBUG = false;
 	
 	static final String OS_NAME = java.lang.System.getProperty("os.name").toLowerCase();
 	static final boolean IS_WINDOWS = OS_NAME.contains("win");
 	static final boolean IS_MAC = OS_NAME.contains("mac");
-	static final boolean IS_UNIXLIKE = OS_NAME.contains("nix") || OS_NAME.contains("nux") || OS_NAME.contains("aix");
+	static final boolean IS_NIX = OS_NAME.contains("nix") || OS_NAME.contains("nux") || OS_NAME.contains("aix");
 	
-	public static int resX;
-	public static int refreshRate;
-	public static boolean useAntiAliasing;
-	public static int scalingQuality;
-	public static int framesPerSec;
-	public static double zoomRatio;
-	public static double moveZoomRatio;
-	public static int zoomLevels;
-	public static double renderSizeScaling;
-	public static int renderAnglesMultiplier;
-	public static int audioChannels;
-	public static double scrollSpeed;
-	public static double accelRate;
-	public static double cameraMoveMultiplier;
-	public static int defaultAutoRepair;
-	public static double masterVolume;
-	public static double musicVolume;
-	public static int maxPointerLineLength;
-	public static int statusSize;
-	public static int targetFadeTime;
-	public static double thrustScale;
-	public static double debrisAmount;
-	public static double debrisRenderAnglesMultiplier;
-	public static int clientPort;
-	public static int serverPort;
-	public static int UDPPort;
-	public static int serverBroadcastPort, clientBroadcastPort;
-	public static int lobbyHostPort, lobbyClientPort;
-	public static String lobbyServer;
-	public static boolean forceTCP;
-	public static boolean UPnPEnabled;
-	public static String username;
-	public static boolean fullscreen, startFullscreen;
-	public static boolean useHardwareAccel;
-	public static String explodingShipExplosion;
-	public static double soundFalloffRate;
-	public static double minSoundVolume;
-	//public static boolean useGLG2D;
-	
-	public static double kineticShieldDamage;
-	public static double explosiveShieldDamage;
-	public static double energyPerThrust;
-	public static double energyPerTurnThrust;
-	public static double energyPerShield;
-	public static double armorExplosiveEffectiveness;
-	public static double armorKineticEffectiveness;
-	public static double explosiveSubtargetChance;
-	public static double explosiveComponentChance;
-	public static double explosiveComponentDamage;
-	public static double kineticSubtargetChance;
-	public static double kineticComponentChance;
-	public static double kineticComponentDamage;
-	public static double EMComponentChance;
-	public static int targetAccelTimeframe;
-	public static double debrisVisionSize;
-	public static double unitRenderAngle;
-	public static double craftDockDistance;
-	public static double craftDockSpeed;
-	public static double repairDistance;
-	public static double repairSpeed;
-	public static double captureDistance;
-	public static double captureSpeed;
-	public static double maneuverThrust;
-	public static double massPerMaterial;
-	public static double scrapReturn;
-	public static double maxComponentDamage;
-	public static double maxScrapDamage;
-	public static double explosionImpulsePerMass, impactImpulsePerDamage;
-	public static int netAdjustTime;
-	public static double unitAccelMultiplier, unitTurnAccelMultiplier;
-	public static double unitVisionMultiplier;
+	public static Options options;
+	public static Configuration config;
+	public static int resX, resY;
+	public static String saveDir;
 	
 	public static ShipType[] shipTypes;
 	public static CraftType[] craftTypes;
@@ -120,7 +51,8 @@ public final class Main{
 	public static Scalr.Method scaleMethod;
 	public static Sound errorSound;
 	public static UPnPHandler UPnPHandler;
-	public static boolean isExiting;
+	public static Font defaultFont;
+	public static boolean isExiting, isStarting;
 	
 	private static JComponent windowPanel;
 	private static JFrame frame;
@@ -128,19 +60,22 @@ public final class Main{
 	private static KeyboardFocusManager manager;
 	private static KeyEventDispatcher dispatcher;
 	private static LinkedList<double[]> ammoMap;
-	public static GraphicsConfiguration graphicsConfiguration;
+	private static GraphicsConfiguration graphicsConfiguration;
 	private static StringBuilder dataString;
 	private static BufferStrategy bufferStrategy;
 	private static Graphics bufferGraphics;
 	private static BufferedImage backgroundBuffer;
 	private static RepaintManager normalManager, manualManager;
-	private static BufferedImage background;
 	
 	public Main(){
-		readOptions();
-		startFullscreen = fullscreen;
+		isStarting = true;
+		isExiting = false;
 		
-		if (useHardwareAccel){// && !useGLG2D){
+		readDirs();
+		
+		options = new Options(saveDir + "/options.txt");
+		
+		if (options.useHardwareAccel){
 			if (IS_WINDOWS){
 				java.lang.System.setProperty("sun.java2d.d3d","True");
 				java.lang.System.setProperty("sun.java2d.ddscale","true");
@@ -167,37 +102,29 @@ public final class Main{
 					return backgroundBuffer.getGraphics();
 			}
 		};
-		frame.setUndecorated(fullscreen);
+		frame.setUndecorated(options.borderless);//fullscreen);
 		frame.setFocusTraversalKeysEnabled(false);
 		
 		windowStack = new Stack<Window>();
 		
-		try{
-			background = Main.convert(ImageIO.read(new File("data/menu_background.png")));
-		}catch(IOException e){
-			background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-		}
 		windowPanel = new JPanel(){
 			public void paintComponent(Graphics g){
-				g.drawImage(background, -(background.getWidth()-Main.resX)/2, 0, null);
+				BufferedImage background = getCurrentWindow().getBackgroundImage();
+				if (background != null){
+					g.drawImage(background,
+							-(background.getWidth() - options.resX)/2,
+							-(background.getHeight() - options.resY)/2,
+							null);
+				}
 			}
 		};
 		windowPanel.setDoubleBuffered(false);
 		windowPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		windowPanel.setFocusTraversalKeysEnabled(false);
-		//windowPanel.setBackground(Window.BACKGROUND_COLOR);
 		
 		findDisplayModes();
 		setDisplayMode();
 		setRenderQuality();
-		
-		try{
-			Arena.starBig = ImageIO.read(new File("data/star_big.png"));
-			Arena.starSmall = ImageIO.read(new File("data/star_small.png"));
-		}catch (IOException ex){
-			Arena.starBig = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-			Arena.starSmall = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-		}
 		
 		BufferedImage icon;
 		try{
@@ -206,7 +133,7 @@ public final class Main{
 			icon = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 		}
 		frame.setIconImage(icon);
-		frame.setResizable(fullscreen);
+		frame.setResizable(options.fullscreen);
 		frame.addWindowListener(new WindowListener(){
 			public void windowClosed(WindowEvent e){
 				exit();
@@ -238,7 +165,7 @@ public final class Main{
 			}
 			public void windowOpened(WindowEvent e){}
 		});
-		if (IS_UNIXLIKE){
+		if (IS_NIX){
 			frame.addFocusListener(new FocusListener(){
 		        public void focusGained(FocusEvent e){
 		            frame.setAlwaysOnTop(true);
@@ -251,12 +178,15 @@ public final class Main{
 		
 		dataString = new StringBuilder(1024);
 		
-		readConfig();
+		config = new Configuration("data/config.txt");
 		readControls();
 		readTypes();
 		readNames();
 		
-		dataHash = getHash(dataString.toString());
+		missions = new Mission[]{new MissionZero(), new MissionOne(), new MissionTwo(), new MissionThree(),
+				new MissionFour(), new MissionFive(), new MissionSix(), new MissionSeven(), new MissionEight()};
+		
+		dataHash = Utility.getHash(dataString.toString());
 		dataString = null;
 		
 		errorSound = new Sound(new File("data/error.wav"));
@@ -272,40 +202,70 @@ public final class Main{
 				return true;
 		}};
 		
-		Sound.initialize(audioChannels, masterVolume);
+		Sound.initialize(options.audioChannels, options.masterVolume);
 		
 		frame.setContentPane(windowPanel);
 		frame.pack();
+		frame.setLocationRelativeTo(null);
 		
-		try{
-			Thread.sleep(500);
-		}catch (Exception e){}
-		
+		Menu.load();
 		MainMenu menu = new MainMenu();
 		addWindow(menu);
 		
 		frame.setVisible(true);
+		Window.load();
 		
-		LoadWindow.start();
-		menu.start();
-		
-		Renderable.startLoadThread();
-		ExplosionType.startLoadThread();
+		new Thread("StartDelayThread"){
+			public void run(){
+				try{
+					Thread.sleep(IS_WINDOWS ? 1000 : 2000);
+				}catch (Exception e){}
+				
+				isStarting = false;
+				LoadWindow.start();
+				menu.start();
+				Renderable.startLoadThread();
+				ExplosionType.startLoadThread();
+			}
+		}.start();
 	}
 	
 	private static void setDefaultFont(){
-		JLabel testLabel = new JLabel();
-		Font defaultFont;
-		int fontSize = 15;
-		do{
-			defaultFont = new Font("Arial", Font.BOLD, --fontSize);
-		}while (testLabel.getFontMetrics(defaultFont).stringWidth("AbCdEfGhIjKlMnOpQrStUvWxYz") > 170);
-		
+		//JLabel testLabel = new JLabel();
+		//Font defaultFont;
+		//int fontSize = 15;
+		//do{
+		//	fontSize--;
+		//	defaultFont = new Font("Arial", Font.BOLD, fontSize);
+		//}while (testLabel.getFontMetrics(defaultFont).stringWidth("AbCdEfGhIjKlMnOpQrStUvWxYz") > 180); //170
+		try{
+			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(
+					Font.createFont(Font.TRUETYPE_FONT, new FileInputStream("data/font.ttf")));
+		}catch (FontFormatException | IOException e){
+			e.printStackTrace();
+		}
+		defaultFont = getDefaultFont(11);
 		for (String componentName : new String[]{
 				"Button", "ToggleButton", "RadioButton", "CheckBox", "ColorChooser",
 				"ComboBox", "Label", "List", "RadioButtonMenuItem", "CheckBoxMenuItem",
 				"Menu", "ScrollPane", "TabbedPane", "TextField", "TextArea", "ToolTip"})
 			UIManager.put(componentName + ".font", defaultFont);
+		Target.unitLabelFont = getDefaultFont(11);
+		Unit.statusFont = getDefaultFont(8);
+		Unit.iconFont = getDefaultFont(10);
+		Arena.previewFontLarge = getDefaultFont(15);
+		Arena.previewFontSmall = getDefaultFont(10);
+		GameWindow.unitLabelFont = getDefaultFont(12);
+		GameWindow.displayFont = getDefaultFont(44);
+		GameWindow.chatFont = getDefaultFont(16);
+		GameWindow.missionChatFont = getDefaultFont(16);
+	}
+	
+	public static Font getDefaultFont(int size){
+		return new Font("Tahoma", Font.BOLD, size);
+	}
+	public static Font getPlainFont(int size){
+		return new Font("Tahoma", Font.PLAIN, size);
 	}
 	
 	private static void findDisplayModes(){
@@ -313,19 +273,19 @@ public final class Main{
 		
 		Map<DisplayMode,Integer> modeFitness = new HashMap<DisplayMode,Integer>();
 		for (DisplayMode mode : device.getDisplayModes()){
-			if (mode.getHeight() == RES_Y && mode.getWidth() >= RES_X_NARROW){
+			if (mode.getHeight() >= RES_Y_SHORT && mode.getHeight() <= RES_Y_TALL && mode.getWidth() >= RES_X_NARROW){
 				int fitness = (mode.getBitDepth() == BIT_DEPTH ? 2 : 0) +
 						(mode.getBitDepth() == DisplayMode.BIT_DEPTH_MULTI ? 1 : 0) +
 						(mode.getRefreshRate() == device.getDisplayMode().getRefreshRate() ? 3 : 0);
-				DisplayMode sameWidthMode = null;
+				DisplayMode sameSizeMode = null;
 				for (DisplayMode existingMode : modeFitness.keySet()){
-					if (existingMode.getWidth() == mode.getWidth())
-						sameWidthMode = existingMode;
+					if (existingMode.getWidth() == mode.getWidth() && existingMode.getHeight() == mode.getHeight())
+						sameSizeMode = existingMode;
 				}
-				if (sameWidthMode == null){
+				if (sameSizeMode == null){
 					modeFitness.put(mode, fitness);
-				}else if (modeFitness.get(sameWidthMode) < fitness){
-					modeFitness.remove(sameWidthMode);
+				}else if (modeFitness.get(sameSizeMode) < fitness){
+					modeFitness.remove(sameSizeMode);
 					modeFitness.put(mode, fitness);
 				}
 			}
@@ -341,28 +301,28 @@ public final class Main{
 			graphicsConfiguration = device.getDefaultConfiguration();
 			Scalr.graphicsConfiguration = graphicsConfiguration;
 			
-			if (startFullscreen){
-				device.setFullScreenWindow(frame);
-				
-				DisplayMode selectedMode = displayModes[0];
-				for (DisplayMode mode : displayModes){
-					if (mode.getWidth() == resX){
-						selectedMode = mode;
-						break;
-					}
-					if (mode.getWidth() > selectedMode.getWidth())
-						selectedMode = mode;
+			DisplayMode selectedMode = displayModes[0];
+			for (DisplayMode mode : displayModes){
+				if (mode.getWidth() == options.resX && mode.getHeight() == options.resY){
+					selectedMode = mode;
+					break;
 				}
-				
-				device.setDisplayMode(selectedMode);
-				resX = selectedMode.getWidth();
-				refreshRate = selectedMode.getRefreshRate();
+				if (mode.getWidth() > selectedMode.getWidth() || mode.getHeight() > selectedMode.getHeight())
+					selectedMode = mode;
 			}
+			
+			if (options.fullscreen){
+				device.setFullScreenWindow(frame);
+				device.setDisplayMode(selectedMode);
+			}
+			
+			resX = selectedMode.getWidth();
+			resY = selectedMode.getHeight();
 		}catch(Exception ex){
 			crash("Video mode not supported: "+ex.getMessage());
 		}
 		
-		windowPanel.setPreferredSize(new Dimension(resX, RES_Y));
+		windowPanel.setPreferredSize(new Dimension(resX, resY));
 	}
 	
 	public static void setRenderQuality(){
@@ -370,7 +330,7 @@ public final class Main{
 		menuHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		inGameHints = new RenderingHints(null);
 		inGameHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		if (useAntiAliasing){
+		if (options.useAntiAliasing){
 			menuHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			menuHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			inGameHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -381,11 +341,11 @@ public final class Main{
 			inGameHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 			inGameHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 		}
-		if (scalingQuality <= 1){
+		if (options.scalingQuality <= 1){
 			scaleMethod = Scalr.Method.SPEED;
-		}else if (scalingQuality == 2){
+		}else if (options.scalingQuality == 2){
 			scaleMethod = Scalr.Method.BALANCED;
-		}else if (scalingQuality >= 3)
+		}else if (options.scalingQuality >= 3)
 			scaleMethod = Scalr.Method.QUALITY;
 		fastHints = new RenderingHints(null);
 		fastHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
@@ -394,107 +354,26 @@ public final class Main{
 		fastHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 	}
 	
-	public static void readOptions(){
+	private static void readDirs(){
+		File file = new File("data/directory.txt");
 		try{
-			Map<String, String> data = readDataFile("data/options.txt");
-			resX = Integer.valueOf(data.get("screen_width"));
-			scalingQuality = Integer.valueOf(data.get("scaling_quality"));
-			useAntiAliasing = Boolean.valueOf(data.get("antialiasing"));
-			masterVolume = Float.valueOf(data.get("master_volume"));
-			musicVolume = Float.valueOf(data.get("music_volume"));
-			framesPerSec = Integer.valueOf(data.get("frames_per_sec"));
-			debrisAmount = Double.valueOf(data.get("debris_amount"));
-			zoomRatio = Double.valueOf(data.get("zoom_ratio"));
-			moveZoomRatio = Double.valueOf(data.get("camera_move_zoom_ratio"));
-			zoomLevels = Integer.valueOf(data.get("zoom_levels"));
-			renderSizeScaling = Double.valueOf(data.get("render_scaling"));
-			renderAnglesMultiplier  = Integer.valueOf(data.get("render_angles_multiplier"));
-			audioChannels = Integer.valueOf(data.get("audio_channels"));
-			scrollSpeed = Double.valueOf(data.get("camera_scroll_speed"))/TPS;
-			accelRate = Double.valueOf(data.get("camera_accel_rate"))/TPS/TPS;
-			cameraMoveMultiplier =  Double.valueOf(data.get("camera_move_multiplier"));
-			maxPointerLineLength = Integer.valueOf(data.get("max_pointer_line_length"));
-			defaultAutoRepair = Integer.valueOf(data.get("default_auto_repair"));
-			statusSize = Integer.valueOf(data.get("unit_status_size"));
-			targetFadeTime = Integer.valueOf(data.get("target_fade_time"))*TPS;
-			thrustScale = Double.valueOf(data.get("thrust_scale"))/TPS/TPS;
-			debrisRenderAnglesMultiplier = Double.valueOf(data.get("debris_render_angles_multiplier"));
-			clientPort = Integer.valueOf(data.get("client_port"));
-			serverPort = Integer.valueOf(data.get("server_listen_port"));
-			UDPPort = Integer.valueOf(data.get("udp_port"));
-			serverBroadcastPort = Integer.valueOf(data.get("server_broadcast_port"));
-			clientBroadcastPort = serverBroadcastPort;
-			lobbyHostPort = Integer.valueOf(data.get("lobby_host_port"));
-			lobbyClientPort = Integer.valueOf(data.get("lobby_client_port"));
-			lobbyServer = data.get("lobby_server");
-			forceTCP = Boolean.valueOf(data.get("force_tcp"));
-			UPnPEnabled = Boolean.valueOf(data.get("enable_upnp"));
-			username = data.get("username");
-			fullscreen = Boolean.valueOf(data.get("fullscreen"));
-			useHardwareAccel = Boolean.valueOf(data.get("use_hardware_accel"));
-			explodingShipExplosion = data.get("death_sequence_explosion");
-			soundFalloffRate = Double.valueOf(data.get("sound_falloff_multiplier"))/(0.5*RES_X_NARROW);
-			
-			minSoundVolume = Double.valueOf(data.get("min_sound_volume"));
-			//useGLG2D = Boolean.valueOf(data.get("use_glg2d"));
-		}catch (Exception e){
-			crash("data/options.txt");
-		}
-	}
-	
-	public static void readConfig(){
-		try{
-			Map<String, String> data = readDataFile("data/config.txt");
-			debrisVisionSize = Double.valueOf(data.get("debris_vision_size"));
-			unitRenderAngle = Double.valueOf(data.get("unit_render_angle"));
-			kineticShieldDamage = Double.valueOf(data.get("kinetic_shield_damage"));
-			explosiveShieldDamage = Double.valueOf(data.get("explosive_shield_damage"));
-			unitVisionMultiplier = Double.valueOf(data.get("unit_vision_multiplier"));
-			unitAccelMultiplier = Double.valueOf(data.get("unit_accel_multiplier"));
-			unitTurnAccelMultiplier = Double.valueOf(data.get("unit_turn_accel_multiplier"));
-			thrustScale *= unitAccelMultiplier;
-			energyPerThrust = Double.valueOf(data.get("energy_per_thrust_second"))/TPS/unitAccelMultiplier;
-			energyPerTurnThrust = Double.valueOf(data.get("energy_per_turn_thrust_second"))/TPS/unitTurnAccelMultiplier;
-			energyPerShield = Double.valueOf(data.get("energy_per_shield"));
-			targetAccelTimeframe = (int)(Double.valueOf(data.get("targeting_accel_timeframe"))*TPS);
-			armorExplosiveEffectiveness = Double.valueOf(data.get("armor_explosive_effectiveness"));
-			armorKineticEffectiveness = Double.valueOf(data.get("armor_kinetic_effectiveness"));
-			explosiveSubtargetChance = Double.valueOf(data.get("explosive_hit_subtarget_chance"));
-			explosiveComponentChance = Double.valueOf(data.get("explosive_hit_component_chance"));
-			explosiveComponentDamage = Double.valueOf(data.get("explosive_hit_component_max_damage"));
-			kineticSubtargetChance = Double.valueOf(data.get("kinetic_hit_subtarget_chance"));
-			kineticComponentChance = Double.valueOf(data.get("kinetic_hit_component_chance"));
-			kineticComponentChance = Double.valueOf(data.get("kinetic_hit_component_max_damage"));
-			EMComponentChance = Double.valueOf(data.get("em_hit_component_chance"));
-			craftDockDistance = Double.valueOf(data.get("craft_dock_distance"));
-			craftDockSpeed = Double.valueOf(data.get("craft_dock_speed"))/TPS;
-			repairDistance = Double.valueOf(data.get("repair_distance"));
-			repairSpeed = Double.valueOf(data.get("repair_speed"))/TPS;
-			captureDistance = Double.valueOf(data.get("capture_distance"));
-			captureSpeed = Double.valueOf(data.get("capture_speed"))/TPS;
-			maneuverThrust = Double.valueOf(data.get("maneuver_thrust"));
-			massPerMaterial = Double.valueOf(data.get("mass_per_repair_material"));
-			scrapReturn = Double.valueOf(data.get("scrap_return"));
-			maxComponentDamage = Double.valueOf(data.get("max_component_damage"));
-			maxScrapDamage = Double.valueOf(data.get("max_scrap_damage"));
-			explosionImpulsePerMass = Double.valueOf(data.get("explosion_impulse_per_mass"))/TPS;
-			impactImpulsePerDamage = Double.valueOf(data.get("impact_impulse_per_damage"))/TPS;
-			netAdjustTime = (int)(Double.valueOf(data.get("net_update_adjust_time"))*TPS);
-			
-			appendData(data, "");
-		}catch (Exception e){
-			crash("data/config.txt");
+			BufferedReader input = new BufferedReader(new FileReader(file));
+			saveDir = input.readLine();
+			input.close();
+		}catch (Exception ex){
+			ex.printStackTrace();
+			crash(file.getPath());
 		}
 	}
 	
 	public static void readControls(){
 		try{
-			Map<String, String> data = readDataFile("data/controls.txt");
+			Map<String, String> data = Utility.readDataFile(saveDir + "/controls.txt");
 			controlVals = new HashMap<Integer, Control>(32);
 			for (String string : data.keySet())
 				controlVals.put(Integer.valueOf(data.get(string)), Control.valueOf(string.toUpperCase()));
 		}catch (Exception ex){
-			crash("data/controls.dat");
+			crash(saveDir + "/controls.txt");
 		}
 	}
 	
@@ -511,7 +390,7 @@ public final class Main{
 			Arrays.sort(availibleWeaponTypes);
 			weaponTypes = new WeaponType[availibleWeaponTypes.length];
 			for (int x = 0; x < availibleWeaponTypes.length; x++){
-				String type = readDataFile("data/weapons/" + availibleWeaponTypes[x] + "/data.txt").get("type");
+				String type = Utility.readDataFile("data/weapons/" + availibleWeaponTypes[x] + "/data.txt").get("type");
 				if (type.equals("missile")){
 					weaponTypes[x] = new MissileType(availibleWeaponTypes[x]);
 				}else if (type.equals("gun")){
@@ -524,23 +403,23 @@ public final class Main{
 				ammoMass[x] = ammoMap.get(x)[1];
 			ammoMap = null;
 			
-			String[] availibleShipTypes = new File("data/ships").list();
-			Arrays.sort(availibleShipTypes);
-			shipTypes = new ShipType[availibleShipTypes.length];
-			for (int x = 0; x < availibleShipTypes.length; x++)
-				shipTypes[x] = new ShipType(availibleShipTypes[x]);
-			
 			String[] availibleCraftTypes = new File("data/crafts").list();
 			Arrays.sort(availibleCraftTypes);
 			craftTypes = new CraftType[availibleCraftTypes.length];
 			for (int x = 0; x < availibleCraftTypes.length; x++)
 				craftTypes[x] = new CraftType(availibleCraftTypes[x]);
 			
+			String[] availibleShipTypes = new File("data/ships").list();
+			Arrays.sort(availibleShipTypes);
+			shipTypes = new ShipType[availibleShipTypes.length];
+			for (int x = 0; x < availibleShipTypes.length; x++)
+				shipTypes[x] = new ShipType(availibleShipTypes[x]);
+			
 			String[] availibleSystemTypes = new File("data/systems").list();
 			Arrays.sort(availibleSystemTypes);
 			systemTypes = new SystemType[availibleSystemTypes.length];
 			for (int x = 0; x < availibleSystemTypes.length; x++){
-				String type = readDataFile("data/systems/" + availibleSystemTypes[x] + "/data.txt").get("type");
+				String type = Utility.readDataFile("data/systems/" + availibleSystemTypes[x] + "/data.txt").get("type");
 				if (type.equals("sensor")){
 					systemTypes[x] = new SensorType(availibleSystemTypes[x]);
 				}else if (type.equals("detector")){
@@ -573,12 +452,6 @@ public final class Main{
 			arenas = new Arena[availibleArenas.length];
 			for (int x = 0; x < availibleArenas.length; x++)
 				arenas[x] = new Arena(availibleArenas[x]);
-			
-			String[] availibleMissions = new File("data/missions").list();
-			Arrays.sort(availibleMissions);
-			missions = new Mission[availibleMissions.length];
-			for (int x = 0; x < availibleMissions.length; x++)
-				missions[x] = new Mission(availibleMissions[x]);
 			
 			buyTypes = new BuyType[shipTypes.length+craftTypes.length+weaponTypes.length+systemTypes.length];
 			int count = 0;
@@ -692,6 +565,11 @@ public final class Main{
 		frame.repaint();
 	}
 	
+	public static void goToMainMenu(){
+		while (windowStack.size() > 1)
+			removeWindow();
+	}
+	
 	public static Window getCurrentWindow(){
 		if (!windowStack.isEmpty())
 			return windowStack.peek();
@@ -728,7 +606,7 @@ public final class Main{
 				bufferStrategy = frame.getBufferStrategy();
 			}
 			if (backgroundBuffer == null)
-				backgroundBuffer = getCompatibleImage(resX, RES_Y, false);
+				backgroundBuffer = getCompatibleImage(resX, resY, false);
 			Sprite.initBuffer();
 		}else{
 			RepaintManager.setCurrentManager(normalManager);
@@ -764,29 +642,20 @@ public final class Main{
 			manager.removeKeyEventDispatcher(dispatcher);
 	}
 	
-	public static Color getColor(double val, double grayness){
-		if (val > 1.0)
-			val = 1.0;
-		else if (val < 0.0)
-			val = 0.0;
-		int gray = (int)(255*grayness);
-		return new Color((int)(min(255, gray+255-510*(val-0.5))),
-				(int)(min(255, gray+510*val)), gray);
-	}
-	
 	public static Point getMousePosition(){
-		if (startFullscreen){
-			return MouseInfo.getPointerInfo().getLocation();
-		}else
-			return windowPanel.getMousePosition();
+		//if (borderless){
+		//	return MouseInfo.getPointerInfo().getLocation();
+		//}else
+		return windowPanel.getMousePosition();
 	}
 	
-	public static boolean isPrintable(char c){
-	    Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
-	    return (!Character.isISOControl(c)) &&
-	            c != KeyEvent.CHAR_UNDEFINED &&
-	            block != null &&
-	            block != Character.UnicodeBlock.SPECIALS;
+	public static void setMousePosition(int posX, int posY){
+		Point pos = windowPanel.getLocationOnScreen();
+		if (pos != null){
+			try{
+				new Robot().mouseMove(pos.x + posX, pos.y + posY);
+			}catch (AWTException ex){}
+		}
 	}
 	
 	public static BufferedImage getCompatibleImage(int width, int height, boolean transparent){
@@ -831,36 +700,6 @@ public final class Main{
 		return image.getCapabilities(graphicsConfiguration).isAccelerated();
 	}
 	
-	public static Map<String, String> readDataFile(String file){
-		Map<String, String> output = new TreeMap<String, String>();
-		try{
-			BufferedReader input = new BufferedReader(new FileReader(file));
-			String property;
-			while((property = input.readLine()) != null){
-				if (!property.trim().isEmpty() && property.charAt(0) != '#'){
-					int y = 0;
-					while (property.charAt(++y) != '=');
-					output.put(property.substring(0, y).trim().toLowerCase(), property.substring(y+1).trim());
-				}
-			}
-			input.close();
-		}catch (Exception e){
-			e.printStackTrace();
-			crash(file.toString());
-		}
-		return output;
-	}
-	
-	public static String getHash(String input){
-		try{
-			MessageDigest algorithm = MessageDigest.getInstance("SHA");
-			algorithm.update(input.getBytes(), 0, input.length());
-		    return new BigInteger(1, algorithm.digest()).toString(16);
-		}catch (Exception e){
-			return null;
-		}
-	}
-	
 	public static int getStringWidth(String string, Font font){
 		return windowPanel.getFontMetrics(font).stringWidth(string);
 	}
@@ -881,21 +720,22 @@ public final class Main{
 		java.lang.System.exit(1);
 	}
 	
-	public static void print(String str){
+	public static void print(Object obj){
+		String str = obj == null ? "null" : obj.toString();
 		Window window = getCurrentWindow();
 		if (window instanceof GameWindow)
 			((GameWindow)window).receiveChat(str, 0);
 		java.lang.System.out.println("****  " + str);
 	}
 	
-	public static void startGame(final Game game, final int randomSeed){
+	public static void startGame(final Game game, final int backgroundSeed, final int gameSeed){
 		SwingUtilities.invokeLater(new Runnable(){
 			public void run(){
 				Main.game = game;
 				
 				for (Player player : game.players){
 					if (player instanceof HumanPlayer){
-						GameWindow window = new GameWindow((HumanPlayer)player, game.gameSpeed, randomSeed);
+						GameWindow window = new GameWindow((HumanPlayer)player, game.gameSpeed, gameSeed);
 						((HumanPlayer)player).setWindow(window);
 						addWindow(window);
 					}
@@ -906,7 +746,7 @@ public final class Main{
 				new Thread("StartGameThread"){
 					public void run(){
 						LoadWindow.awaitLoad();
-						game.start(randomSeed);
+						game.start(backgroundSeed, gameSeed);
 						SwingUtilities.invokeLater(new Runnable(){
 							public void run(){
 								removeWindow();
@@ -920,21 +760,6 @@ public final class Main{
 						}});
 				}}.start();
 		}});
-	}
-	
-	public static String filter(String string, char[] validChars){
-		StringBuilder filteredName = new StringBuilder(string);
-		int index = 0;
-		while (index < filteredName.length()){
-			boolean isValid = false;
-			for (int x = 0; x < validChars.length; x++)
-				isValid = isValid || filteredName.charAt(index) == validChars[x];
-			if (isValid){
-				index++;
-			}else
-				filteredName.deleteCharAt(index);
-		}
-		return filteredName.toString();
 	}
 	
 	public static void main(String[] args){

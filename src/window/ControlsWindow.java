@@ -9,7 +9,7 @@ public class ControlsWindow extends Window{
 	private ControlPanel panel;
 	
 	public ControlsWindow(){
-		super(true);
+		super(Size.NORMAL);
 		
 		controlsPanel = new JPanel();
 		controlsPanel.setPreferredSize(new Dimension(640, 500));
@@ -27,17 +27,17 @@ public class ControlsWindow extends Window{
 		JPanel exitPanel = new JPanel();
 		exitPanel.setPreferredSize(new Dimension(900, 100));
 		exitPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
-		JButton cancel = new JButton("Cancel");
-		cancel.setPreferredSize(new Dimension(120, 35));
-		cancel.addActionListener(new ActionListener(){
+		JButton cancelButton = new JButton("Cancel");
+		cancelButton.setPreferredSize(new Dimension(120, 35));
+		cancelButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				Main.removeWindow();
 		}});
-		JButton OK = new JButton("Save");
-		OK.setPreferredSize(new Dimension(120, 35));
-		OK.addActionListener(new OKListener());
-		exitPanel.add(cancel);
-		exitPanel.add(OK);
+		JButton saveButton = new JButton("Save");
+		saveButton.setPreferredSize(new Dimension(120, 35));
+		saveButton.addActionListener(new OKListener());
+		exitPanel.add(cancelButton);
+		exitPanel.add(saveButton);
 		
 		this.addKeyListener(new InputListener());
 		Main.setDispatcherEnabled(true);
@@ -68,7 +68,7 @@ public class ControlsWindow extends Window{
 			this.setBorder(BorderFactory.createEtchedBorder());
 			
 			title = new JLabel(control.description);
-			title.setFont(new Font("Arial", Font.PLAIN, 12));
+			title.setFont(Main.getDefaultFont(11));
 			title.setPreferredSize(new Dimension(146, 20));
 			title.setHorizontalAlignment(JLabel.CENTER);
 			
@@ -113,7 +113,7 @@ public class ControlsWindow extends Window{
 	
 	private class OKListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
-			File file = new File("data/controls.txt");
+			File file = new File(Main.saveDir + "/controls.txt");
 			try{
 				file.delete();
 				PrintWriter writer = new PrintWriter(new FileWriter(file));

@@ -17,9 +17,8 @@ public class OutfitWindow extends Window{
 	double ammoRatio;
 	
 	final UnitWindow unitWindow;
-	//final JRadioButton weapons;
 	final JSlider arcSlider, orientationSlider;
-	final JLabel componentNameLabel;//, componentClassLabel;
+	final JLabel componentNameLabel;
 	final DetailImage componentViewPanel;
 	final JLabel arcLabel, massLabel, costLabel, orientationLabel;
 	final JLabel totalMassValueLabel, totalCostValueLabel;
@@ -29,10 +28,9 @@ public class OutfitWindow extends Window{
 	final JPanel rightPanel, ammoStoragePanel;
 	final JPanel namePanel;
 	final JTextField nameField;
-	//final JButton setButton, removeButton;
 	
 	public OutfitWindow (Unit outfitUnit){
-		super(true);
+		super(Size.NORMAL);
 		this.unit = outfitUnit;
 		
 		ammoRatio = 1.0;
@@ -89,22 +87,15 @@ public class OutfitWindow extends Window{
 		
 		componentNameLabel = new JLabel();
 		componentNameLabel.setPreferredSize(new Dimension(160, 13));
-		componentNameLabel.setFont(new Font("Arial", Font.BOLD, 12));
+		componentNameLabel.setFont(Main.getDefaultFont(12));
 		componentNameLabel.setHorizontalAlignment(JLabel.CENTER);
-		//componentClassLabel = new JLabel();
-		//componentClassLabel.setPreferredSize(new Dimension(130, 13));
-		//componentClassLabel.setFont(new Font("Arial", Font.BOLD, 11));
-		//componentClassLabel.setHorizontalAlignment(JLabel.CENTER);
 		
 		componentViewPanel = new DetailImage();
-		//componentViewPanel.setPreferredSize(new Dimension(72, 36));
 		
 		JPanel componentControlPanel = new JPanel();
 		componentControlPanel.setPreferredSize(new Dimension(177, 210));
 		componentControlPanel.setBorder(BorderFactory.createEtchedBorder());
-		componentControlPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
 		componentControlPanel.add(componentNameLabel);
-		//middleButtonPanel.add(componentClassLabel);
 		componentControlPanel.add(componentViewPanel);
 		componentControlPanel.add(arcPanel);
 		
@@ -180,7 +171,6 @@ public class OutfitWindow extends Window{
 		overviewPanelLeft.add(sysPowerLabel);
 		overviewPanelLeft.add(capTimeLabel);
 		
-		
 		Dimension overviewValueSize = new Dimension(45, overviewLabelSize.height);
 		Dimension overviewValueSizeBig = new Dimension(45, overviewLabelSizeBig.height);
 		
@@ -238,9 +228,6 @@ public class OutfitWindow extends Window{
 		
 		rightPanel = new JPanel();
 		rightPanel.setPreferredSize(new Dimension(188, unitWindow.getPreferredSize().height));
-		//buttonPanel.add(groupPanel);
-		//buttonPanel.add(setButton);
-		//buttonPanel.add(removeButton);
 		rightPanel.add(componentControlPanel);
 		rightPanel.add(ammoStoragePanel);
 		rightPanel.add(overviewPanel);
@@ -262,7 +249,7 @@ public class OutfitWindow extends Window{
 		});
 		namePanel = new JPanel();
 		namePanel.setPreferredSize(new Dimension(1000, 34));
-		namePanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		namePanel.setOpaque(false);
 		namePanel.add(nameField);
 		
 		JButton autoButton = new JButton("Random Loadout");
@@ -279,22 +266,16 @@ public class OutfitWindow extends Window{
 		}});
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setPreferredSize(new Dimension(704, 60));
-		bottomPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		bottomPanel.setOpaque(false);
 		bottomPanel.add(autoButton);
 		bottomPanel.add(exitButton);
 		
-		//JLabel titleLabel = new JLabel("Outfit Unit", JLabel.CENTER);
-		//titleLabel.setPreferredSize(new Dimension(900, 120));
-		//titleLabel.setFont(new Font("Courier", Font.BOLD, 25));
-		
-		this.add(new Title("Outfit Unit", 900, 120));
+		this.add(new Title("Outfit Unit", 900, 90));
 		this.add(unitWindow);
 		this.add(rightPanel);
 		this.add(namePanel);
 		this.add(bottomPanel);
 		
-		//if (unit.type.weaponHardpoints.length == 0)
-		//	systems.setSelected(true);
 		unitWindow.select(null);
 		
 		updateComponentUI();
@@ -353,14 +334,14 @@ public class OutfitWindow extends Window{
 		updateLabels();
 	}
 	
-	private void updateLabels(){
+	public void updateLabels(){
 		double wepPower = 0.0, sysPower = 0.0;
 		for (Weapon wep : unit.weapons)
 			wepPower += wep.type.getAveragePowerUse();
 		for (System sys : unit.systems)
 			sysPower += sys.type.getAveragePowerUse();
-		double engPower = unit.type.thrust*Main.energyPerThrust;
-		double shieldPower = unit instanceof Ship ? ((Ship)unit).type.shieldRecharge*Main.energyPerShield : 0.0;
+		double engPower = unit.type.thrust*Main.config.energyPerThrust;
+		double shieldPower = unit instanceof Ship ? ((Ship)unit).type.shieldRecharge*Main.config.energyPerShield : 0.0;
 		double capDrainTime = unit.type.capacitor/(engPower + wepPower + sysPower - unit.type.power);
 		
 		arcLabel.setText("Arc: " + arcSlider.getValue());
@@ -414,18 +395,23 @@ public class OutfitWindow extends Window{
 		unitWindow.select(null);
 	}
 	
-	private class UnitWindow extends JComponent implements Runnable{
+	private class UnitWindow extends JComponent{
 		final static int EXTRA_WIDTH = 20;
 		final static int EXTRA_HEIGHT = 45;
+		final static int ANIMATION_SPEED = 1000;
 		
 		private final BufferedImage img;
+		private final Font categoryFont, massFont;
 		private int smallestWeapon, smallestSystem;
 		private int lineLength;
-		boolean running;
+		PeriodicTimer timer;
 		
 		public UnitWindow(){
 			img = unit.type.topImg;
 			lineLength = 0;
+			
+			categoryFont = Main.getDefaultFont(9);
+			massFont = new Font("Courier", Font.BOLD, 8);
 			
 			this.setPreferredSize(new Dimension(
 				unit.type.topImg.getWidth()+EXTRA_WIDTH, unit.type.topImg.getHeight()+EXTRA_HEIGHT));
@@ -463,14 +449,20 @@ public class OutfitWindow extends Window{
 				if (hardpoint.mass < smallestSystem)
 					smallestSystem = hardpoint.mass;
 			
-			new Thread(this).start();
+			timer = new PeriodicTimer(1000/Main.options.menuFramesPerSec){
+				public void runTimerTask(){
+					UnitWindow.this.repaint();
+					if (lineLength < 500)
+						lineLength += ANIMATION_SPEED/Main.options.menuFramesPerSec;
+			}};
+			timer.start();
 		}
 		
 		public void exit(){
-			running = false;
+			timer.stop(false);
 		}
 		public void resume(){
-			new Thread(this).start();
+			timer.start();
 		}
 		
 		private void select(Hardpoint hardpoint){
@@ -479,7 +471,7 @@ public class OutfitWindow extends Window{
 			updateComponentUI();
 			if (hardpoint != null && unit.getComponentAt(hardpoint) != null){
 				ComponentType type = unit.getComponentAt(hardpoint).type;
-				componentNameLabel.setText(type.typeClass);
+				componentNameLabel.setText(type.className);
 				//componentClassLabel.setText(type.typeClass);
 				componentViewPanel.select(type);
 			}else{
@@ -534,9 +526,9 @@ public class OutfitWindow extends Window{
 							
 							if (component == null){
 								g.setColor(Color.BLACK);
-								g.setFont(new Font("Arial", Font.PLAIN, 9));
+								g.setFont(categoryFont);
 								g.drawString(isWeapon ? "WEP" : "SYS", posX-10, posY-5);
-								g.setFont(new Font("Courier", Font.BOLD, 8));
+								g.setFont(massFont);
 								g.drawString("mass", posX-9, posY+6);
 								g.drawString(String.valueOf(hardpoint.mass), posX-(hardpoint.mass < 100 ? 5 : 8), posY+13);//9);
 							}else{
@@ -560,16 +552,5 @@ public class OutfitWindow extends Window{
 			
 		}
 		
-		public void run(){
-			running = true;
-			while (running){
-				this.repaint();
-				if (lineLength < 500)
-					lineLength += 20;
-				try{
-					Thread.sleep(30);
-				}catch (InterruptedException e) {}
-			}
-		}
 	}
 }

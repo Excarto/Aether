@@ -5,29 +5,28 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import java.awt.Component;
+import java.util.*;
 import java.util.List;
-import java.util.HashMap;
-import java.util.Vector;
 
-public class TypeWindow extends Window implements Runnable{
+public class TypeWindow extends Window{
 	
 	List<BuyType> types;
-	Window user;
-	DisplayWindow perspective, side;//, front;
+	DisplayWindow perspective, side;
 	JList<BuyType> typeList;
 	JPanel typePanel;
 	JLabel costLabel, massLabel;
 	Title title;
 	JTextArea description;
 	JPanel specsPanel;
-	//double[] highestValues, lowestValues;
 	HashMap<String, Double>  highestValues, lowestValues;
-	boolean running;
+	PeriodicTimer timer;
+	Bar tooltipBar;
+	Font barFont;
 	
-	public TypeWindow(Class<? extends BuyType> typeClass, Vector<BuyType> availableTypes, Window userWindow){
-		super(true);
-		//this.setPreferredSize(new Dimension(800, 670));
-		//this.setDoubleBuffered(true);
+	public TypeWindow(Class<? extends BuyType> typeClass, Vector<BuyType> availableTypes, Window parentWindow){
+		super(Size.NORMAL);
+		
+		barFont = Main.getDefaultFont(12);
 		
 		for (int x = 0; x < availableTypes.size(); x++){
 			int leastExpensive = x;
@@ -41,12 +40,12 @@ public class TypeWindow extends Window implements Runnable{
 		}
 		
 		types = availableTypes;
-		user = userWindow;
 		
 		int perspectiveWidth = types.get(0).perspectiveImg.getWidth() + 20;
 		int perspectiveHeight = types.get(0).perspectiveImg.getHeight() + 20;
 		int sideWidth = types.get(0).sideImg.getWidth() + 20;
 		int sideHeight = types.get(0).sideImg.getHeight() + 20;
+		int imagesHeight = 88+perspectiveHeight+sideHeight;
 		
 		typeList = new JList<BuyType>(availableTypes);
 		typeList.setPreferredSize(new Dimension(110, 270));
@@ -56,53 +55,41 @@ public class TypeWindow extends Window implements Runnable{
 		typeList.addListSelectionListener(new SelectListener());
 		
 		JLabel typeLabel = new JLabel("Available Types");
-		typeLabel.setFont(new Font("Arial", Font.BOLD, 13));
+		typeLabel.setFont(Main.getDefaultFont(13));
 		
 		typePanel = new JPanel();
-		typePanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		typePanel.setOpaque(false);
 		typePanel.setPreferredSize(new Dimension(125, 365));
 		typePanel.add(typeLabel);
 		typePanel.add(typeList);
 		
 		costLabel = new JLabel();
-		costLabel.setPreferredSize(new Dimension(300, 13));
-		costLabel.setFont(new Font("Courier", Font.PLAIN, 15));
+		costLabel.setPreferredSize(new Dimension(300, 12));
+		costLabel.setFont(new Font("Courier", Font.PLAIN, 14));
 		massLabel = new JLabel();
-		massLabel.setPreferredSize(new Dimension(300, 13));
-		massLabel.setFont(new Font("Courier", Font.PLAIN, 15));
-		//JPanel labelPanel = new JPanel();
-		//labelPanel.setPreferredSize(new Dimension(340, 45));
-		//labelPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-		//labelPanel.add(costLabel);
-		//labelPanel.add(massLabel);
+		massLabel.setPreferredSize(new Dimension(300, 12));
+		massLabel.setFont(new Font("Courier", Font.PLAIN, 14));
 		
 		perspective = new DisplayWindow(perspectiveWidth, perspectiveHeight, "Perspective");
 		side = new DisplayWindow(sideWidth, sideHeight, "Side");
 		
-		JPanel imagePanel = new JPanel();
-		imagePanel.setPreferredSize(new Dimension(max(perspectiveWidth, sideWidth), 88+perspectiveHeight+sideHeight));
-		imagePanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		JPanel imagePanel = new JPanel(DEFAULT_LAYOUT);
+		imagePanel.setPreferredSize(new Dimension(max(perspectiveWidth, sideWidth), imagesHeight));
+		imagePanel.setOpaque(false);
 		
 		description = new JTextArea();
 		description.setPreferredSize(new Dimension(imagePanel.getPreferredSize().width,
-				imagePanel.getPreferredSize().height-perspectiveHeight-sideHeight-15));
+				imagesHeight-perspectiveHeight-sideHeight-7));
 		description.setEditable(false);
 		description.setLineWrap(true);
 		description.setWrapStyleWord(true);
 		description.setSelectionColor(null);
 		description.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		description.setMargin(new Insets(5, 5, 5, 5));
 		
-		//imagePanel.add(costLabel);
-		//imagePanel.add(massLabel);
 		imagePanel.add(perspective);
 		imagePanel.add(side);
-		//imagePanel.add(front);
-		//imagePanel.add(labelPanel);
 		imagePanel.add(description);
-		
-		//JPanel textPanel = new JPanel();
-		//textPanel.setPreferredSize(new Dimension(350, 670));
-		//textPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
 		
 		highestValues = new HashMap<String, Double>();
 		lowestValues = new HashMap<String, Double>();
@@ -124,71 +111,87 @@ public class TypeWindow extends Window implements Runnable{
 		}
 		
 		specsPanel = new JPanel();
-		specsPanel.setPreferredSize(new Dimension(335, imagePanel.getPreferredSize().height));
+		specsPanel.setPreferredSize(new Dimension(335, imagesHeight-8));
 		specsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-		//textPanel.add(description);
-		//textPanel.add(specsPanel);
 		
 		JPanel exitPanel = new JPanel();
-		exitPanel.setPreferredSize(new Dimension(700, 40));
-		exitPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		exitPanel.setPreferredSize(new Dimension(700, 38));
+		exitPanel.setOpaque(false);
 		JButton exitButton = new JButton("Select");
-		exitButton.setPreferredSize(new Dimension(120, 35));
+		exitButton.setPreferredSize(new Dimension(120, 34));
 		exitButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				Main.removeWindow();
 				if (typeList.getSelectedIndex() != -1)
-					TypeWindow.this.user.returnValue(typeList.getSelectedValue());
+					parentWindow.returnValue(typeList.getSelectedValue());
 			}
 		});
 		exitPanel.add(exitButton);
 		
-		title = new Title("", 1000, 30);
+		title = new Title("", 1000, 32);
 		
-		this.add(createSpacer(1000, (Main.RES_Y-imagePanel.getPreferredSize().height-80)/2));
+		int topSpace = 315 - imagesHeight/2;
+		this.add(createSpacer(Main.resX-100, topSpace));
 		this.add(title);
 		this.add(typePanel);
 		this.add(imagePanel);
 		this.add(specsPanel);
-		//this.add(textPanel);
 		this.add(exitPanel);
 		
 		typeList.setSelectedIndex(0);
 		typeList.requestFocus();
 		
-		new Thread(this).start();
+		timer = new PeriodicTimer(1000/Main.options.menuFramesPerSec){
+			public void runTimerTask(){
+				animateFrame();
+				repaint();
+		}};
+		timer.start();
 	}
 	
-	public void run(){
-		running = true;
-		while (running){
-			try{
-				Thread.sleep(30);
-			}catch (InterruptedException e){}
-			
-			for (Component component : specsPanel.getComponents())
-				if (component instanceof Bar)
-					((Bar)component).animate();
-			perspective.animate();
-			side.animate();
-			//front.animate();
-			repaint();
-		}
+	public void animateFrame(){
+		for (Component component : specsPanel.getComponents())
+			if (component instanceof Bar)
+				((Bar)component).animate();
+		perspective.animate();
+		side.animate();
 	}
 	
 	public void suspend(){
-		running = false;
+		timer.stop(false);
 	}
 	
+	static final int TOOLTIP_HEIGHT = 17;
+	public void paint(Graphics g){
+		super.paint(g);
+		
+		Bar bar = tooltipBar;
+		if (bar != null && bar.tooltip != null){
+			g.setFont(barFont);
+			int width = g.getFontMetrics().stringWidth(bar.tooltip) + 10;
+			
+			Point barPos = bar.getLocationOnScreen();
+			Point thisPos = this.getLocationOnScreen();
+			int posX = barPos.x - thisPos.x - width/2 + 80;
+			int posY = barPos.y - thisPos.y + 19;
+			
+			g.setColor(Color.WHITE);
+			g.fillRect(posX, posY, width, TOOLTIP_HEIGHT);
+			g.setColor(Color.BLACK);
+			g.drawRect(posX, posY, width, TOOLTIP_HEIGHT);
+			g.drawString(bar.tooltip, posX+5, posY+13);
+		}
+	}
+	
+	static final Font CATEGORY_FONT = new Font("Courier", Font.BOLD, 12);
 	private class SelectListener implements ListSelectionListener{
 		public void valueChanged(ListSelectionEvent e){
 			if (!typeList.isSelectionEmpty() && !e.getValueIsAdjusting()){
 				BuyType type = typeList.getSelectedValue();
 				perspective.setImage(type.perspectiveImg);
 				side.setImage(type.sideImg);
-				//front.setImage(type.frontImg);
 				
-				title.setText(type.name + " class " + type.typeClass);
+				title.setText(type.getFullName());
 				costLabel.setText("Cost: " + type.cost);
 				massLabel.setText("Mass: " + type.mass);
 				description.setText(type.description);
@@ -204,18 +207,21 @@ public class TypeWindow extends Window implements Runnable{
 				
 				for (String[] spec : type.getSpecs()){
 					if (spec[1].equals("CATEGORY")){
-						JLabel category = new JLabel(spec[0]);
-						category.setFont(new Font("Courier", Font.BOLD, 12));
+						JLabel category = new JLabel(spec[0].toUpperCase());
+						category.setFont(CATEGORY_FONT);
 						category.setPreferredSize(new Dimension(190, 13));
 						specsPanel.add(category);
 					}else if (spec[1].equals("N/A")){
 						
 					}else{
+						String tooltip = null;
+						if (spec.length >= 3)
+							tooltip = spec[2];
 						specsPanel.add(lowestValues.get(spec[0]) >= 0 ?
-								new Bar(spec[0], Double.parseDouble(spec[1]),
+								new Bar(spec[0], tooltip, Double.parseDouble(spec[1]),
 										highestValues.get(spec[0]), lowestValues.get(spec[0]),
 										type.getSpecs().length, false):
-								new Bar(spec[0], -Double.parseDouble(spec[1]),
+								new Bar(spec[0], tooltip, -Double.parseDouble(spec[1]),
 										-lowestValues.get(spec[0]), -highestValues.get(spec[0]),
 										type.getSpecs().length, true));
 					}
@@ -226,8 +232,8 @@ public class TypeWindow extends Window implements Runnable{
 		}
 	}
 	
+	final static int WINDOW_ANIMATION_SPEED = 600;
 	private class DisplayWindow extends JComponent{
-		//final String text;
 		BufferedImage img;
 		int lineWidth, lineHeight;
 		int width, height;
@@ -279,24 +285,27 @@ public class TypeWindow extends Window implements Runnable{
 		public void animate(){
 			if (lineWidth < width || lineHeight < height){
 				if (lineWidth < width)
-					lineWidth += 15;
+					lineWidth += WINDOW_ANIMATION_SPEED/Main.options.menuFramesPerSec;
 				if (lineHeight < height)
-					lineHeight += 15;
+					lineHeight += WINDOW_ANIMATION_SPEED/Main.options.menuFramesPerSec;
 			}
 		}
 	}
 	
+	
+	static final int BAR_LENGTH = 150, BORDER = 5;
+	final static double BAR_ANIMATION_SPEED = 1.0;
 	private class Bar extends JComponent{
-		static final int BAR_LENGTH = 150, BORDER = 5;
-		
 		String title;
+		String tooltip;
 		double value, targetValue;
 		double maxVal, minVal;
 		boolean negative;
 		
-		public Bar(String title, double value, double maxVal, double minVal, int size, boolean negative){
-			this.setPreferredSize(new Dimension(330, (int)sqrt(17*450/size)));
+		public Bar(String title, String tooltip, double value, double maxVal, double minVal, int size, boolean negative){
+			this.setPreferredSize(new Dimension(330, (int)sqrt(12*specsPanel.getPreferredSize().height/size)));
 			this.title = title;
+			this.tooltip = tooltip;
 			this.targetValue = (double)((int)(value*100))/100;
 			this.maxVal = maxVal;
 			this.minVal = minVal/2;
@@ -304,17 +313,26 @@ public class TypeWindow extends Window implements Runnable{
 			
 			this.negative = negative;
 			this.setBackground(new Color(238, 238, 238));
+			
+			this.addMouseListener(new MouseAdapter(){
+				public void mouseEntered(MouseEvent e){
+			       tooltipBar = Bar.this;
+			    }
+				public void mouseExited(MouseEvent e){
+			       tooltipBar = null;
+			    }
+			});
 		}
 		
 		public void paint(Graphics g){
 			((Graphics2D)g).setRenderingHints(Main.menuHints);
 			g.setColor(Color.WHITE);
 			g.fillRect(165, 0, BAR_LENGTH, 15);
-			g.setFont(new Font("Arial", Font.PLAIN, 13));
+			g.setFont(barFont);
 			g.setColor(Color.BLACK);
 			g.drawRect(165, 0, BAR_LENGTH+1, 15);
 			double val = maxVal > minVal ? (value-minVal)/(maxVal-minVal) : 0.5;
-			g.setColor(Main.getColor(negative ? 1.0-val : val, 0.15));
+			g.setColor(Utility.getColor(negative ? 1.0-val : val, 0.15));
 			g.fillRect(166, 1, (int)(BORDER+(BAR_LENGTH-2*BORDER)*val), 14);
 			g.setColor(Color.BLACK);
 			g.drawString(title + ": ", 1, 13);
@@ -324,7 +342,7 @@ public class TypeWindow extends Window implements Runnable{
 		
 		public void animate(){
 			if (value < targetValue)
-				value = min(targetValue, value+0.028*(maxVal-minVal));
+				value = min(targetValue, value + BAR_ANIMATION_SPEED*(maxVal-minVal)/Main.options.menuFramesPerSec);
 		}
 	}
 }

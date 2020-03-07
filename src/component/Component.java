@@ -77,9 +77,9 @@ public abstract class Component implements Repairable, Id{
 	public void takeHit(double damage){
 		if (hull > 0 && hull-damage <= 0){
 			Main.game.createDeathExplosion(type, getPosX(), getPosY(), unit.getVelX(), unit.getVelY());
-			hull = type.hull*Main.maxComponentDamage;
+			hull = type.hull*Main.config.maxComponentDamage;
 		}
-		hull = max(hull-damage, type.hull*Main.maxComponentDamage);
+		hull = max(hull-damage, type.hull*Main.config.maxComponentDamage);
 	}
 	
 	public double getPosX(){
@@ -102,7 +102,7 @@ public abstract class Component implements Repairable, Id{
 	
 	public void repair(double material, boolean isScrap){
 		if (isScrap){
-			hull -= material*type.hullPerMaterial/Main.scrapReturn;
+			hull -= material*type.hullPerMaterial/Main.config.scrapReturn;
 		}else
 			hull = min(type.hull, hull+material*type.hullPerMaterial);
 	}

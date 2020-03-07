@@ -54,7 +54,7 @@ public abstract class Sprite implements Id, Locatable{
 		
 		posX += velX+adjustRateX;
 		posY += velY+adjustRateY;
-		angle = Game.fixAngle(angle+turnSpeed+adjustRateTurn);
+		angle = Utility.fixAngle(angle+turnSpeed+adjustRateTurn);
 		
 		//this.act();
 	}
@@ -78,7 +78,7 @@ public abstract class Sprite implements Id, Locatable{
 		currentId = 0;
 	}
 	
-	protected Image getImage(double zoom, double renderTime){
+	protected Image getImage(double zoom){
 		return renderable.getImage(zoom, renderAngle, true, (int)signum(turnSpeed));
 	}
 	
@@ -139,18 +139,23 @@ public abstract class Sprite implements Id, Locatable{
 		return sqrt(vx*vx+vy*vy);
 	}
 	public final double heading(Locatable locatable){
-		return Game.fixAngle(90-toDegrees(atan2(this.posY-locatable.getPosY(), locatable.getPosX()-this.posX)));
+		return Utility.fixAngle(90-toDegrees(atan2(this.posY-locatable.getPosY(), locatable.getPosX()-this.posX)));
 	}
 	public final double bearing(Locatable locatable){
-		return Game.fixAngle(heading(locatable)-getAngle());
+		return Utility.fixAngle(heading(locatable)-getAngle());
 	}
 	public final double velBearing(Locatable locatable){
-		return Game.fixAngle(90-toDegrees(atan2(locatable.getVelY()-this.velY, this.velX-locatable.getVelX()))-getAngle());
+		return Utility.fixAngle(90-toDegrees(atan2(locatable.getVelY()-this.velY, this.velX-locatable.getVelX()))-getAngle());
 	}
-	public final double drdt(Locatable locatable){
+	public final double radVel(Locatable locatable){
 		double dx = locatable.getPosX()-this.posX, dy = locatable.getPosY()-this.posY;
 		double vx = locatable.getVelX()-this.velX, vy = locatable.getVelY()-this.velY;
-		return (dx*vx+dy*vy)/sqrt(dx*dx+dy*dy);
+		return (dx*vx + dy*vy)/sqrt(dx*dx + dy*dy);
+	}
+	public final double tanSpeed(Locatable locatable){
+		double dx = locatable.getPosX()-this.posX, dy = locatable.getPosY()-this.posY;
+		double vx = locatable.getVelX()-this.velX, vy = locatable.getVelY()-this.velY;
+		return abs(dx*vy - dy*vx)/sqrt(dx*dx + dy*dy);
 	}
 	
 	public void place(double posX, double posY, double velX, double velY,
@@ -170,14 +175,14 @@ public abstract class Sprite implements Id, Locatable{
 			double velX, double velY,
 			double angle, double turnSpeed){
 		
-		adjustRateX = (posX-this.posX)/Main.netAdjustTime;
-		adjustRateY = (posY-this.posY)/Main.netAdjustTime;
+		adjustRateX = (posX-this.posX)/Main.config.netAdjustTime;
+		adjustRateY = (posY-this.posY)/Main.config.netAdjustTime;
 		if (this.angle-angle > 180){
 			angle += 360;
 		}else if (this.angle-angle < -180)
 			angle -= 360;
-		adjustRateTurn = (angle-this.angle)/Main.netAdjustTime;
-		adjustTimeLeft = Main.netAdjustTime;
+		adjustRateTurn = (angle-this.angle)/Main.config.netAdjustTime;
+		adjustTimeLeft = Main.config.netAdjustTime;
 		
 		this.velX = velX;
 		this.velY = velY;
@@ -207,8 +212,8 @@ public abstract class Sprite implements Id, Locatable{
 		int posX = window.posXOnScreen(renderPosX), posY = window.posYOnScreen(renderPosY);
 		int size = getRenderSize(window.getRenderZoom());
 		
-		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < GameWindow.WINDOW_RES_Y+size){
-			Image img = getImage(window.getRenderZoom(), window.renderTimeLeft());
+		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){
+			Image img = getImage(window.getRenderZoom());
 			if (img != null){
 				int width = img.getWidth(null), height = img.getHeight(null);
 				List<? extends Effect> effects = getEffects();
@@ -236,7 +241,6 @@ public abstract class Sprite implements Id, Locatable{
 				if (bufferGraphics != null){
 					Rectangle oldClip = g.getClipBounds();
 					g.clipRect(posX-width/2, posY-height/2, width, height);
-					//g.drawImage(effectBuffer, 0, 0, null);
 					g.drawImage(effectBuffer, posX-width/2, posY-height/2, null);
 					g.setClip(oldClip.x, oldClip.y, oldClip.width, oldClip.height);
 					bufferGraphics.dispose();
@@ -272,7 +276,7 @@ public abstract class Sprite implements Id, Locatable{
 	public void drawHudBottom(Graphics2D g, GameWindow window){
 		Controllable controllable = (Controllable)this;
 		int posX = window.posXOnScreen(renderPosX), posY = window.posYOnScreen(renderPosY);
-		if (posX > 0 && posY > 0 && posX < window.windowResX && posY < GameWindow.WINDOW_RES_Y){
+		if (posX > 0 && posY > 0 && posX < window.windowResX && posY < window.windowResY){
 			int size = getRenderSize(window.getRenderZoom());
 			g.setColor(TURN_COLOR);
 			Order topOrder = controllable.orders().getTopOrder();
@@ -289,7 +293,7 @@ public abstract class Sprite implements Id, Locatable{
 		int posX = (int)window.posXOnScreen(renderPosX), posY = (int)window.posYOnScreen(renderPosY);
 		int renderSize = getRenderSize(window.getRenderZoom());
 		int size = renderSize+8;
-		if (posX > -size && posY > -size && posX < window.windowResX+size && posY < GameWindow.WINDOW_RES_Y+size){
+		if (posX > -size && posY > -size && posX < window.windowResX+size && posY < window.windowResY+size){
 			g.setColor(HUD_COLOR);
 			if (window.isStrategic()){
 				int startAngle = 45 + GAP_SIZE/2;
@@ -315,21 +319,14 @@ public abstract class Sprite implements Id, Locatable{
 		Controllable controllable = (Controllable)this;
 		
 		if (controllable.orders().getOrder() != null){
-			int previousX = window.posXOnScreen(renderPosX);
-			int previousY = window.posYOnScreen(renderPosY);
+			double lastPosX = renderPosX;
+			double lastPosY = renderPosY;
 			
 			for (Order order : controllable.orders()){
-				if (order instanceof Locatable && order.getColor() != null){
-					if (Double.isFinite(order.getRenderPosX()) && Double.isFinite(order.getRenderPosY())){
-						int posX = window.posXOnScreen(order.getRenderPosX());
-						int posY = window.posYOnScreen(order.getRenderPosY());
-						
-						g.setColor(order.getColor());
-						g.drawLine(previousX, previousY, posX, posY);
-						g.drawRect(posX-3, posY-3, 6, 6);
-						previousX = posX;
-						previousY = posY;
-					}
+				if (order instanceof LocatableOrder){
+					((LocatableOrder)order).draw(g, window, lastPosX, lastPosY);
+					lastPosX = order.getRenderPosX();
+					lastPosY = order.getRenderPosY();
 				}
 			}
 		}

@@ -41,7 +41,7 @@ public class Escort extends MoveToTarget{
 		}else
 			super.act();
 		
-		if (time%27 == 0){
+		if (runTime%20 == 0){
 			double a = ((Controllable)host).getAccel();
 			double timeToTarget = sqrt(4*host.distance(this)/a) + 2.0*host.speed(this)/a;
 			if (isFacing && timeToTarget > slack){

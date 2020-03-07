@@ -10,6 +10,7 @@ public class Player{
 	
 	public final String name;
 	public final int team;
+	public final int totalBudget;
 	
 	public final IdList<Controllable> controllables;
 	public final IdList<Ship> ships;
@@ -18,8 +19,8 @@ public class Player{
 	public final Iterable<Unit> units;
 	public final Set<Controllable> visibleControllables;
 	
-	private final Map<Sprite,SensorTarget> sensorTargets;
-	private final Map<Controllable,Target> targets;
+	public final Map<Sprite,SensorTarget> sensorTargets;
+	public final Map<Controllable,Target> targets;
 	private final Queue<Ship> warpQueue;
 	
 	private int budget, budgetInterval;
@@ -35,9 +36,8 @@ public class Player{
 		controllables = new IdList<Controllable>();
 		this.ships = new IdList<Ship>();
 		for (int x = 0; x < ships.size(); x++){
-			Ship ship = ships.get(x).copy();
+			Ship ship = ships.get(x);
 			this.ships.add(ship);
-			//controllables.add(ship);
 			ship.setPlayer(this);
 			ship.initialize();
 		}
@@ -93,6 +93,7 @@ public class Player{
 			}
 		};
 		
+		this.totalBudget = budget;
 		this.budget = (int)round(arena.startBudget*budget);
 		if (arena.startBudget < 1.0 && arena.incomeTime > 0){
 			this.budgetInterval = BUDGET_UPDATE_INTERVAL*(budget-this.budget)/arena.incomeTime;
@@ -157,7 +158,7 @@ public class Player{
 			ship.setId();
 		
 		this.position = position;
-		if (Main.game.arena.startBudget >= 1.0 || Main.game.arena.incomeTime <= 0){
+		if (Main.game.arena.startBudget >= 1.0 || totalBudget <= 0){
 			for (Ship ship : ships)
 				warpIn(ship);
 		}
@@ -203,7 +204,7 @@ public class Player{
 	}
 	
 	public boolean addSensorSighting(SensorSighting sighting, Sprite sprite){
-		if (!visibleControllables.contains(sprite)){
+		if (!visibleControllables.contains((Controllable)sprite)){
 			SensorTarget sensorTarget = sensorTargets.get(sprite);
 			if (sensorTarget == null){
 				sensorTarget = new SensorTarget(sprite);
@@ -318,4 +319,46 @@ public class Player{
 	public boolean controlPressed(Control control){
 		return false;
 	}
+	
+	static final double COST_REJECTION_STD = 1.1;
+	static final double COST_REJECTION_BIAS = 0.0;
+	static final double CARRIER_REJECTION_PROB = 0.35;
+	public static void makeFleet(Vector<Ship> ships, int budget, long randomSeed){
+		Random rand = randomSeed == 0 ? new Random() : new Random(randomSeed);
+		
+		int minCost = Integer.MAX_VALUE;
+		int maxCost = 0;
+		for (ShipType type : Main.shipTypes){
+			minCost = min(minCost, type.outfittedCost);
+			maxCost = max(maxCost, type.outfittedCost);
+		}
+		
+		for (int x = 0; x < 50; x++){
+			ships.clear();
+			int fleetCost = 0;
+			
+			for (int y = 0; y < 200; y++){
+				ShipType type = Main.shipTypes[(rand.nextInt(Main.shipTypes.length))];
+				
+				boolean rejected = false;
+				double costFrac = (type.outfittedCost - minCost)/(double)(maxCost - minCost);
+				costFrac = 2*(costFrac - 0.5);
+				double acceptProb = exp(-pow(((costFrac-COST_REJECTION_BIAS)/COST_REJECTION_STD), 2));
+				rejected = rejected || rand.nextDouble() > acceptProb;
+				rejected = rejected || (type.totalCraftMass/CraftType.smallestCraftMass > 3 && rand.nextDouble() < CARRIER_REJECTION_PROB);
+				
+				if (!rejected){
+					Ship ship = new Ship(type);	
+					ship.autoLoadout();
+					if (fleetCost + ship.getCost() <= budget){
+						ships.add(ship);
+						fleetCost += ship.getCost();
+					}
+				}
+			}
+			if (fleetCost > budget-50)
+				break;
+		}
+	}
+	
 }

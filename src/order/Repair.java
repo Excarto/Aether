@@ -1,7 +1,6 @@
 import java.awt.*;
 
 public class Repair extends Escort{
-	
 	RepairTarget repairTarget;
 	
 	public Repair(Unit unit){
@@ -13,7 +12,7 @@ public class Repair extends Escort{
 		
 		repairTarget = new RepairTarget((Unit)target, ((Ship)host).type.repairRate, false);
 		repairTarget.repair = true;
-		repairTarget.rearm = false;
+		repairTarget.rearm = true;
 		repairTarget.inRange = false;
 		((Ship)host).repairTargets.add(repairTarget);
 		((Ship)host).repairQueue.clear();
@@ -27,14 +26,14 @@ public class Repair extends Escort{
 	public void act(){
 		super.act();
 		
-		if (time%50 == 0){
-			repairTarget.inRange = ((Ship)host).distance(target) < Main.repairDistance;
-			if (repairTarget.doneRearm && repairTarget.doneRecharge && repairTarget.doneRepair)
+		if (runTime%50 == 0){
+			repairTarget.inRange = ((Ship)host).distance(target) < Main.config.repairDistance;
+			if (Main.options.repairAutoFinish && repairTarget.doneRearm && repairTarget.doneRecharge && repairTarget.doneRepair)
 				((Unit)host).orders().finish(this);
 		}
 	}
 	
 	public Color getColor(){
-		return new Color(0, 255, 0, OPAQUE);
+		return new Color(0, 255, 0, OPAQUE_ALPHA);
 	}
 }

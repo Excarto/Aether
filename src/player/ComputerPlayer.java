@@ -5,39 +5,50 @@ public class ComputerPlayer extends Player{
 	
 	static final int ACTION_REFRESH_PERIOD = 200;
 	
-	static int actionCounter = 0;
+	private static int actionCounter = 0;
 	
-	final List<Action> actions;
-	final double boosterThreshold, captureCaution;
-	double timeToWin, timeToLose;
-	double objectiveFracCapturing;
+	private final List<Action> actions;
+	private final double boosterThreshold, captureCaution;
+	private double timeToWin, timeToLose;
+	private double objectiveFracCapturing;
+	private boolean attackDisabled, captureDisabled;
 	
 	public ComputerPlayer(String name, int team, List<Ship> ships, int budget, Arena arena){
 		super(name, team, ships, budget, arena);
 		
 		actions = new ArrayList<Action>();
+		captureDisabled = false;
+		attackDisabled = false;
 		
+		setFireModes();
+		
+		boosterThreshold = 0.4 + 0.4*random();
+		captureCaution = (0.40 + 0.60*random())*30000*Main.TPS;
+	}
+	
+	private void setFireModes(){
 		for (Ship ship : this.ships){
 			for (Component component : ship){
 				if (component instanceof Weapon){
-					Weapon weapon = (Weapon)component;
-					weapon.setFireMode(Weapon.FireMode.AUTONOMOUS);
-					if (weapon.type.reloadTime > Main.TPS){
-						weapon.setFireMode(Weapon.FireMode.AUTOMATIC);
-						weapon.autoMissiles = false;
-						weapon.autoCraft = false;
-						if (random() < 0.5 && weapon instanceof Launcher && ((Launcher)weapon).type.deltaV > 14.0){
-							((Launcher)weapon).volleySize = 1+(int)(3*random());
-						}else if (random() < 0.5 && weapon instanceof Gun && ((Gun)weapon).type.velocity*Main.TPS > 700){
-							weapon.autoCraft = true;
+					if (attackDisabled){
+						((Weapon)component).setFireMode(Weapon.FireMode.DISABLED);
+					}else{
+						Weapon weapon = (Weapon)component;
+						weapon.setFireMode(Weapon.FireMode.AUTONOMOUS);
+						if (weapon.type.reloadTime > Main.TPS){
+							weapon.setFireMode(Weapon.FireMode.AUTOMATIC);
+							weapon.autoMissiles = false;
+							weapon.autoCraft = false;
+							if (random() < 0.5 && weapon instanceof Launcher && ((Launcher)weapon).type.deltaV > 14.0){
+								((Launcher)weapon).volleySize = 1+(int)(3*random());
+							}else if (random() < 0.5 && weapon instanceof Gun && ((Gun)weapon).type.velocity*Main.TPS > 700){
+								weapon.autoCraft = true;
+							}
 						}
 					}
 				}
 			}
 		}
-		
-		boosterThreshold = 0.4 + 0.4*random();
-		captureCaution = (0.2 + 0.8*random())*30000*Main.TPS;
 	}
 	
 	public void start(int position){
@@ -51,18 +62,15 @@ public class ComputerPlayer extends Player{
 		for (Ship ship : ships)
 			actions.add(new EscortAction(ship));
 		
-		
 	}
 	
 	public void contact(Projectile projectile, Controllable controllable){
-		projectile.contact(controllable);
-		if (controllable.getHull() <= 0)
+		if (projectile.contact(controllable))
 			controllable.explode();
 	}
 	
 	public void contact(Beam beam, Controllable controllable, double posX, double posY){
-		beam.contact(controllable, posX, posY);
-		if (controllable.getHull() <= 0)
+		if (beam.contact(controllable, posX, posY))
 			controllable.explode();
 	}
 	
@@ -182,13 +190,23 @@ public class ComputerPlayer extends Player{
 			return false;
 	}
 	
+	public void setCaptureDisabled(boolean captureDisabled){
+		this.captureDisabled = captureDisabled;
+	}
+	
+	public void setAttackDisabled(boolean attackDisabled){
+		this.attackDisabled = attackDisabled;
+		setFireModes();
+	}
+	
+	
 	private double threatAt(Locatable location){
 		double threat = 0.0;
 		for (Player player : Main.game.players){
 			if (player.team != team){
-				for (Controllable controllable : player.controllables){
-					if (controllable instanceof Unit)
-						threat += unitKnowledge((Unit)controllable)*unitPresence((Unit)controllable, location);
+				for (Controllable enemyUnit : player.controllables){
+					if (enemyUnit instanceof Unit)
+						threat += unitKnowledge((Unit)enemyUnit)*unitPresence((Unit)enemyUnit, location);
 				}
 			}
 		}
@@ -209,26 +227,6 @@ public class ComputerPlayer extends Player{
 		return knowledge;
 	}
 	
-	private static double approxTime(Unit unit, Locatable target){
-		return approxTime(unit, unit, target);
-	}
-	
-	private static double approxTime(Unit unit, Sprite startLocation, Locatable target){
-		if (unit == null || startLocation == null || target == null)
-			return 0.0;
-		if (target.equals(unit))
-			return 0.0;
-		
-		double dist = startLocation.distance(target);
-		double speed = startLocation.speed(target);
-		double drdt = startLocation.drdt(target);
-		double a = unit.getAccel();
-		
-		double ta = 0.75*speed/a;
-		double tb = sqrt(8*abs(dist+drdt*ta/2)/a);
-		return ta + tb;
-	}
-	
 	private static double unitStrength(Unit unit){
 		int craftMass = 0;
 		double health = unit.getHull();
@@ -244,7 +242,8 @@ public class ComputerPlayer extends Player{
 	}
 	
 	private static double unitPresence(Unit unit, Locatable location){
-		return unitStrength(unit)/(1+pow(max(0, approxTime(unit, location)-unitRange(unit))/(25*Main.TPS), 1.4));
+		double time = Utility.approxTime(unit, location);
+		return unitStrength(unit)/(1+pow(max(0, time-0.8*unitRange(unit))/(25*Main.TPS), 1.4));
 	}
 	
 	private static double unitRange(Unit unit){
@@ -272,7 +271,7 @@ public class ComputerPlayer extends Player{
 		}else{
 			double time = Double.MAX_VALUE;
 			for (Arena.Objective objective : Main.game.arena.objectives)
-				time = min(time, approxTime(unit, objective, location));
+				time = min(time, Utility.approxTime(objective, location, unit.getAccel()));
 			return time;
 		}
 	}
@@ -415,6 +414,8 @@ public class ComputerPlayer extends Player{
 		}
 		
 		double computePriority(Unit unit){
+			if (captureDisabled)
+				return Double.MAX_VALUE;
 			if (unit.orders().getOrder() instanceof Dock)
 				return Double.MAX_VALUE;
 			if (unit.type.captureRate == 0)
@@ -425,7 +426,7 @@ public class ComputerPlayer extends Player{
 				return Double.MAX_VALUE;
 			
 			double strength = unitStrength(unit);
-			double time = approxTime(unit, objective);
+			double time = Utility.approxTime(unit, objective);
 			double priority = 0.8*time;
 			
 			if (currentUnit != null && currentUnit != unit)
@@ -444,7 +445,7 @@ public class ComputerPlayer extends Player{
 				priority += captureCaution*objectiveFracCapturing*objectiveFracCapturing;
 			if (!objective.isCaptured && isCapturing && ((Capture)currentOrder).isCapturing())
 				priority /= 1.0 + pow(5*Main.TPS/capTimeLeft, 2.0);
-			priority /= objective.value*(objective.isCaptured ? 1.6 : 1.0)*Main.TPS;
+			priority /= sqrt(objective.value)*(objective.isCaptured ? 1.5 : 1.0);
 			if (timeToLose < timeToWin)
 				priority /= 1 + (200*Main.TPS)/timeToLose;
 			
@@ -494,6 +495,9 @@ public class ComputerPlayer extends Player{
 		double computePriority(Unit unit){
 			Unit targetUnit = (Unit)target.target;
 			
+			if (attackDisabled)
+				return Double.MAX_VALUE;
+			
 			if (unit.orders().getOrder() instanceof Dock)
 				return Double.MAX_VALUE;
 			
@@ -518,10 +522,10 @@ public class ComputerPlayer extends Player{
 				}
 			}
 			
-			double timeToTarget = approxTime(unit, target);
+			double timeToTarget = Utility.approxTime(unit, target);
 			double priority = timeToTarget;
 			if (unit instanceof Craft)
-				priority += 3*approxTime(((Craft)unit).getMothership(), target);
+				priority += 3*Utility.approxTime(((Craft)unit).getMothership(), target);
 			priority += 750*Main.TPS*max(-0.20, threat*sqrt(unitEffectiveness(targetUnit, unit))/strength - 1.0);
 			priority += 150*Main.TPS*pow(1 - unit.getHull()/unit.type.hull, 2.0);
 			priority += 50*Main.TPS*(targetUnit.getHull()/targetUnit.type.hull - 1);
@@ -596,7 +600,7 @@ public class ComputerPlayer extends Player{
 			if (unit.orders().getOrder() instanceof Dock)
 				return Double.MAX_VALUE;
 			
-			double priority = approxTime(unit, target) + 0.5*timeToObjective(unit, target);
+			double priority = Utility.approxTime(unit, target) + 0.5*timeToObjective(unit, target);
 			return priority*1.5*(1+2*unit.weapons.size()*unit.getWeaponReadiness()) + 120*Main.TPS;
 		}
 		
@@ -642,9 +646,9 @@ public class ComputerPlayer extends Player{
 			if (unit.weapons.size() == 0)
 				return Double.MAX_VALUE;
 			
-			double priority = 1500*Main.TPS + 1.2*approxTime(unit, target);
+			double priority = 1500*Main.TPS + 1.2*Utility.approxTime(unit, target);
 			if (unit instanceof Craft)
-				priority += 2*approxTime(((Craft)unit).getMothership(), target);
+				priority += 2*Utility.approxTime(((Craft)unit).getMothership(), target);
 			priority += 3*timeToObjective;
 			return priority;
 		}
@@ -696,20 +700,18 @@ public class ComputerPlayer extends Player{
 				return Double.MAX_VALUE;
 			if (unit.type.captureRate > 0 && unit.weapons.size() < 2)
 				return Double.MAX_VALUE;
-			if (objective.owner != team && objective.getCapturingTeam() != team && unit.weapons.size() > 0)
-				return Double.MAX_VALUE;
 			
-			double priority = approxTime(unit, objective);
+			double priority = Utility.approxTime(unit, objective);
 			if (unit instanceof Craft)
-				priority += approxTime(((Craft)unit).getMothership(), objective);
-			//if (objective.getCapturingTeam() != -1 && objective.getCapturingTeam() != team)
-			//	priority /= 2;
+				priority += Utility.approxTime(((Craft)unit).getMothership(), objective);
 			priority += 600*Main.TPS*threat/(unitStrength(unit) + 200);
 			if (unit.weapons.size() == 0){
 				Order order = unit.orders().getOrder();
 				boolean isOrbiting = order instanceof Orbit && ((Orbit)order).target == objective;
 				priority += 400*Main.TPS*(isOrbiting ? numDefenders-1 : numDefenders);
 			}
+			if (objective.owner != team && objective.getCapturingTeam() != team && unit.weapons.size() > 0)
+				priority += 1500*Main.TPS;
 			return priority + 450*Main.TPS;
 		}
 		

@@ -10,7 +10,7 @@ public class ComponentsPanel extends SidePanel{
 	public ComponentsPanel(boolean isWeapons){
 		super();
 		
-		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, 550));
+		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, Unit.CONTROLS_HEIGHT));
 		this.setLayout(Window.DEFAULT_LAYOUT);
 		
 		unitPanel = new SelectPanel(isWeapons);
@@ -53,8 +53,12 @@ public class ComponentsPanel extends SidePanel{
 			ComponentsPanel.this.repaint();
 			
 			IdList<? extends Component> components = isWeapons ? unit.weapons : unit.systems;
-			if (components.size() > 0)
-				select(components.get(0));
+			for (Component component : components){
+				if (component.selected){
+					select(component);
+					break;
+				}
+			}
 		}
 		
 		protected void select(Component component){

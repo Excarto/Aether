@@ -20,10 +20,10 @@ public class ClientJoinWindow extends Window{
 	String username;
 	
 	public ClientJoinWindow(boolean isLAN){
-		super(true);
+		super(Size.NORMAL);
 		this.isLAN = isLAN;
 		
-		username = Main.username;
+		username = Main.options.username;
 		
 		serverListModel = new DefaultListModel<AvailableServer>();
 		serverList = new JList<AvailableServer>(serverListModel);
@@ -32,7 +32,7 @@ public class ClientJoinWindow extends Window{
 		serverList.addListSelectionListener(new ListSelectionListener(){
 			public void valueChanged(ListSelectionEvent e){
 				if (!serverList.isSelectionEmpty())
-					addressField.setText(serverList.getSelectedValue().address.getHostAddress());
+					addressField.setText(serverList.getSelectedValue().getAddressString());
 			}
 		});
 		
@@ -61,7 +61,7 @@ public class ClientJoinWindow extends Window{
 		
 		JPanel joinPanel = new JPanel();
 		joinPanel.setPreferredSize(new Dimension(1000, 50));
-		joinPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		joinPanel.setOpaque(false);
 		joinPanel.add(new JLabel("IP Address: "));
 		joinPanel.add(addressField);
 		joinPanel.add(joinButton);
@@ -84,8 +84,8 @@ public class ClientJoinWindow extends Window{
 		
 		JPanel namePanel = new JPanel();
 		namePanel.setPreferredSize(new Dimension(1000, 50));
-		namePanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
-		namePanel.add(new JLabel("Username:"));
+		namePanel.setOpaque(false);
+		namePanel.add(new JLabel("Player Name:"));
 		namePanel.add(usernameField);
 		
 		JButton backButton = new JButton("Back");
@@ -96,21 +96,14 @@ public class ClientJoinWindow extends Window{
 		}});
 		JPanel backPanel = new JPanel();
 		backPanel.setPreferredSize(new Dimension(1000, 100));
-		backPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		backPanel.setOpaque(false);
 		backPanel.add(backButton);
 		
-		//JLabel title = new JLabel(isLAN ? "Join LAN Game" : "Join Internet Game");
-		//title.setFont(new Font("Courier", Font.BOLD, 22));
-		//JPanel titlePanel = new JPanel();
-		//titlePanel.setPreferredSize(new Dimension(1000, 40));;
-		//titlePanel.setBackground(BACKGROUND_COLOR);
-		//titlePanel.add(title);
-		
 		errorLabel = new JLabel();
-		errorLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+		errorLabel.setFont(Main.getDefaultFont(13));
 		JPanel errorPanel = new JPanel();
 		errorPanel.setPreferredSize(new Dimension(1000, 50));
-		errorPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		errorPanel.setOpaque(false);
 		errorPanel.add(errorLabel);
 		
 		this.add(createSpacer(1000, 100));
@@ -130,7 +123,7 @@ public class ClientJoinWindow extends Window{
 	private void listenForServers(boolean[] running){
 		DatagramSocket socket = null;
 		try{
-			socket = new DatagramSocket(Main.clientBroadcastPort);
+			socket = new DatagramSocket(Main.options.clientBroadcastPort);
 			byte[] buffer = new byte[Connection.PACKET_SIZE];
 			DatagramPacket packet = new DatagramPacket(buffer, Connection.PACKET_SIZE);
 			BroadcastMsg broadcastListener = new BroadcastMsg(){
@@ -153,7 +146,7 @@ public class ClientJoinWindow extends Window{
 					broadcastListener.read(buffer);
 			}
 		}catch(IOException e){
-			errorMessage("Unable to listen for server broadcast");
+			displayMessage("Unable to listen for server broadcast");
 		}
 		if (socket != null)
 			socket.close();
@@ -198,8 +191,8 @@ public class ClientJoinWindow extends Window{
 		try{
 			Socket lobbyServerSocket = new Socket();
 			lobbyServerSocket.setSoTimeout(2000);
-			lobbyServerSocket.bind(new InetSocketAddress(Main.clientPort));
-			lobbyServerSocket.connect(new InetSocketAddress(Main.lobbyServer, Main.lobbyClientPort), 4000);
+			lobbyServerSocket.bind(new InetSocketAddress(Main.options.clientPort));
+			lobbyServerSocket.connect(new InetSocketAddress(Main.options.lobbyServer, Main.options.lobbyClientPort), 4000);
 			lobbyServer = new Connection(lobbyServerSocket, true);
 			lobbyServer.addListener(new BroadcastMsg(){
 				public void confirmed(){
@@ -207,7 +200,7 @@ public class ClientJoinWindow extends Window{
 					serverList.repaint();
 			}});
 		}catch (IOException ex){
-			errorMessage("Cannot connect to game lobby server");
+			displayMessage("Cannot connect to lobby server");
 		}
 		
 		new Thread("RefreshEnableThread"){
@@ -238,7 +231,7 @@ public class ClientJoinWindow extends Window{
 		try{
 			Socket socket = new Socket();
 			socket.setReuseAddress(true);
-			socket.bind(new InetSocketAddress(Main.clientPort));
+			socket.bind(new InetSocketAddress(Main.options.clientPort));
 			
 			/*if (Main.UPnPEnabled){
 				Main.UPnPHandler.enableUPnP(socket.getLocalPort(), Protocol.TCP);
@@ -246,11 +239,11 @@ public class ClientJoinWindow extends Window{
 					errorMessage("UPnP configuration failed");
 			}*/
 			
-			socket.connect(new InetSocketAddress(addressField.getText(), Main.serverPort), 4000);
-			connection = new Connection(socket, Main.forceTCP);
+			socket.connect(new InetSocketAddress(addressField.getText(), Main.options.serverPort), 4000);
+			connection = new Connection(socket, Main.options.forceTCP);
 			final boolean[] responseReceived = new boolean[]{false};
 			
-			connection.addListener(new ClientAcceptedMsg(){
+			connection.addSwingListener(new ClientAcceptedMsg(){
 				public void confirmed(){
 					responseReceived[0] = true;
 					errorLabel.setText("");
@@ -258,10 +251,10 @@ public class ClientJoinWindow extends Window{
 					Main.addWindow(new SetupWindowNetClient(connection, username));
 			}});
 			
-			connection.addListener(new ClientRejectedMsg(){
+			connection.addSwingListener(new ClientRejectedMsg(){
 				public void confirmed(){
 					responseReceived[0] = true;
-					errorMessage(message);
+					displayMessage(message);
 					connection.close();
 			}});
 			
@@ -278,22 +271,22 @@ public class ClientJoinWindow extends Window{
 						Thread.sleep(1500);
 					}catch (InterruptedException e){}
 					if (!responseReceived[0])
-						errorMessage("Host is not responding");
+						displayMessage("Host is not responding");
 				}
 			}.start();
 			
 		}catch (UnknownHostException e){
-			errorMessage("Could not connect to host");
+			displayMessage("Could not connect to host");
 		}catch (IOException e){
-			errorMessage(e.getMessage());
+			displayMessage(e.getMessage());
 		}
 	}
 	
-	private void errorMessage(String message){
+	private void displayMessage(String message){
 		Main.errorSound.play();
 		errorLabel.setText(message);
 		errorLabel.setBorder(BorderFactory.createEtchedBorder());
-		java.lang.System.err.println(message);
+		Main.print(message);
 	}
 	
 	private class AvailableServer{
@@ -317,6 +310,10 @@ public class ClientJoinWindow extends Window{
 				return true;
 			}
 			return false;
+		}
+		
+		public String getAddressString(){
+			return address.getHostAddress();
 		}
 		
 		public String toString(){

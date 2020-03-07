@@ -13,7 +13,7 @@ public final class AmmoWindow extends Window{
 	private int ammoToDecrease;
 	
 	public AmmoWindow(double[] ammoRatios, double ammoSpace){
-		super(true);
+		super(Size.NORMAL);
 		this.ammoRatios = ammoRatios;
 		this.ammoSpace = ammoSpace;
 		ammoToDecrease = 0;
@@ -45,7 +45,7 @@ public final class AmmoWindow extends Window{
 		//titleLabel.setPreferredSize(new Dimension(900, 65));
 		//titleLabel.setFont(new Font("Courier", Font.BOLD, 25));
 		
-		this.add(new Title("Manual Ammunition Settings", 900, 80));
+		this.add(new Title("Manual Ammunition Settings", Main.resX-100, 50));
 		this.add(pane);
 		this.add(exitPanel);
 	}

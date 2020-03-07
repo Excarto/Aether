@@ -7,29 +7,43 @@ import java.util.*;
 import java.io.*;
 
 public class OptionsWindow extends Window{
-	static final String RES_SUFFIX = " x "+Main.RES_Y;
 	static final int OPTION_HEIGHT = 32, OPTION_WIDTH = 320, LABEL_WIDTH = 140;
 	
-	int startResX;
 	JButton cancelButton, okButton;
 	
 	Map<String, String> options;
 	Map<String, JComponent> components;
 	
+	boolean resetRequired;
+	
 	public OptionsWindow(){
-		super(true);
-		startResX = Main.resX;
+		super(Size.NORMAL);
 		
-		options = Main.readDataFile("data/options.txt");
+		try{
+			options = Utility.readDataFile(Main.saveDir + "/options.txt");
+		}catch (IOException ex){
+			ex.printStackTrace();
+			Main.crash(Main.saveDir + "/options.txt");
+		}
 		components = new HashMap<String, JComponent>();
+		resetRequired = false;
 		
 		OptionPanel gamePanel = new OptionPanel("Game");
-		gamePanel.addOption("Username", "username", new JTextField(){
+		gamePanel.addOption("Player Name", "username", new JTextField(){
 			public void setName(String name){
 				setText(name);
 			}
 			public String toString(){
 				return getText();
+			}
+		});
+		String[] difficulties = new String[]{"Normal", "Hard"};
+		gamePanel.addOption("Difficulty", "difficulty", new JComboBox<String>(difficulties){
+			public void setName(String val){
+				this.setSelectedIndex(Integer.parseInt(val));
+			}
+			public String toString(){
+				return String.valueOf(getSelectedIndex());
 			}
 		});
 		
@@ -129,19 +143,24 @@ public class OptionsWindow extends Window{
 		});
 		
 		OptionPanel videoPanel = new OptionPanel("Video");
-		String[] widths = new String[Main.displayModes.length];
-		for (int x = 0; x < widths.length; x++)
-			widths[x] = Main.displayModes[x].getWidth()+RES_SUFFIX;
-		videoPanel.addOption("Screen Resolution", "screen_width", new JComboBox<String>(widths){
+		String[] sizes = new String[Main.displayModes.length];
+		for (int x = 0; x < sizes.length; x++)
+			sizes[x] = Main.displayModes[x].getWidth() + "x" + Main.displayModes[x].getHeight();
+		videoPanel.addOption("Screen Resolution", "screen_size", new JComboBox<String>(sizes){
+			{
+				this.addActionListener(new ResetListener());
+			}
 			public void setName(String val){
-				this.setSelectedItem(Integer.parseInt(val)+RES_SUFFIX);
+				this.setSelectedItem(val);
 			}
 			public String toString(){
-				String resString = (String)getSelectedItem();
-				return resString.substring(0,resString.length()-RES_SUFFIX.length());
+				return (String)getSelectedItem();
 			}
 		});
 		videoPanel.addOption("Hardware Acceleration", "use_hardware_accel", new JCheckBox(){
+			{
+				this.addActionListener(new ResetListener());
+			}
 			public void setName(String val){
 				setSelected(Boolean.parseBoolean(val));
 			}
@@ -149,12 +168,16 @@ public class OptionsWindow extends Window{
 				return String.valueOf(isSelected());
 			}
 		});
-		videoPanel.addOption("Windowed Mode", "fullscreen", new JCheckBox(){
+		String[] modes = new String[]{"fullscreen", "window"};//, "window"};
+		videoPanel.addOption("Display Mode", "window_mode", new JComboBox<String>(modes){
+			{
+				this.addActionListener(new ResetListener());
+			}
 			public void setName(String val){
-				setSelected(!Boolean.parseBoolean(val));
+				this.setSelectedItem(val);
 			}
 			public String toString(){
-				return String.valueOf(!isSelected());
+				return (String)getSelectedItem();
 			}
 		});
 		
@@ -188,7 +211,7 @@ public class OptionsWindow extends Window{
 				return String.valueOf(getValue());
 			}
 		});
-		graphicsPanel.addOption("Frames Per Second", "frames_per_sec", new JSlider(){
+		/*graphicsPanel.addOption("Frames Per Second", "frames_per_sec", new JSlider(){
 			int minVal, maxVal;
 			public void setName(String val){
 				minVal = 1;
@@ -204,12 +227,12 @@ public class OptionsWindow extends Window{
 				setMinimum(0);
 				setLabelTable(table);
 				setPaintLabels(true);
-				setValue(maxVal-getTurnsPerFrame(Main.framesPerSec, 1.0));
+				setValue(maxVal-getTurnsPerFrame(Main.options.framesPerSec, 1.0));
 			}
 			public String toString(){
 				return String.valueOf(getFramesPerSec(maxVal-getValue(), 1.0));
 			}
-		});
+		});*/
 		graphicsPanel.addOption("Unit Status Size", "unit_status_size", new JSlider(10, 30){
 			public void setName(String val){
 				setMajorTickSpacing(2);
@@ -263,7 +286,7 @@ public class OptionsWindow extends Window{
 		
 		JPanel exitPanel = new JPanel();
 		exitPanel.setPreferredSize(new Dimension(900, 100));
-		exitPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		exitPanel.setOpaque(false);
 		cancelButton = new JButton("Cancel");
 		cancelButton.setPreferredSize(new Dimension(120, 35));
 		cancelButton.addActionListener(new ActionListener(){
@@ -274,34 +297,13 @@ public class OptionsWindow extends Window{
 		okButton.setPreferredSize(new Dimension(120, 35));
 		okButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				for (String option : components.keySet())
-					options.put(option, components.get(option).toString());
-				
-				File file = new File("data/options.txt");
-				try{
-					file.delete();
-					PrintWriter writer = new PrintWriter(file);
-					for (String option : options.keySet())
-						writer.println(option + "= " + options.get(option));
-					
-					writer.close();
-					Main.readOptions();
-					
-					if (Main.resX != startResX)
-						Main.setDisplayMode();
-					
-					Sound.initialize(Main.audioChannels, Main.masterVolume);
-					
-					Main.removeWindow();
-				}catch(IOException ex){
-					Main.crash(file.getPath());
-				}
+				saveFile();
 		}});
 		exitPanel.add(cancelButton);
 		exitPanel.add(okButton);
 		
 		JPanel optionPanel = new JPanel();
-		optionPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		optionPanel.setOpaque(false);
 		optionPanel.add(gamePanel);
 		optionPanel.add(controlsPanel);
 		optionPanel.add(videoPanel);
@@ -328,9 +330,34 @@ public class OptionsWindow extends Window{
 		}
 		optionPanel.setPreferredSize(new Dimension(700, totalHeight));
 		
-		this.add(new Title("Settings", 900, 80));
+		this.add(new Title("Settings", 900, 65));
 		this.add(optionPanel);
 		this.add(exitPanel);
+	}
+	
+	private void saveFile(){
+		for (String option : components.keySet())
+			options.put(option, components.get(option).toString());
+		
+		String filename = Main.options.file;
+		File file = new File(filename);
+		try{
+			file.delete();
+			PrintWriter writer = new PrintWriter(file);
+			for (String option : options.keySet())
+				writer.println(option + "= " + options.get(option));
+			writer.close();
+			
+			if (resetRequired)
+				Main.exit();
+			
+			Main.options = new Options(filename);
+			Sound.initialize(Main.options.audioChannels, Main.options.masterVolume);
+			
+			Main.removeWindow();
+		}catch(IOException ex){
+			okButton.setText("Cannot save!");
+		}
 	}
 	
 	private class OptionPanel extends JPanel{
@@ -362,6 +389,15 @@ public class OptionsWindow extends Window{
 			this.add(titleLabel);
 			this.add(component);
 			components.put(optionName, component);
+		}
+	}
+	
+	private class ResetListener implements ActionListener{
+		public void actionPerformed(ActionEvent e){
+			if (okButton != null){
+				resetRequired = true;
+				okButton.setText("Save and exit");
+			}
 		}
 	}
 	

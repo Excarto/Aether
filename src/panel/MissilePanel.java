@@ -51,7 +51,7 @@ public class MissilePanel extends SidePanel{
 		ETILabel.repaint();
 		
 		fuelLeft.setText("Fuel Remaining: " + (int)(missile.getEnergy()/missile.type.capacitor*100) + "%"
-				+ " (" + (double)round(missile.getEnergy()/missile.type.thrust/Main.energyPerThrust/Main.TPS*10)/10 + "s)");
+				+ " (" + (double)round(missile.getEnergy()/missile.type.thrust/Main.config.energyPerThrust/Main.TPS*10)/10 + "s)");
 		timeLeft.setText("Lifetime Remaining: " + (double)round(missile.getTimeToLive()/Main.TPS*10)/10 + "s");
 	}
 	

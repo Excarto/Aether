@@ -1,7 +1,7 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
-public abstract class StationaryOrder extends Order implements Locatable{
+public abstract class StationaryOrder extends LocatableOrder{
 	double completionDist;
 	double completionSpeed;
 	
@@ -9,7 +9,9 @@ public abstract class StationaryOrder extends Order implements Locatable{
 	double posX, posY, renderPosX, renderPosY;
 	boolean finished;
 
-	public StationaryOrder(int posX, int posY, double velX, double velY, double completionDist, double completionSpeed){
+	public StationaryOrder(double posX, double posY,
+			double velX, double velY,
+			double completionDist, double completionSpeed){
 		this.posX = posX;
 		this.posY = posY;
 		this.velX = velX;
@@ -37,6 +39,7 @@ public abstract class StationaryOrder extends Order implements Locatable{
 	}
 	
 	public void move(){
+		super.move();
 		posX += velX;
 		posY += velY;
 	}
@@ -79,6 +82,6 @@ public abstract class StationaryOrder extends Order implements Locatable{
 	}
 	
 	public Color getColor(){
-		return new Color(100, 100, 200, TRANSPARENT);
+		return new Color(100, 100, 200, TRANSLUCENT_ALPHA);
 	}
 }

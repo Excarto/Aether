@@ -10,17 +10,17 @@ public class Dock extends Escort{
 		super.act();
 		
 		Ship ship = (Ship)target;
-		if (time%5 == 0){
+		if (runTime%5 == 0){
 			if (ship.type.craftMass < ((Craft)host).type.mass ||
 					ship.type.totalCraftMass < ship.totalCraftMass()+((Craft)host).type.mass)
 				((Controllable)host).orders().finish(this);
-			if (host.distance(target) < Main.craftDockDistance &&
-					host.speed(target) < Main.craftDockSpeed && ((Craft)host).canDock())
+			if (host.distance(target) < Main.config.craftDockDistance &&
+					host.speed(target) < Main.config.craftDockSpeed && ((Craft)host).canDock())
 				ship.player.retrieveCraft(ship, (Craft)host);
 		}
 	}
 	
 	public Color getColor(){
-		return new Color(0, 255, 0, OPAQUE);
+		return new Color(0, 255, 0, OPAQUE_ALPHA);
 	}
 }

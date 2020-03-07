@@ -44,7 +44,7 @@ public class Missile extends Projectile implements Controllable{
 		turnsPassed++;
 		
 		if (orders != null)
-			orders.move();
+			orders.act();
 		
 		if (netThrustTime[Thruster.FORWARD] > 0){
 			netThrustTime[Thruster.FORWARD]--;
@@ -71,7 +71,7 @@ public class Missile extends Projectile implements Controllable{
 	public void accelForward(){
 		if (capacitor > 0 && accelForwardTime < Main.game.turn){
 			accel(type.thrust/type.projectileMass, getAngle());
-			capacitor -= type.thrust*Main.energyPerThrust;
+			capacitor -= type.thrust*Main.config.energyPerThrust;
 			accelForwardTime = Main.game.turn;
 		}
 	}
@@ -79,7 +79,7 @@ public class Missile extends Projectile implements Controllable{
 	public void accelTurn(boolean direction){
 		if (capacitor > 0 && accelTurnTime < Main.game.turn){
 			accelTurn((direction ? 1 : -1)*type.turnThrust/type.projectileMass);
-			capacitor -= type.turnThrust*Main.energyPerTurnThrust;
+			capacitor -= type.turnThrust*Main.config.energyPerTurnThrust;
 			accelTurnTime = Main.game.turn;
 		}
 	}

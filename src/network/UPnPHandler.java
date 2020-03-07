@@ -17,7 +17,7 @@ public class UPnPHandler{
 	}
 	
 	public void enableUPnP(int port, Protocol protocol){
-		if (!Main.UPnPEnabled)
+		if (!Main.options.UPnPEnabled)
 			return;
 		
 		if (device == null)

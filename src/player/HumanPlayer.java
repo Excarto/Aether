@@ -72,14 +72,12 @@ public class HumanPlayer extends Player{
 	}
 	
 	public void contact(Projectile projectile, Controllable controllable){
-		projectile.contact(controllable);
-		if (controllable.getHull() <= 0)
+		if (projectile.contact(controllable))
 			controllable.explode();
 	}
 	
 	public void contact(Beam beam, Controllable controllable, double posX, double posY){
-		beam.contact(controllable, posX, posY);
-		if (controllable.getHull() <= 0)
+		if (beam.contact(controllable, posX, posY))
 			controllable.explode();
 	}
 	

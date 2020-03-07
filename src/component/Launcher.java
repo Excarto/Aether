@@ -42,7 +42,7 @@ public class Launcher extends Gun{
 	}
 	
 	protected double getProjectileVelocity(){
-		return 0.5*type.capacitor/Main.energyPerThrust/type.projectileMass;
+		return 0.5*type.capacitor/Main.config.energyPerThrust/type.projectileMass;
 	}
 	
 	public void removeControllable(Controllable controllable){
@@ -55,7 +55,7 @@ public class Launcher extends Gun{
 		double vx = locatable.getVelX()-unit.getVelX(), vy = locatable.getVelY()-unit.getVelY();
 		
 		return type.approxTime(dx, dy, vx, vy,
-				Game.fixAngle(unit.bearing(locatable)-getAngle()), type.capacitor, type.velocity);
+				Utility.fixAngle(unit.bearing(locatable)-getAngle()), type.capacitor, type.velocity);
 	}
 	
 }

@@ -28,6 +28,7 @@ public class InputHandler{
 	private List<List<Controllable>> groups;
 	private boolean chatToAll;
 	private String currentChat;
+	private HungarianAlg assigner;
 	
 	public InputHandler(GameWindow window, JComponent viewWindow){
 		this.window = window;
@@ -44,6 +45,7 @@ public class InputHandler{
 		rightMouseTimer = new TimerThread(null);
 		leftMouseTimer = new TimerThread(null);
 		middleMouseTimer = new TimerThread(null);
+		assigner = new HungarianAlg(10);
 		
 		groups = new ArrayList<List<Controllable>>(10);
 		for (int x = 0; x <= 9; x++)
@@ -84,7 +86,7 @@ public class InputHandler{
 			((MousePosition)rightClickStart).move();
 		
 		if (rightMouseTimer.timeElapsed && rightMouseTimer.event != null){
-			issueMouseOrder(rightMouseTimer.event.getPoint(), DOUBLE_CLICK_INTERVAL, null, true);
+			issueMouseCommand(rightMouseTimer.event.getPoint(), DOUBLE_CLICK_INTERVAL, null, true);
 			rightMouseTimer.event = null;
 		}
 		
@@ -162,7 +164,7 @@ public class InputHandler{
 											Sprite sprite2 = (Sprite)controllable2;
 											if (closest.getType() == controllable2.getType() && 
 													window.posXOnScreen(sprite2) > 0 && window.posXOnScreen(sprite2) < window.windowResX &&
-													window.posYOnScreen(sprite2) > 0 && window.posYOnScreen(sprite2) < GameWindow.WINDOW_RES_Y)
+													window.posYOnScreen(sprite2) > 0 && window.posYOnScreen(sprite2) < window.windowResY)
 												selected.add(controllable2);
 										}
 									}
@@ -218,7 +220,7 @@ public class InputHandler{
 				}else{
 					if (!rightMouseTimer.timeElapsed){
 						//issueMouseOrder(e.getPoint(), DOUBLE_CLICK_INTERVAL*2/3, null, false);
-						issueMouseOrder(rightMouseTimer.event.getPoint(), DOUBLE_CLICK_INTERVAL*2/3, null, false);
+						issueMouseCommand(rightMouseTimer.event.getPoint(), DOUBLE_CLICK_INTERVAL*2/3, null, false);
 						rightMouseTimer.event = null;
 					}else{
 						orderSelected.clear();
@@ -226,7 +228,7 @@ public class InputHandler{
 						if (rightClickStart != null &&
 								hypot(window.posXInGame(e.getPoint())-rightClickStart.getPosX(),
 										window.posYInGame(e.getPoint())-rightClickStart.getPosY()) > window.getMultiPosOrderDist()){
-							issueMouseOrder(e.getPoint(), 0, rightClickStart, true);
+							issueMouseCommand(e.getPoint(), 0, rightClickStart, true);
 						}else
 							rightMouseTimer = new TimerThread(e);
 					}
@@ -258,7 +260,7 @@ public class InputHandler{
 						currentChat = currentChat.substring(0, currentChat.length()-1);
 				}else if (control == Control.MENU){
 					currentChat = null;
-				}else if (Main.isPrintable(e.getKeyChar()) && currentChat.length() < TextMsg.MAX_LENGTH)
+				}else if (Utility.isPrintable(e.getKeyChar()) && currentChat.length() < TextMsg.MAX_LENGTH)
 					currentChat += e.getKeyChar();
 			}else{
 				if (control != null)
@@ -339,142 +341,161 @@ public class InputHandler{
 		}
 	}
 	
-	private void issueMouseOrder(Point location, int locationTimeDelay, Locatable startLocation, boolean singleClick){
+	private void issueMouseCommand(Point mouseLocation, int locationTimeDelay, Locatable startLocation, boolean singleClick){
 		if (orderSelected.isEmpty())
 			return;
-		int locX = window.posXInGame(location), locY = window.posYInGame(location);
 		
 		if (!window.isStrategic()){
-			Controllable controllable = orderSelected.get(0);
+			issueTacticalMouseCommand(mouseLocation, locationTimeDelay, singleClick);
+		}else{
+			if (startLocation != null){
+				issueStrategicDragMouseCommand(mouseLocation, locationTimeDelay, startLocation, singleClick);
+			}else{
+				issueStrategicClickMouseCommand(mouseLocation, locationTimeDelay, singleClick);
+			}
+		}
+	}
+	
+	private void issueTacticalMouseCommand(Point mouseLocation, int locationTimeDelay, boolean singleClick){
+		int locX = window.posXInGame(mouseLocation), locY = window.posYInGame(mouseLocation);
+		
+		Controllable selected = orderSelected.get(0);
+		if (selected instanceof Unit){
+			Sprite sprite = getVisibleSpriteAt(mouseLocation, locationTimeDelay, false, true);
+			if (sprite != null && sprite instanceof Unit){
+				((Unit) selected).setTarget(window.player.getTarget((Controllable)sprite));
+				return;
+			}
+		}
+		selected.orders().queueOrder(new TurnTo(
+				90-toDegrees(atan2(((Sprite)selected).getRenderPosY()-locY, locX-((Sprite)selected).getRenderPosX()))));
+	}
+	
+	private void issueStrategicDragMouseCommand(Point mouseLocation, int locationTimeDelay, Locatable startLocation, boolean singleClick){
+		int locX = window.posXInGame(mouseLocation), locY = window.posYInGame(mouseLocation);
+		
+		double dx = locX-startLocation.getPosX();
+		double dy = locY-startLocation.getPosY();
+		if (startLocation instanceof Controllable || startLocation instanceof Arena.ForegroundObject){
 			
-			if (controllable instanceof Unit){
-				Sprite sprite = getVisibleSpriteAt(location, locationTimeDelay, false, true);
-				if (sprite != null && sprite instanceof Unit){
-					((Unit) controllable).setTarget(window.player.getTarget((Controllable)sprite));
-					return;
+			for (Controllable selected : orderSelected){
+				if (startLocation == selected){
+					selected.orders().queueOrder(new MovePastPoint(locX, locY, selected.getVelX(), selected.getVelY()));
+				}else if(selected instanceof Unit){
+					if (startLocation instanceof Arena.ForegroundObject){
+						selected.orders().queueOrder(new Orbit(startLocation, hypot(dx, dy)));
+					}else{
+						if (((Controllable)startLocation).getPlayer().team == window.player.team){
+							if (startLocation instanceof Unit){
+								selected.orders().queueOrder(new Escort((Unit)startLocation, Unit.ESCORT_SLACK,
+										90-toDegrees(atan2(-dy, dx)), hypot(dx, dy)));
+							}
+						}else{
+							if (startLocation instanceof Unit)
+								selected.orders().queueOrder(new Orbit(window.player.getTarget((Unit)startLocation), hypot(dx, dy)));
+						}
+					}
 				}
 			}
 			
-			controllable.orders().queueOrder(new TurnTo(
-					90-toDegrees(atan2(((Sprite)controllable).getRenderPosY()-locY, locX-((Sprite)controllable).getRenderPosX()))));
-		}else{
-			if (startLocation != null){
-				double dx = locX-startLocation.getPosX();
-				double dy = locY-startLocation.getPosY();
-				if (startLocation instanceof Controllable || startLocation instanceof Arena.ForegroundObject){
-					for (Controllable controllable : orderSelected){
-						if (startLocation == controllable){
-							controllable.orders().queueOrder(new MovePastPoint(locX, locY, controllable.getVelX(), controllable.getVelY()));
-						}else if(controllable instanceof Unit){
-							if (startLocation instanceof Arena.ForegroundObject){
-								controllable.orders().queueOrder(new Orbit(startLocation, hypot(dx, dy)));
-							}else{
-								if (((Controllable)startLocation).getPlayer().team == window.player.team){
-									if (startLocation instanceof Unit){
-										controllable.orders().queueOrder(new Escort((Unit)startLocation, Unit.ESCORT_SLACK,
-												/*-startSprite.getAngle()+*/90-toDegrees(atan2(-dy, dx)), hypot(dx, dy)));
-									}
-								}else{
-									if (startLocation instanceof Unit)
-										controllable.orders().queueOrder(new Orbit(window.player.getTarget((Unit)startLocation), hypot(dx, dy)));
-								}
-							}
-						}
-					}
-				}else if (startLocation instanceof MousePosition){
-					
-					int incrementX = (locX-(int)startLocation.getPosX())/max(1, orderSelected.size()-1);
-					int incrementY = (locY-(int)startLocation.getPosY())/max(1, orderSelected.size()-1);
-					boolean[] assigned = new boolean[orderSelected.size()];
-					for (int x = 0; x < orderSelected.size(); x++){
-						Sprite sprite = (Sprite)orderSelected.get(x);
-						double stopTime = hypot(sprite.getVelX()-startLocation.getVelX(),
-								sprite.getVelY()-startLocation.getVelY())/orderSelected.get(x).getAccel();
-						double spritePosX = sprite.getPosX()+sprite.getVelX()*stopTime;
-						double spritePosY = sprite.getPosY()+sprite.getVelY()*stopTime;
-						double posX = startLocation.getPosX(), posY = startLocation.getPosY();
-						double minDist = Double.MAX_VALUE;
-						int closest = 0;
-						for (int y = 0; y < orderSelected.size(); y++){
-							double distance = hypot(spritePosX-posX, spritePosY-posY);
-							if (!assigned[y] && distance < minDist){
-								minDist = distance;
-								closest = y;
-							}
-							posX += incrementX;
-							posY += incrementY;
-						}
-						assigned[closest] = true;
-						((Controllable)sprite).orders().queueOrder(new MoveToPoint(
-								(int)startLocation.getPosX()+closest*incrementX, (int)startLocation.getPosY()+closest*incrementY,
-								startLocation.getVelX(), startLocation.getVelY()));
-					}
-					
+		}else if (startLocation instanceof MousePosition){
+			
+			int incrementX = (locX-(int)startLocation.getPosX())/max(1, orderSelected.size()-1);
+			int incrementY = (locY-(int)startLocation.getPosY())/max(1, orderSelected.size()-1);
+			if (assigner.matrix.length < orderSelected.size())
+				assigner = new HungarianAlg(orderSelected.size());
+			
+			Locatable[] destinations = new Locatable[orderSelected.size()];
+			double posX = startLocation.getPosX();
+			double posY = startLocation.getPosY();
+			for (int x = 0; x < destinations.length; x++){
+				destinations[x] = new Location(posX, posY, startLocation.getVelX(), startLocation.getVelY());
+				posX += incrementX;
+				posY += incrementY;
+			}
+			
+			for (int x = 0; x < orderSelected.size(); x++){
+				for (int y = 0; y < orderSelected.size(); y++){
+					double time = Utility.approxTime(orderSelected.get(x), destinations[y]);
+					assigner.matrix[y][x] = pow(time, 2);
 				}
-			}else{
-				Sprite sprite = getVisibleSpriteAt(location, locationTimeDelay, false, false);
-				if (sprite != null){
-					for (Controllable controllable : orderSelected){
-						if (controllable != sprite){
-							
-							if (sprite instanceof Arena.Objective){
-								if (singleClick){
-									controllable.orders().queueOrder(new MoveToPoint(locX, locY, window.getVelX(), window.getVelY()));
-								}else{
-									if (controllable instanceof Unit && !singleClick && ((Unit)controllable).type.captureRate > 0)
-										controllable.orders().queueOrder(new Capture((Arena.Objective)sprite));
-								}
-							}else if (sprite instanceof Controllable){
-								if (((Controllable)sprite).getPlayer().team == window.player.team){
-									if (singleClick){
-										if (controllable instanceof Unit && sprite instanceof Unit){
-											controllable.orders().queueOrder(new Escort((Unit)sprite, Unit.ESCORT_SLACK,
-													sprite.heading(controllable), 300));
-										}else{
-											controllable.orders().queueOrder(new MoveToPoint(
-													(int)sprite.getPosX(), (int)sprite.getPosY(), window.getVelX(), window.getVelY()));
-										}
-									}else{
-										if (controllable instanceof Unit && sprite instanceof Unit){
-											if (controllable instanceof Ship){
-												controllable.orders().queueOrder(new Repair((Unit)sprite));
-											}else{
-												if (sprite instanceof Ship)
-													controllable.orders().queueOrder(new Dock((Ship)sprite));
-											}
-										}else{
-											controllable.orders().queueOrder(new MovePastPoint(
-													(int)sprite.getPosX(), (int)sprite.getPosY(), window.getVelX(), window.getVelY()));
-										}
-									}
-								}else{
-									Target target = window.player.getTarget((Controllable)sprite);
-									if (controllable instanceof Missile){
-										controllable.orders().queueOrder(new Impact(target));
-									}else{
-										if ((((Unit)controllable).getTarget() == target || controlPressed.get(Control.FUNCTION2)) && window.isStrategic()){
-											if (singleClick){
-												controllable.orders().queueOrder(new AttackSlow(target));
-											}else
-												controllable.orders().queueOrder(new AttackFast(target));
-										}else{
-											if (target.target instanceof Unit)
-												((Unit)controllable).setTarget(target);
-										}
-									}
-								}
-							}
-							
-						}
-					}
-				}else{
-					for (Controllable controllable : orderSelected){
+			}
+			
+			int[] assignments = assigner.solve(orderSelected.size());
+			for (int x = 0; x < orderSelected.size(); x++){
+				Locatable dest = destinations[assignments[x]];
+				orderSelected.get(x).orders().queueOrder(new MoveToPoint(
+						dest.getPosX(), dest.getPosY(),
+						dest.getVelX(), dest.getVelY()));
+			}
+			
+		}
+	}
+	
+	private void issueStrategicClickMouseCommand(Point mouseLocation, int locationTimeDelay, boolean singleClick){
+		int locX = window.posXInGame(mouseLocation), locY = window.posYInGame(mouseLocation);
+		
+		Sprite sprite = getVisibleSpriteAt(mouseLocation, locationTimeDelay, false, false);
+		if (sprite != null){
+			for (Controllable selected : orderSelected){
+				if (selected != sprite){
+					
+					if (sprite instanceof Arena.Objective){
 						if (singleClick){
-							controllable.orders().queueOrder(new MoveToPoint(locX, locY, window.getVelX(), window.getVelY()));
-						}else
-							controllable.orders().queueOrder(new MovePastPoint(locX, locY, window.getVelX(), window.getVelY()));
+							selected.orders().queueOrder(new MoveToPoint(locX, locY, window.getVelX(), window.getVelY()));
+						}else{
+							if (selected instanceof Unit && !singleClick && ((Unit)selected).type.captureRate > 0)
+								selected.orders().queueOrder(new Capture((Arena.Objective)sprite));
+						}
+					}else if (sprite instanceof Controllable){
+						if (((Controllable)sprite).getPlayer().team == window.player.team){
+							if (singleClick){
+								if (selected instanceof Unit && sprite instanceof Unit){
+									selected.orders().queueOrder(new Escort((Unit)sprite, Unit.ESCORT_SLACK,
+											sprite.heading(selected), 300));
+								}else{
+									selected.orders().queueOrder(new MoveToPoint(
+											(int)sprite.getPosX(), (int)sprite.getPosY(), window.getVelX(), window.getVelY()));
+								}
+							}else{
+								if (selected instanceof Unit && sprite instanceof Unit){
+									if (selected instanceof Ship){
+										selected.orders().queueOrder(new Repair((Unit)sprite));
+									}else{
+										if (sprite instanceof Ship)
+											selected.orders().queueOrder(new Dock((Ship)sprite));
+									}
+								}else{
+									selected.orders().queueOrder(new MovePastPoint(
+											(int)sprite.getPosX(), (int)sprite.getPosY(), window.getVelX(), window.getVelY()));
+								}
+							}
+						}else{
+							Target target = window.player.getTarget((Controllable)sprite);
+							if (selected instanceof Missile){
+								selected.orders().queueOrder(new Impact(target));
+							}else{
+								if ((((Unit)selected).getTarget() == target || controlPressed.get(Control.FUNCTION2)) && window.isStrategic()){
+									if (singleClick){
+										selected.orders().queueOrder(new AttackSlow(target));
+									}else
+										selected.orders().queueOrder(new AttackFast(target));
+								}else{
+									if (target.target instanceof Unit)
+										((Unit)selected).setTarget(target);
+								}
+							}
+						}
 					}
+					
 				}
+			}
+		}else{
+			for (Controllable selected : orderSelected){
+				if (singleClick){
+					selected.orders().queueOrder(new MoveToPoint(locX, locY, window.getVelX(), window.getVelY()));
+				}else
+					selected.orders().queueOrder(new MovePastPoint(locX, locY, window.getVelX(), window.getVelY()));
 			}
 		}
 	}
@@ -524,7 +545,7 @@ public class InputHandler{
 		int size = sprite.getRenderSize(window.getRenderZoom());
 		int posX = window.posXOnScreen(sprite.getPosX()), posY = window.posYOnScreen(sprite.getPosY());
 		return posX > -size && posX < window.windowResX+size &&
-				posY > -size && posY < GameWindow.WINDOW_RES_Y+size;
+				posY > -size && posY < window.windowResY+size;
 	}
 	
 	public void setWeaponToSetTarget(Weapon weapon){

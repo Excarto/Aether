@@ -31,14 +31,14 @@ public class Capture extends TrackOrder{
 				&& objective.capAmount >= objective.capSize)
 			host.orders().finish(this);
 		
-		if (host.distance(objective) < Main.captureDistance &&
-					host.speed(objective) < Main.captureSpeed && host.getTurnSpeed() < 0.1){
+		if (host.distance(objective) < Main.config.captureDistance &&
+					host.speed(objective) < Main.config.captureSpeed && host.getTurnSpeed() < 0.1){
 			host.orders().finish(moveOrder);
 			
 			host.stopTurn();
 			host.accelManeuver(180+host.velBearing(objective));
 			
-			if (time%TURNS_CAPTURE == 0)
+			if (runTime%TURNS_CAPTURE == 0)
 				host.getPlayer().capture(objective, (int)(host.type.captureRate*TURNS_CAPTURE));
 		}else{
 			if (!host.orders().isActive(moveOrder))

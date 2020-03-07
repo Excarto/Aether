@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 import org.imgscalr.*;
 
 public class Renderable{
-	public static final int MIN_CACHE_MEMORY = 250;
+	public static final int MIN_CACHE_MEMORY = 300;
 	private static final int MAX_NUM_SCALES = 30;
 	private static final int MAX_QUEUE_SIZE = 20;
 	private static final long START_CACHE_SIZE = 1000*1000*MIN_CACHE_MEMORY +
@@ -47,10 +47,6 @@ public class Renderable{
 		this.minSize = minSize;
 		this.queueQuality = queueQuality;
 		angleIncrement = 360.0/numRenders;
-		//unscaled = new BufferedImage[numRenders];
-		//scaled = new ArrayList<Map<Double,VolatileImage>>(numRenders);
-		//for (int i = 0; i < numRenders; i++)
-		//	scaled.add(new HashMap<Double,VolatileImage>(30));
 	}
 	
 	public Image getImage(double zoom, double angle, boolean useTemp, int preloadDirection){
@@ -130,7 +126,6 @@ public class Renderable{
 			g.scale(zoom, zoom);
 		if (rotation != 0)
 			g.rotate(toRadians(rotation), size/2, size/2);
-		//g.drawImage(untransformedImg, (width-transformedWidth(untransformedImg, rotation, zoom))/2, (height-transformedHeight(untransformedImg, rotation, zoom))/2, null);
 		g.drawImage(untransformedImg, (size-untransformedImg.getWidth())/2, (size-untransformedImg.getHeight())/2, null);
 		g.dispose();
 		
@@ -182,7 +177,6 @@ public class Renderable{
 			g.dispose();
 			
 			addUnscaled(unscaledImg, angleIndex);
-			//unscaled[angleIndex] = new ImageNode(rotated, angleIndex, 1.0, useApproximation ? CacheLevel.TEMPORARY : CacheLevel.ROTATED);
 		}
 		
 		BufferedImage unscaledImg = unscaled[angleIndex].img;
@@ -264,7 +258,6 @@ public class Renderable{
 	}
 	
 	private void addUnscaled(BufferedImage img, int angleIndex){
-		//Main.print("add unscaled");
 		ImageNode node = new ImageNode(img, angleIndex);
 		unscaled[angleIndex] = node;
 		cacheSize += node.size;
@@ -380,7 +373,7 @@ public class Renderable{
 	}
 	
 	public static void startLoadThread(){
-		loadThread = new Thread(){
+		loadThread = new Thread("ImageLoadThread"){
 			public void run(){
 				while (true){
 					try{

@@ -1,0 +1,48 @@
+description = its a map
+
+default_budget = 10000
+max_score = 2400.0
+start_budget = 0.25
+income_time = 1260
+decap_multiplier = 2
+mission_only = true
+
+foreground_object1_image= station1
+foreground_object1_x_pos= -21500
+foreground_object1_y_pos= 10500
+foreground_object1_obj_type= normal
+foreground_object1_obj_value= 1
+foreground_object1_obj_capture_size= 1600
+
+foreground_object2_image= station1
+foreground_object2_x_pos= -21500
+foreground_object2_y_pos= -10500
+foreground_object2_obj_type= normal
+foreground_object2_obj_value= 1
+foreground_object2_obj_capture_size= 1600
+
+foreground_object3_image= station2
+foreground_object3_x_pos= 0
+foreground_object3_y_pos= 0
+foreground_object3_obj_type= normal
+foreground_object3_obj_value= 2
+foreground_object3_obj_capture_size= 1600
+
+foreground_object4_image= station1
+foreground_object4_x_pos= 21500
+foreground_object4_y_pos= 10500
+foreground_object4_obj_type= normal
+foreground_object4_obj_value= 1
+foreground_object4_obj_capture_size= 1600
+
+foreground_object5_image= station1
+foreground_object5_x_pos= 21500
+foreground_object5_y_pos= -10500
+foreground_object5_obj_type= normal
+foreground_object5_obj_value= 1
+foreground_object5_obj_capture_size= 1600
+
+player1_x_pos= 00000
+player1_y_pos= 35000
+player2_x_pos= 00000
+player2_y_pos= -35000

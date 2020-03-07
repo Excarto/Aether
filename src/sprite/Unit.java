@@ -8,14 +8,15 @@ import java.io.*;
 public abstract class Unit extends Sprite implements Controllable, Repairable, Iterable<Component>{
 	public final static int ESCORT_SLACK = 6*Main.TPS;
 	public final static int RES = 0, CAP = 1, OFF = 2;
-	final static double THRUST_AVG_FACTOR = 1/(0.20*Main.TPS);
+	final static int CONTROLS_HEIGHT = 640;
+	final static double THRUST_AVG_FACTOR = 1/(0.25*Main.TPS);
 	final static char[] VALID_NAME_CHARS =
-			"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_+-".toCharArray();
+			" abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_+-[]".toCharArray();
 	final static Color PLAYER_COLOR = Color.GREEN, ALLY_COLOR = new Color(0, 210, 130), ENEMY_COLOR = Color.RED;
 	final static Random RANDOM = new Random();
-	final static Font STATUS_FONT = new Font("Arial", Font.PLAIN, 8);
-	final static Font ICON_FONT = new Font("Arial", Font.BOLD, 10);
 	final static Color STATUS_OUTLINE_COLOR = new Color(80, 80, 80);
+	static Font statusFont;
+	static Font iconFont;
 	
 	static int unitCounter = 0;
 	static SidePanel menu;
@@ -46,7 +47,6 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 	int radarRange, cloakRange, scannerRange;
 	double radarSize, visionSize;
 	int accelLinearTime, accelRightTime, accelLeftTime, accelForwardTime;
-	//int durationThrustingForward, durationThrustingLeft, durationThrustingRight;
 	double forwardThrustAvg, leftThrustAvg, rightThrustAvg;
 	int turnsPassed;
 	Thruster[][] activeThrusters;
@@ -79,7 +79,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		addEnergy(type.power);
 		
 		if (orders != null)
-			orders.move();
+			orders.act();
 		
 		if (netThrustTime[Thruster.FORWARD] > 0){
 			netThrustTime[Thruster.FORWARD]--;
@@ -275,12 +275,12 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 	}
 	
 	public void accelManeuver(double angle){
-		accelLinear(getAngle()+angle, Main.maneuverThrust*type.thrust);
+		accelLinear(getAngle()+angle, Main.config.maneuverThrust*type.thrust);
 	}
 	
 	private boolean accelLinear(double angle, double thrust){
 		if (accelLinearTime < Main.game.turn){
-			if (drainEnergy(thrust*Main.energyPerThrust, "Engines", "Forward")){
+			if (drainEnergy(thrust*Main.config.energyPerThrust, "Engines", "Forward")){
 				accel(thrust/mass, angle);
 				accelLinearTime = Main.game.turn;
 				return true;
@@ -291,7 +291,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 	
 	public void accelTurn(boolean direction){
 		if (accelRightTime < Main.game.turn && accelLeftTime < Main.game.turn){
-			if (drainEnergy(type.turnThrust*Main.energyPerTurnThrust, "Engines", "Turn")){
+			if (drainEnergy(type.turnThrust*Main.config.energyPerTurnThrust, "Engines", "Turn")){
 				if (abs(getTurnSpeed()) >= type.turnThrust/type.mass/2 || abs(getTurnSpeed()) < 0.0001){
 					accelTurn((direction ? 1 : -1)*type.turnThrust/type.mass);
 				}else
@@ -318,45 +318,45 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		boolean componentHit = false;
 		
 		if (explosiveDamage > 0){
-			if (!componentHit && hasSubtarget && RANDOM.nextDouble() < Main.explosiveSubtargetChance){
-				double explosiveTargetDamage = (RANDOM.nextDouble()*Main.explosiveComponentDamage)*explosiveDamage;
+			if (!componentHit && hasSubtarget && RANDOM.nextDouble() < Main.config.explosiveSubtargetChance){
+				double explosiveTargetDamage = (RANDOM.nextDouble()*Main.config.explosiveComponentDamage)*explosiveDamage;
 				explosiveDamage -= explosiveTargetDamage;
 				subTarget.takeHit(explosiveTargetDamage);
 			}
 			for (Component component : weapons){
-				if (!componentHit && RANDOM.nextDouble() < Main.explosiveComponentChance){
-					double weaponExplosiveDamage = (RANDOM.nextDouble()*Main.explosiveComponentDamage)*explosiveDamage;
+				if (!componentHit && RANDOM.nextDouble() < Main.config.explosiveComponentChance){
+					double weaponExplosiveDamage = (RANDOM.nextDouble()*Main.config.explosiveComponentDamage)*explosiveDamage;
 					component.takeHit(weaponExplosiveDamage);
 					explosiveDamage -= weaponExplosiveDamage;
 				}
 			}
 			for (Component component : systems){
-				if (!componentHit && RANDOM.nextDouble() < Main.explosiveComponentChance){
-					double systemExplosiveDamage = (RANDOM.nextDouble()*Main.explosiveComponentDamage)*explosiveDamage;
+				if (!componentHit && RANDOM.nextDouble() < Main.config.explosiveComponentChance){
+					double systemExplosiveDamage = (RANDOM.nextDouble()*Main.config.explosiveComponentDamage)*explosiveDamage;
 					component.takeHit(systemExplosiveDamage);
 					explosiveDamage -= systemExplosiveDamage;
 				}
 			}
-			this.hull -= damage(explosiveDamage, armor*Main.armorExplosiveEffectiveness);
+			this.hull -= damage(explosiveDamage, armor*Main.config.armorExplosiveEffectiveness);
 		}
 		
 		if (kineticDamage > 0){
-			if (!componentHit && hasSubtarget && RANDOM.nextDouble() < Main.kineticSubtargetChance){
-				subTarget.takeHit(Main.kineticComponentDamage*kineticDamage);
-				kineticDamage -= Main.kineticComponentDamage*kineticDamage;
-			}else if (!componentHit && weapons.size() > 0 && RANDOM.nextDouble() < Main.kineticComponentChance){
-				weapons.get((int)(RANDOM.nextDouble()*weapons.size())).takeHit(Main.kineticComponentDamage*kineticDamage);
-				kineticDamage -= Main.kineticComponentDamage*kineticDamage;
-			}else if (!componentHit && systems.size() > 0 && RANDOM.nextDouble() < Main.kineticComponentChance){
-				systems.get((int)(RANDOM.nextDouble()*systems.size())).takeHit(Main.kineticComponentDamage*kineticDamage);
-				kineticDamage -= Main.kineticComponentDamage*kineticDamage;
+			if (!componentHit && hasSubtarget && RANDOM.nextDouble() < Main.config.kineticSubtargetChance){
+				subTarget.takeHit(Main.config.kineticComponentDamage*kineticDamage);
+				kineticDamage -= Main.config.kineticComponentDamage*kineticDamage;
+			}else if (!componentHit && weapons.size() > 0 && RANDOM.nextDouble() < Main.config.kineticComponentChance){
+				weapons.get((int)(RANDOM.nextDouble()*weapons.size())).takeHit(Main.config.kineticComponentDamage*kineticDamage);
+				kineticDamage -= Main.config.kineticComponentDamage*kineticDamage;
+			}else if (!componentHit && systems.size() > 0 && RANDOM.nextDouble() < Main.config.kineticComponentChance){
+				systems.get((int)(RANDOM.nextDouble()*systems.size())).takeHit(Main.config.kineticComponentDamage*kineticDamage);
+				kineticDamage -= Main.config.kineticComponentDamage*kineticDamage;
 			}
-			this.hull -= damage(kineticDamage, armor*Main.armorKineticEffectiveness);
+			this.hull -= damage(kineticDamage, armor*Main.config.armorKineticEffectiveness);
 		}
 		
 		if (EMDamage > 0){
 			for (Component component : this){
-				if (RANDOM.nextDouble() > Main.EMComponentChance)
+				if (RANDOM.nextDouble() > Main.config.EMComponentChance)
 					component.takeHit(EMDamage*RANDOM.nextDouble());
 			}
 		}
@@ -394,11 +394,11 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		if (engines[OFF] > 0 || forward[OFF] > 0)
 			return 0;
 		
-		if (forward[CAP] + engines[CAP] + unreservedCap[CAP] > 8*Main.TPS*type.thrust*Main.energyPerThrust){
+		if (forward[CAP] + engines[CAP] + unreservedCap[CAP] > 8*Main.TPS*type.thrust*Main.config.energyPerThrust){
 			return type.thrust/mass;
 		}else{
 			return 0.7*type.power*(forward[RES] + engines[RES] +
-					unreservedCap[RES]+overflowPower)/(Main.energyPerThrust*mass);
+					unreservedCap[RES]+overflowPower)/(Main.config.energyPerThrust*mass);
 		}
 	}
 	
@@ -409,11 +409,11 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		if (engines[OFF] > 0 || turn[OFF] > 0)
 			return 0;
 		
-		if (turn[CAP] + engines[CAP]+unreservedCap[CAP] > 8*Main.TPS*type.turnThrust*Main.energyPerTurnThrust){
+		if (turn[CAP] + engines[CAP]+unreservedCap[CAP] > 8*Main.TPS*type.turnThrust*Main.config.energyPerTurnThrust){
 			return type.turnThrust/mass;
 		}else{
 			return 0.7*type.power*(turn[RES] + engines[RES] +
-					unreservedCap[RES]+overflowPower)/(Main.energyPerTurnThrust*mass);
+					unreservedCap[RES]+overflowPower)/(Main.config.energyPerTurnThrust*mass);
 		}
 	}
 	
@@ -578,9 +578,13 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		}
 	}
 	
+	public int getMaxAmmo(int ammoIndex){
+		return (int)(ammoRatio*ammoRatios[ammoIndex]*type.storageSpace/Main.ammoMass[ammoIndex]);
+	}
+	
 	public void initializeAmmoAndMass(){
 		for (int x = 0; x < ammoRatios.length; x++)
-			ammo[x] = (int)(ammoRatio*ammoRatios[x]*type.storageSpace/Main.ammoMass[x]);
+			ammo[x] = getMaxAmmo(x);
 		
 		mass = type.mass;
 		for (Component component : this)
@@ -607,7 +611,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 	}
 	
 	public boolean setName(String name){
-		this.name = Main.filter(name, VALID_NAME_CHARS);
+		this.name = Utility.filter(name, VALID_NAME_CHARS);
 		return name.equals(this.name);
 	}
 	
@@ -685,10 +689,9 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 			activeThrusters[x] = NO_THRUSTERS;
 		if (Main.game.turn-accelForwardTime <= 1)
 			activeThrusters[Thruster.FORWARD] = type.thrusters[Thruster.FORWARD];
-		//if (durationThrustingLeft > 1)
-		if (leftThrustAvg > 0.4)
+		if (leftThrustAvg - rightThrustAvg > 0.3)
 			activeThrusters[Thruster.LEFT] = type.thrusters[Thruster.LEFT];
-		if (rightThrustAvg > 0.4)
+		if (rightThrustAvg - leftThrustAvg > 0.3)
 			activeThrusters[Thruster.RIGHT] = type.thrusters[Thruster.RIGHT];
 		return activeThrusters;
 	}
@@ -717,59 +720,60 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 	public void draw(Graphics2D g, GameWindow window){
 		int posX = window.posXOnScreen(renderPosX), posY = window.posYOnScreen(renderPosY);
 		int size = getRenderSize(window.getRenderZoom());
+		int statSize = Main.options.statusSize;
 		
 		g.setColor(window.getPlayer() == player ? PLAYER_COLOR :
 				(window.getPlayer().team == player.team ? ALLY_COLOR : ENEMY_COLOR));
 		window.drawPointerLine(g, posX, posY, type.iconLabel);
 		
-		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < GameWindow.WINDOW_RES_Y+size){
+		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){
 			super.draw(g, window);
 			
-			if (getImage(window.getRenderZoom(), window.renderTimeLeft()) != null){
+			if (getImage(window.getRenderZoom()) != null){
 				
 				if (window.getPlayer().knowHealth(this)){
-					g.setColor(Main.getColor(1-(type.hull-getHull())/(0.9*type.hull), 0.0));
-					g.fillOval(posX+size*4/11+Main.statusSize/4, posY+size*4/11+Main.statusSize/4,
-								Main.statusSize/2, Main.statusSize/2);
+					g.setColor(Utility.getColor(1-(type.hull-getHull())/(0.9*type.hull), 0.0));
+					g.fillOval(posX+size*4/11+statSize/4, posY+size*4/11+statSize/4,
+								statSize/2, statSize/2);
 					g.setColor(STATUS_OUTLINE_COLOR);
-					g.drawOval(posX+size*4/11+Main.statusSize/4, posY+size*4/11+Main.statusSize/4,
-							Main.statusSize/2, Main.statusSize/2);
+					g.drawOval(posX+size*4/11+statSize/4, posY+size*4/11+statSize/4,
+							statSize/2, statSize/2);
 				}
 				
 				if (Main.DEBUG){
-					g.setFont(STATUS_FONT);
+					g.setFont(statusFont);
 					if (debug != null)
-						g.drawString(debug, posX-size*4/11-2, posY+size*4/11+Main.statusSize+10);
+						g.drawString(debug, posX-size*4/11-2, posY+size*4/11+statSize+10);
 					if (orders.getOrder() != null)
-						g.drawString(orders.getOrder().getClass().getName(), posX-size*4/11-2, posY+size*4/11+Main.statusSize+2);
+						g.drawString(orders.getOrder().getClass().getName(), posX-size*4/11-2, posY+size*4/11+statSize+2);
 				}
 				
 				if (player.team == window.getPlayer().team){
 					g.setColor(STATUS_OUTLINE_COLOR);
-					g.setFont(STATUS_FONT);
+					g.setFont(statusFont);
 					
 					if (orders != null && orders.isActive(FaceWeapons.class))
-						g.drawString("F", posX-size*4/11-2, posY+size*4/11+Main.statusSize);
+						g.drawString("F", posX-size*4/11-2, posY+size*4/11+statSize);
 					
-					g.drawRect(posX-size*4/11-Main.statusSize, posY+size*4/11,
-							Main.statusSize/4, Main.statusSize);
-					g.drawRect(posX-size*4/11-Main.statusSize/2, posY+size*4/11,
-							Main.statusSize/4, Main.statusSize);
-					g.drawString("E", posX-size*4/11-Main.statusSize, posY+size*4/11+Main.statusSize+8);
-					g.drawString("A", posX-size*4/11-Main.statusSize/2, posY+size*4/11+Main.statusSize+8);
+					g.drawRect(posX-size*4/11-statSize, posY+size*4/11,
+							statSize/4, statSize);
+					g.drawRect(posX-size*4/11-statSize/2, posY+size*4/11,
+							statSize/4, statSize);
+					g.drawString("E", posX-size*4/11-statSize, posY+size*4/11+statSize+8);
+					g.drawString("A", posX-size*4/11-statSize/2, posY+size*4/11+statSize+8);
 					
 					
 					g.setColor(window.getPlayer() == player ? PLAYER_COLOR : ALLY_COLOR);
-					int barHeight = (int)round((Main.statusSize-1)*getEnergy()/type.capacitor);
-					g.fillRect(posX-size*4/11-Main.statusSize+1, posY+size*4/11+1+((Main.statusSize-1)-barHeight),
-							Main.statusSize/4-1, barHeight);
+					int barHeight = (int)round((statSize-1)*getEnergy()/type.capacitor);
+					g.fillRect(posX-size*4/11-statSize+1, posY+size*4/11+1+((statSize-1)-barHeight),
+							statSize/4-1, barHeight);
 					
 					double ammoMass = 0;
 					for (int y = 0; y < ammo.length; y++)
 						ammoMass += ammo[y]*Main.ammoMass[y];
-					barHeight = (int)round((Main.statusSize-1)*ammoMass/(type.storageSpace*ammoRatio));
-					g.fillRect(posX-size*4/11-Main.statusSize/2+1, posY+size*4/11+1+((Main.statusSize-1)-barHeight),
-							Main.statusSize/4-1, barHeight);
+					barHeight = (int)round((statSize-1)*ammoMass/(type.storageSpace*ammoRatio));
+					g.fillRect(posX-size*4/11-statSize/2+1, posY+size*4/11+1+((statSize-1)-barHeight),
+							statSize/4-1, barHeight);
 				}
 				
 				for (Weapon weapon : weapons){
@@ -781,7 +785,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 					}
 				}
 			}else{
-				g.setFont(ICON_FONT);
+				g.setFont(iconFont);
 				g.setColor(Color.LIGHT_GRAY);
 				g.drawString(type.iconLabel, posX-type.iconLabel.length()*3, posY+size/2+9);
 			}
@@ -792,7 +796,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		if (target != null){
 			int targetPosX = window.posXOnScreen(target.renderPosX);
 			int targetPosY = window.posYOnScreen(target.renderPosY);
-			if (targetPosX > 0 && targetPosY > 0 && targetPosX < window.windowResX && targetPosY < GameWindow.WINDOW_RES_Y){
+			if (targetPosX > 0 && targetPosY > 0 && targetPosX < window.windowResX && targetPosY < window.windowResY){
 				int size = target.getHUDSize(window.getRenderZoom());	
 				g.setColor(Color.RED);
 				int length = size/4;
@@ -812,7 +816,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		Object useAntialiasing = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 		
-		int windowDistX = posX - window.windowResX/2, windowDistY = posY - GameWindow.WINDOW_RES_Y/2;
+		int windowDistX = posX - window.windowResX/2, windowDistY = posY - window.windowResY/2;
 		int windowDist = (int)sqrt(windowDistX*windowDistX + windowDistY*windowDistY);
 		int maxRadius = windowDist + window.inscribeRadius, minRadius = windowDist - window.inscribeRadius;
 		
@@ -871,7 +875,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		weaponsPanel = new ComponentsPanel(true);
 		systemsPanel = new ComponentsPanel(false);
 		powerPanel = new PowerPanel();
-		targetPanel = new TargetPanel();
+		targetPanel = new TargetPanel(Main.resY > Main.RES_Y_SHORT+100);
 		
 		menu = new SidePanel(){
 			public void refresh(){
@@ -883,15 +887,30 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		menu.setLayout(new FlowLayout(FlowLayout.CENTER, 1, 0));
 		
 		nameLabel = new JLabel();
-		nameLabel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, 17));
+		nameLabel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, 20));
 		nameLabel.setFont(new Font("Courier", Font.BOLD, 15));
 		nameLabel.setHorizontalAlignment(JLabel.CENTER);
 		
 		controls = new JTabbedPane();
-		controls.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, 612));
+		controls.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, CONTROLS_HEIGHT));
+		
+		int spacerHeight = Main.resY-CONTROLS_HEIGHT-targetPanel.getPreferredSize().height-25;
+		JPanel spacer = null;
+		if (spacerHeight > 0){
+			spacer = new JPanel(){
+				public void paint(Graphics g){
+					g.drawImage(SidePanel.spacer, 0, 0, null);
+					super.printBorder(g);
+				}
+			};
+			spacer.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-6, spacerHeight));
+			spacer.setBorder(BorderFactory.createEtchedBorder());
+		}
 		
 		menu.add(nameLabel);
 		menu.add(controls);
+		if (spacer != null)
+			menu.add(spacer);
 		menu.add(Unit.targetPanel);
 	}
 	
@@ -915,17 +934,6 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 			}else
 				out.write("null"+"\n");
 		}
-	}
-	
-	private final static double ARMOR_BETA = 4+0.1, ARMOR_OMEGA0 = sqrt(ARMOR_BETA);
-	private final static double ARMOR_CMINUS = (-ARMOR_BETA-sqrt(ARMOR_BETA*ARMOR_BETA-4*ARMOR_OMEGA0*ARMOR_OMEGA0))/2;
-	private final static double ARMOR_CPLUS = (-ARMOR_BETA+sqrt(ARMOR_BETA*ARMOR_BETA-4*ARMOR_OMEGA0*ARMOR_OMEGA0))/2;
-	private final static double ARMOR_A = (1+ARMOR_CPLUS)/(ARMOR_CPLUS-ARMOR_CMINUS);
-	private final static double ARMOR_B = (1+ARMOR_CMINUS)/(ARMOR_CMINUS-ARMOR_CPLUS);
-	public static double damage(double damage, double armor){
-		double scaledDamage = damage/armor;
-		double f = ARMOR_A*exp(ARMOR_CMINUS*scaledDamage) + ARMOR_B*exp(ARMOR_CPLUS*scaledDamage);
-		return armor*(scaledDamage-1+f);
 	}
 	
 	public static Unit read(BufferedReader in){
@@ -969,4 +977,16 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 			return null;
 		}
 	}
+	
+	private final static double ARMOR_BETA = 4+0.1, ARMOR_OMEGA0 = sqrt(ARMOR_BETA);
+	private final static double ARMOR_CMINUS = (-ARMOR_BETA-sqrt(ARMOR_BETA*ARMOR_BETA-4*ARMOR_OMEGA0*ARMOR_OMEGA0))/2;
+	private final static double ARMOR_CPLUS = (-ARMOR_BETA+sqrt(ARMOR_BETA*ARMOR_BETA-4*ARMOR_OMEGA0*ARMOR_OMEGA0))/2;
+	private final static double ARMOR_A = (1+ARMOR_CPLUS)/(ARMOR_CPLUS-ARMOR_CMINUS);
+	private final static double ARMOR_B = (1+ARMOR_CMINUS)/(ARMOR_CMINUS-ARMOR_CPLUS);
+	public static double damage(double damage, double armor){
+		double scaledDamage = damage/armor;
+		double f = ARMOR_A*exp(ARMOR_CMINUS*scaledDamage) + ARMOR_B*exp(ARMOR_CPLUS*scaledDamage);
+		return armor*(scaledDamage-1+f);
+	}
+	
 }

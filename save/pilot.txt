@@ -1,0 +1,15 @@
+name= robot123
+type= Robot
+mis0= 1
+mis1= 1
+mis2= 0
+mis3= 0
+mis4= 0
+mis5= 0
+mis6= 0
+mis7= 0
+mis8= 0
+-ANNOY_PARTNER_1=1
+-SHIP_LOST=1
+-ANNOY_PARTNER_2=1
+-SHOOT=1

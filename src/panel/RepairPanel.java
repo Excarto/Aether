@@ -6,7 +6,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 public class RepairPanel extends SidePanel{
-	public static final Font AUTO_FONT = new Font("Arial", Font.PLAIN, 8);
+	public static Font autoFont;
 	
 	Ship ship;
 	int material;
@@ -21,9 +21,11 @@ public class RepairPanel extends SidePanel{
 	
 	public RepairPanel(){
 		super();
+		autoFont = Main.getDefaultFont(8);
+		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, Unit.CONTROLS_HEIGHT));
 		
 		materialLabel = new JLabel();
-		materialLabel.setFont(new Font("Sans", Font.BOLD, 14));
+		materialLabel.setFont(Main.getDefaultFont(13));
 		
 		targetPanel = new JPanel(Window.DEFAULT_LAYOUT);
 		JScrollPane targetScrollPane = new JScrollPane(targetPanel);
@@ -60,7 +62,7 @@ public class RepairPanel extends SidePanel{
 			}
 		};
 		repairablePanel.setBorder(BorderFactory.createEtchedBorder());
-		repairablePanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-5, 338));
+		repairablePanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-5, 368));
 		repairablePanel.add(autoPanel);
 		repairablePanel.add(unitPanel);
 		repairablePanel.add(selectedPanel);
@@ -163,12 +165,6 @@ public class RepairPanel extends SidePanel{
 		}
 		
 		public void setSelected(boolean selected){
-			/*Color color = selected ? Window.PANEL_ALT_COLOR1 : targetPanel.getBackground();
-			this.setBackground(color);
-			optionsPanel.setBackground(color);
-			repairBox.setBackground(color);
-			rearmBox.setBackground(color);
-			rechargeBox.setBackground(color);*/
 			if (selected){
 				this.setBorder(Window.SELECTED_BORDER);
 			}else
@@ -258,7 +254,7 @@ public class RepairPanel extends SidePanel{
 					if (pos < NUM_ITEMS){
 						g.drawImage(item.repairable.getIcon(), posX, 0, null);
 						if (item.isAuto){
-							g.setFont(AUTO_FONT);
+							g.setFont(autoFont);
 							g.drawString("AUTO", posX+10, 49);
 						}
 						if (item == selected){
@@ -347,14 +343,14 @@ public class RepairPanel extends SidePanel{
 			iconPanel.setPreferredSize(new Dimension(42, 38));
 			iconPanel.setOpaque(false);
 			hullLabel = new JLabel();
-			hullLabel.setPreferredSize(new Dimension(54, 20));
+			hullLabel.setPreferredSize(new Dimension(58, 20));
 			JPanel hullPanel = new JPanel(Window.DEFAULT_LAYOUT);
-			hullPanel.setPreferredSize(new Dimension(60, 60));
+			hullPanel.setPreferredSize(new Dimension(62, 60));
 			hullPanel.setOpaque(false);
 			hullPanel.add(iconPanel);
 			hullPanel.add(hullLabel);
 			
-			hullSlider = new JSlider((int)(100*Main.maxScrapDamage), 100, 100);
+			hullSlider = new JSlider((int)(100*Main.config.maxScrapDamage), 100, 100);
 			hullSlider.setPreferredSize(new Dimension(20, 62));
 			hullSlider.setOpaque(false);
 			hullSlider.setOrientation(JSlider.VERTICAL);
@@ -365,14 +361,14 @@ public class RepairPanel extends SidePanel{
 			}});
 			
 			newHullLabel = new JLabel();
-			newHullLabel.setPreferredSize(new Dimension(100, 15));
+			newHullLabel.setPreferredSize(new Dimension(98, 15));
 			materialLabel = new JLabel();
-			materialLabel.setPreferredSize(new Dimension(100, 15));
+			materialLabel.setPreferredSize(new Dimension(98, 15));
 			timeLabel = new JLabel();
-			timeLabel.setPreferredSize(new Dimension(100, 15));
+			timeLabel.setPreferredSize(new Dimension(98, 15));
 			
 			JPanel requiredPanel = new JPanel(Window.DEFAULT_LAYOUT);
-			requiredPanel.setPreferredSize(new Dimension(100, 50));
+			requiredPanel.setPreferredSize(new Dimension(98, 50));
 			requiredPanel.setOpaque(false);
 			requiredPanel.add(newHullLabel);
 			requiredPanel.add(materialLabel);
@@ -415,7 +411,7 @@ public class RepairPanel extends SidePanel{
 			double material = (targetHull()-hullSlider.getValue())/100.0*repairable.getType().hull/repairable.getType().hullPerMaterial;
 			newHullLabel.setText(hullSlider.getValue() + "%");
 			timeLabel.setText("Time: " + (int)(10*abs(material)/unitPanel.repairRate()/Main.game.turnsPerSecond)/10.0 + "s");
-			materialLabel.setText("Material: " + (int)(10*material*(hullSlider.getValue() > targetHull() ? 1.0 : Main.scrapReturn))/10.0);
+			materialLabel.setText("Material: " + (int)(10*material*(hullSlider.getValue() > targetHull() ? 1.0 : Main.config.scrapReturn))/10.0);
 			
 			if (hullSlider.getValue() > targetHull()){
 				button.setEnabled(true);

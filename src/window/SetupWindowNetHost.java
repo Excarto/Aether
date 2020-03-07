@@ -10,12 +10,12 @@ public class SetupWindowNetHost extends SetupWindowHost{
 	ChatPanel chatPanel;
 	
 	public SetupWindowNetHost(boolean isLAN){
-		titleLabel.setPreferredSize(new Dimension(550, 28));
+		titleLabel.setPreferredSize(new Dimension(550, 40));
 		Main.server = new Server(isLAN);
 		setGameSettings();
-		connection = Main.server.start(Main.username, selectedPlayer.ships);
+		connection = Main.server.start(Main.options.username, selectedPlayer.ships);
 		
-		connection.addListener(new JoinMsg(){ 
+		connection.addSwingListener(new JoinMsg(){ 
 			public void confirmed(){
 				NetPlayerPanel panel = new NetPlayerPanel(playerType, name);
 				Main.server.setShips(name, panel.ships);
@@ -27,7 +27,7 @@ public class SetupWindowNetHost extends SetupWindowHost{
 				displayMessage(name+" has joined the game", 0);
 		}});
 		
-		connection.addListener(new SetTeamMsg(){
+		connection.addSwingListener(new SetTeamMsg(){
 			public void confirmed(){
 				PlayerPanel panel = getPanel(name);
 				if (panel != null){
@@ -38,7 +38,7 @@ public class SetupWindowNetHost extends SetupWindowHost{
 				}
 		}});
 		
-		connection.addListener(new LeaveMsg(){
+		connection.addSwingListener(new LeaveMsg(){
 			public void confirmed(){
 				PlayerPanel panel = getPanel(name);
 				if (panel != null){
@@ -49,7 +49,7 @@ public class SetupWindowNetHost extends SetupWindowHost{
 				displayMessage(name+" has left the game", 0);
 		}});
 		
-		connection.addListener(new ReturnToLobbyMsg(){
+		connection.addSwingListener(new ReturnToLobbyMsg(){
 			public void confirmed(){
 				PlayerPanel panel = getPanel(name);
 				if (panel != null)
@@ -57,7 +57,7 @@ public class SetupWindowNetHost extends SetupWindowHost{
 				displayMessage(name+" has returned to game lobby", 0);
 		}});
 		
-		connection.addListener(new TextMsg(){
+		connection.addSwingListener(new TextMsg(){
 			public void confirmed(){
 				displayMessage(message, team);
 		}});
@@ -104,7 +104,7 @@ public class SetupWindowNetHost extends SetupWindowHost{
 		optionPanel.add(gameNamePanel);
 		optionPanel.revalidate();
 		
-		if (!isLAN && Main.UPnPEnabled){
+		if (!isLAN && Main.options.UPnPEnabled){
 			if (Main.UPnPHandler.isSuccessful()){
 				chatPanel.print("UPnP enabled");
 				chatPanel.print("Your external IP address is " + Main.UPnPHandler.getExternalIP());
@@ -114,7 +114,7 @@ public class SetupWindowNetHost extends SetupWindowHost{
 	}
 	
 	protected HostPlayerPanel getHostPanel(){
-		return new NetPlayerPanel(PlayerType.HOST, Main.username);
+		return new NetPlayerPanel(PlayerType.HOST, Main.options.username);
 	}
 	
 	protected void addDefaultComps(){}
@@ -184,11 +184,11 @@ public class SetupWindowNetHost extends SetupWindowHost{
 		
 		public Player getPlayer(){
 			if (playerType == PlayerType.NET_HOST){
-				return new NetPlayerHost(getName(), getTeam(), ships, getMaxBudget(), arena, Main.server.getConnection(getName()));
+				return new NetPlayerHost(getName(), getTeam(), getCopiedShips(), getMaxBudget(), arena, Main.server.getConnection(getName()));
 			}else if (playerType == PlayerType.HOST){
-				return new HostPlayer(getName(), getTeam(), ships, getMaxBudget(), arena, connection);
+				return new HostPlayer(getName(), getTeam(), getCopiedShips(), getMaxBudget(), arena, connection);
 			}else if (playerType == PlayerType.AI){
-				return new NetComputerPlayer(getName(), getTeam(), ships, getMaxBudget(), arena);
+				return new NetComputerPlayer(getName(), getTeam(), getCopiedShips(), getMaxBudget(), arena);
 			}else
 				return super.getPlayer();
 		}

@@ -19,6 +19,8 @@ public final class ShipType extends UnitType{
 	public final double ammoTransferTimePerMass;
 	public final int deathTime;
 	
+	public final int outfittedCost;
+	
 	public ShipType (String type){
 		super(type, "ships");
 		
@@ -37,6 +39,16 @@ public final class ShipType extends UnitType{
 		deathTime = (int)(getDouble("death_time")*Main.TPS);
 		
 		minDeathTime = min(minDeathTime, deathTime);
+		
+		int craftCost = 0;
+		int numTypes = 0;
+		for (CraftType craftType : Main.craftTypes){
+			if (craftType.mass <= this.craftMass){
+				numTypes++;
+				craftCost += craftType.cost;
+			}
+		}
+		outfittedCost = this.cost + (numTypes > 0 ? craftCost/numTypes : 0);
 	}
 	
 	public CraftType autoLoadoutCraft(){
@@ -86,11 +98,14 @@ public final class ShipType extends UnitType{
 		}else
 			systemMass = "0";
 		
-		String[][] temp ={
-				{"Vision Radius",			String.valueOf(visionRange)},
-				{"Storage Space",			String.valueOf(storageSpace)},
-				{"Sensor Signature",		String.valueOf(-radarSize)},
-				{"Capture Rate",			String.valueOf(captureRate*Main.TPS)},
+		String[][] specs = {
+				{"Vision Radius",			String.valueOf(10*(int)round(visionRange/10.0))},
+				{"Storage Space",			String.valueOf(storageSpace),
+						"Used for both ammunition and repair material"},
+				{"Sensor Signature",		String.valueOf(-radarSize),
+						"A larger signature means this ship is more easily spotted"},
+				{"Capture Rate",			String.valueOf(captureRate*Main.TPS),
+						"How quickly the ship can capture mission objectives"},
 					{"Armament", "CATEGORY"},
 				{"Number of Mounts",		String.valueOf(weaponHardpoints.length)},
 				{"Average Mount Mass",		weaponMass},
@@ -98,36 +113,29 @@ public final class ShipType extends UnitType{
 					{"Defense", "CATEGORY"},
 				{"Front Shields",			String.valueOf(frontShield)},
 				{"Rear Shields",			String.valueOf(rearShield)},
-				{"Shield Recharge (s)",		String.valueOf(-(frontShield+rearShield)/2/(shieldRecharge*Main.TPS))},
+				{"Shield Recharge (sec.)",	String.valueOf(-(int)((frontShield+rearShield)/2/(shieldRecharge*Main.TPS))),
+						"How long it takes down shields to fully recharge"},
 				{"Hull",					String.valueOf(hull)},
-				{"Armor",					String.valueOf(armor)},
+				{"Armor",					String.valueOf(armor),
+						"Armor reduces hull damage from lighter weapons, but helps little against heavier weapons"},
 					{"Engines", "CATEGORY"},
-				{"Forward Accel. (empty)",	String.valueOf(thrust/mass*Main.TPS*Main.TPS)},
-				{"Forward Accel. (loaded)",	String.valueOf(thrust/maxMass*Main.TPS*Main.TPS)},
+				{"Forward Accel. (empty)",	String.valueOf(thrust/mass*Main.TPS*Main.TPS),
+						"Acceleration with no weapons, storage, or crafts"},
+				{"Forward Accel. (loaded)",	String.valueOf(thrust/maxMass*Main.TPS*Main.TPS),
+						"Acceleration with maximum possible mass of weapons, storage, and crafts"},
 				{"Maneuvering Accel.",      String.valueOf(turnThrust/((mass+maxMass)/2)*Main.TPS*Main.TPS)},
 					{"Energy", 	"CATEGORY"},
-				{"Power (Energy/Sec)",		String.valueOf(power*Main.TPS/1000)},
+				{"Power (Energy/Sec)",		String.valueOf(power*Main.TPS/1000),
+						"Capacitor recharge rate"},
 				{"Capacitor",				String.valueOf(capacitor/1000)},
 					{"Systems", "CATEGORY"},
 				{"Number of Mounts",		String.valueOf(systemHardpoints.length)},
-				{"Average Mount Mass",		String.valueOf(systemMass)}
-				
+				{"Average Mount Mass",		String.valueOf(systemMass)},
+					{"Craft", "CATEGORY"},
+				{"Craft Bay Size",			String.valueOf(totalCraftMass)},
+				{"Maximum Craft Mass",		String.valueOf(craftMass)}
 		};
-		//if (totalCraftMass > 0){
-			String[][] temp2 ={
-						{"Craft", "CATEGORY"},
-					{"Craft Bay Size",		String.valueOf(totalCraftMass)},
-					{"Maximum Craft Mass",	String.valueOf(craftMass)}};
-					//{"Launch Rate (Per Minute)",String.valueOf(1/craftLaunchTime/Main.TPS/60)}};
-			
-			String[][] temp3 = new String[temp.length+temp2.length][2];
-			for (int x = 0; x < temp.length; x++)
-				temp3[x] = temp[x];
-			for (int x = temp.length; x < temp.length+temp2.length; x++)
-				temp3[x] = temp2[x-temp.length];
-			temp = temp3;
-		//}
-		
-		specs = temp;
+		this.specs = specs;
 	}
+	
 }

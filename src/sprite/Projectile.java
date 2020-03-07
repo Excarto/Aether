@@ -48,7 +48,9 @@ public class Projectile extends Sprite{
 			this.remove();
 	}
 	
-	public void contact(Controllable controllable){
+	public boolean contact(Controllable controllable){
+		boolean alive = controllable.getHull() > 0;
+		
 		Sprite sprite = (Sprite)controllable;
 		if (!(controllable instanceof Missile && type.goThroughMissiles))
 			this.remove();
@@ -66,6 +68,8 @@ public class Projectile extends Sprite{
 				this.getPosX(), this.getPosY(), sprite.getVelX(), sprite.getVelY()));
 		
 		Main.game.playSound(type.impactSound, controllable, true);
+		
+		return alive && controllable.getHull() <= 0;
 	}
 	
 	public void remove(){

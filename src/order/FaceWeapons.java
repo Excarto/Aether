@@ -24,18 +24,18 @@ public class FaceWeapons extends Order{
 		if (arcAngle.size() <= MIN_NUM_ANGLES || abs(stopDist) > 100)
 			host.stopTurn();
 		
-		if (time%8 == 0){
+		if (runTime%5 == 0){
 			double angle = getFaceAngle(null);
 			double lead = 0.0;
 			if (angle != NO_ANGLE){
-				if (previousAngle != NO_ANGLE && abs(Game.fixAngle(angle - host.getAngle())) < 40){
-					double targetAngleRate = Game.fixAngle(angle - previousAngle);
-					double turnLag = Game.fixAngle(previousAngle + previousLead - host.getAngle());
+				if (previousAngle != NO_ANGLE && abs(Utility.fixAngle(angle - host.getAngle())) < 40){
+					double targetAngleRate = Utility.fixAngle(angle - previousAngle);
+					double turnLag = Utility.fixAngle(previousAngle + previousLead - host.getAngle());
 					if (signum(turnLag) != signum(targetAngleRate))
 						turnLag = 0.0;
-					turnLag = Game.maxAbs(turnLag, abs(32*targetAngleRate));
-					lead = Game.maxAbs(turnLag + targetAngleRate, 10.0);
-					//lead = Game.maxAbs(15.0*(angle-Game.centerAbout(previousAngle, angle)), 6.0);
+					turnLag = Utility.clamp(turnLag, abs(32*targetAngleRate));
+					lead = Utility.clamp(turnLag + targetAngleRate, 10.0);
+					//lead = Utility.clamp(15.0*(angle-Game.centerAbout(previousAngle, angle)), 6.0);
 				}
 				host.orders().stackOrder(new TurnTo(angle+lead), this);
 			}
@@ -61,8 +61,8 @@ public class FaceWeapons extends Order{
 		for (Weapon weapon : host.weapons){
 			if (weapon.getHull() > 0 && !Double.isNaN(weapon.getTargetAngle()) && weapon.getArc() < 180 &&
 					(target == null || weapon.getTarget() == target)){
-				double startAngle = Game.fixAngle(weapon.getTargetAngle()-weapon.getMountAngle()-weapon.getArc());
-				double endAngle = Game.fixAngle(weapon.getTargetAngle()-weapon.getMountAngle()+weapon.getArc());
+				double startAngle = Utility.fixAngle(weapon.getTargetAngle()-weapon.getMountAngle()-weapon.getArc());
+				double endAngle = Utility.fixAngle(weapon.getTargetAngle()-weapon.getMountAngle()+weapon.getArc());
 				double weight = weapon.getMass();
 				if (weapon.type instanceof MissileType)
 					weight /= 8;
@@ -112,7 +112,6 @@ public class FaceWeapons extends Order{
 					highestEnd = angle;
 				}
 				currentWeight += weight;
-				//Test.p(x+" "+angle+" "+weight+" "+currentWeight+" "+highestStart+" "+highestEnd);
 			}
 			return host.getAngle()+(highestStart+highestEnd)/2;
 		}else

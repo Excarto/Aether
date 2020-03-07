@@ -13,18 +13,25 @@ public class MoveTo extends Order{
 	}
 	
 	public void act(){
-		double deltaTarget = abs(Game.fixAngle(targetAngle-host.getAngle()));
+		
 		if (turnsUntilSetAngle-- < 0){
 			setTimeAndAngle();
-			if (timeToAccel > 1 && deltaTarget > 2)
-				((Controllable)host).orders().stackOrder(new TurnTo(targetAngle), this);
+			if (timeToAccel > 1){
+				double deltaTarget = Utility.fixAngle(targetAngle-host.getAngle());
+				double dampedTargetAngle = targetAngle;
+				if (abs(deltaTarget) < 5 && abs(host.bearing(target)) > 90)
+					dampedTargetAngle -= deltaTarget*0.95;
+				
+				((Controllable)host).orders().stackOrder(new TurnTo(dampedTargetAngle), this);
+			}
 			turnsUntilSetAngle = TURNS_SET_TIME;
 		}
 		
 		if (timeToAccel > 0){
+			double deltaTarget = Utility.fixAngle(targetAngle-host.getAngle());
 			//double angleThresh = max(3, min(24, 4*Main.TPS/timeToAccel));
-			double angleThresh = max(3, min(30, 6*timeToAccel/Main.TPS));
-			if (deltaTarget < angleThresh){
+			double angleThresh = max(5, min(30, 10*timeToAccel/Main.TPS));
+			if (abs(deltaTarget) < angleThresh){
 				((Controllable)host).accelForward();
 				timeToAccel--;
 			}

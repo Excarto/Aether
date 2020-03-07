@@ -19,7 +19,7 @@ public class SetupWindowNetClient extends SetupWindow{
 		this.connection = conn;
 		this.username = username;
 		disableTeamListener = true;
-		titleLabel.setPreferredSize(new Dimension(550, 28));
+		titleLabel.setPreferredSize(new Dimension(550, 35));
 		
 		final ClientPlayerPanel panel = new ClientPlayerPanel(username);
 		panel.teamBox.setEnabled(true);
@@ -34,7 +34,7 @@ public class SetupWindowNetClient extends SetupWindow{
 		}});
 		playersPanel.add(panel);
 		
-		connection.addListener(new JoinMsg(){
+		connection.addSwingListener(new JoinMsg(){
 			public void confirmed(){
 				playerType = playerType == PlayerType.AI ? PlayerType.NET_AI : PlayerType.NET_HOST;
 				PlayerPanel panel = new PlayerPanel(playerType, name);
@@ -48,7 +48,7 @@ public class SetupWindowNetClient extends SetupWindow{
 				displayMessage(name+" has joined the game", 0);
 		}});
 		
-		connection.addListener(new SetTeamMsg(){
+		connection.addSwingListener(new SetTeamMsg(){
 			public void confirmed(){
 				PlayerPanel panel = getPanel(name);
 				if (panel != null){
@@ -61,13 +61,13 @@ public class SetupWindowNetClient extends SetupWindow{
 					setReady(false);
 		}});
 		
-		connection.addListener(new SetBudgetMsg(){
+		connection.addSwingListener(new SetBudgetMsg(){
 			public void confirmed(){
 				getPanel(name).budgetField.setText(String.valueOf(budget));
 				getPanel(name).updateBudget();
 		}});
 		
-		connection.addListener(new LeaveMsg(){
+		connection.addSwingListener(new LeaveMsg(){
 			public void confirmed(){
 				PlayerPanel panel = getPanel(name);
 				if (panel != null){
@@ -80,7 +80,7 @@ public class SetupWindowNetClient extends SetupWindow{
 				displayMessage(name+" has left the game", 0);
 		}});
 		
-		connection.addListener(new ReturnToLobbyMsg(){
+		connection.addSwingListener(new ReturnToLobbyMsg(){
 			public void confirmed(){
 				PlayerPanel panel = getPanel(name);
 				if (panel != null)
@@ -88,7 +88,7 @@ public class SetupWindowNetClient extends SetupWindow{
 				displayMessage(name+" has returned to game lobby", 0);
 		}});
 		
-		connection.addListener(new GameSettingsMsg(){
+		connection.addSwingListener(new GameSettingsMsg(){
 			public void confirmed(){
 				setGameSpeed((int)round(gameSpeed*100));
 				arena = Main.arenas[arenaIndex];
@@ -101,7 +101,7 @@ public class SetupWindowNetClient extends SetupWindow{
 		}});
 		connection.send(new GameSettingsMsg());
 		
-		connection.addListener(new GameStartMsg(){
+		connection.addSwingListener(new GameStartMsg(){
 			public void confirmed(){
 				start(randomSeed);
 				
@@ -172,7 +172,7 @@ public class SetupWindowNetClient extends SetupWindow{
 			readyButton.setText(ready ? "Un-ready" : "Ready");
 			if (ready){
 				UnitDescriptionMsg unitMsg = new UnitDescriptionMsg();
-				unitMsg.player = Main.username;
+				unitMsg.player = Main.options.username;
 				for (Ship ship : selectedPlayer.ships){
 					unitMsg.unit = ship;
 					connection.send(unitMsg);
@@ -226,7 +226,7 @@ public class SetupWindowNetClient extends SetupWindow{
 		}
 		
 		public Player getPlayer(){
-			return new NetPlayerClient(getName(), getTeam(), ships, getMaxBudget(), arena, connection);
+			return new NetPlayerClient(getName(), getTeam(), getCopiedShips(), getMaxBudget(), arena, connection);
 		}
 		
 		public void updateBudget(){

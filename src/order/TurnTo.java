@@ -1,6 +1,7 @@
 import static java.lang.Math.*;
 
 public class TurnTo extends Order{
+	static final double STOP_DIST_SLACK = 0.5;
 	
 	public final int targetAngle;
 	
@@ -9,7 +10,7 @@ public class TurnTo extends Order{
 	private double turnAccel, stopDist;
 	
 	public TurnTo(double angle){
-		this.targetAngle = (int)Game.fixAngle(angle);
+		this.targetAngle = (int)Utility.fixAngle(angle);
 	}
 	
 	public void setHost(Controllable host){
@@ -21,7 +22,7 @@ public class TurnTo extends Order{
 	}
 	
 	public void act(){
-		if (time%19 == 0)
+		if (runTime%32 == 0)
 			turnAccel = ((Controllable)host).getTurnAccel();
 		
 		double turnSpeed = host.getTurnSpeed();
@@ -30,7 +31,7 @@ public class TurnTo extends Order{
 		if (stopDist > 170){
 			((Controllable)host).stopTurn();
 		}else{
-			double angleDiff = Game.fixAngle(targetAngle-host.getAngle());
+			double angleDiff = Utility.fixAngle(targetAngle-host.getAngle());
 			double distToTarget;
 			if (signum(angleDiff) == signum(turnSpeed)){
 				distToTarget = abs(angleDiff);
@@ -38,7 +39,7 @@ public class TurnTo extends Order{
 				distToTarget = 360-abs(angleDiff);
 			
 			if (isAccelerating){
-				if ((distToTarget > 1.2*stopDist || distToTarget < stopDist) && accelTime > 0){
+				if ((distToTarget > (1 + STOP_DIST_SLACK)*stopDist || distToTarget < stopDist) && accelTime > 0){
 					((Controllable)host).accelTurn(accelDirection > 0);
 					accelTime--;
 				}else
@@ -46,7 +47,7 @@ public class TurnTo extends Order{
 			}else{
 				if (abs(turnSpeed) < 0.0001 && distToTarget < 1){
 					((Controllable)host).orders().finish(this);
-				}else if (distToTarget > 1.2*stopDist){
+				}else if (distToTarget > (1 + STOP_DIST_SLACK)*stopDist){
 					accelDirection = angleDiff > 0 ? 1 : -1;
 					((Controllable)host).accelTurn(accelDirection > 0);
 				}else if (distToTarget > stopDist && distToTarget < stopDist+10*abs(turnSpeed)){
@@ -93,7 +94,7 @@ public class TurnTo extends Order{
 			return 0;
 		int angle = (int)host.getAngle();
 		double speed = host.getTurnSpeed();
-		int arc = (int)Game.fixAngle(angle-targetAngle);
+		int arc = (int)Utility.fixAngle(angle-targetAngle);
 		int stopAngle = (int)signum(speed)*(int)stopDist;
 		int stoppedArc = arc+stopAngle;
 		
@@ -106,7 +107,7 @@ public class TurnTo extends Order{
 	
 	public static double approxTurnTime(Controllable controllable, double angle){
 		double accel = controllable.getTurnAccel();
-		double deltaAngle = Game.fixAngle(angle-((Sprite)controllable).getAngle());
+		double deltaAngle = Utility.fixAngle(angle-((Sprite)controllable).getAngle());
 		double turnSpeed = ((Sprite)controllable).getTurnSpeed();
 		double distToward, distAway;
 		if (turnSpeed > 0){

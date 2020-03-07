@@ -1,0 +1,20 @@
+description = its a map
+
+default_budget = 3000
+max_score = 1000.0
+start_budget = 0.32
+income_time = 240
+decap_multiplier = 5
+mission_only = true
+
+foreground_object1_image= station
+foreground_object1_x_pos= 0
+foreground_object1_y_pos= 0
+foreground_object1_obj_type= normal
+foreground_object1_obj_value= 1
+foreground_object1_obj_capture_size= 1000
+
+player1_x_pos= 12000
+player1_y_pos= 8000
+player2_x_pos= 15000
+player2_y_pos= -6000

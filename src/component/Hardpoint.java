@@ -19,7 +19,7 @@ public class Hardpoint{
 		centerDistance = hypot(posX-0.5, posY-0.5);
 		centerAngle = toDegrees(atan2(posY-0.5, posX-0.5))-90;
 		
-		posYShift = -posZ/2*sin(toRadians(Main.unitRenderAngle));
+		posYShift = -posZ/2*sin(toRadians(Main.config.unitRenderAngle));
 	}
 	
 	public final double getRotatedPosX(double angle){

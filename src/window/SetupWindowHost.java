@@ -14,7 +14,10 @@ public class SetupWindowHost extends SetupWindow{
 	JButton addCompButton;
 	
 	public SetupWindowHost(){
-		arena = Main.arenas[0];
+		for (Arena arena : Main.arenas){
+			if (arena.isDefault)
+				this.arena = arena;
+		}
 		univBudgetField.setText(String.valueOf(arena.defaultBudget));
 		
 		currentName = 0;
@@ -59,6 +62,7 @@ public class SetupWindowHost extends SetupWindow{
 		start.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				start(random.nextInt());
+				//start(-1064939365);
 		}});
 		bottomPanel.add(start);
 		
@@ -67,7 +71,7 @@ public class SetupWindowHost extends SetupWindow{
 	}
 	
 	protected HostPlayerPanel getHostPanel(){
-		return new HostPlayerPanel(PlayerType.HOST, Main.username);
+		return new HostPlayerPanel(PlayerType.HOST, Main.options.username);
 	}
 	
 	protected void addDefaultComps(){
@@ -151,7 +155,7 @@ public class SetupWindowHost extends SetupWindow{
 		
 		public void autoSetTeam(){
 			int lowestTeam = 1, lowestNumPlayers = Integer.MAX_VALUE;
-			for (int x = 0; x < arena.teamPositions.length; x++){
+			for (int x = 0; x < arena.teamPos.length; x++){
 				int numPlayers = 0;
 				for (int y = 0; y < playersPanel.getComponentCount(); y++)
 					if (playersPanel.getComponent(y) instanceof PlayerPanel &&
@@ -167,9 +171,9 @@ public class SetupWindowHost extends SetupWindow{
 		
 		public Player getPlayer(){
 			if (playerType == PlayerType.AI){
-				return new ComputerPlayer(getName(), getTeam(), ships, getMaxBudget(), arena);
+				return new ComputerPlayer(getName(), getTeam(), getCopiedShips(), getMaxBudget(), arena);
 			}else if (playerType == PlayerType.HOST){
-				return new HumanPlayer(getName(), getTeam(), ships, getMaxBudget(), arena);
+				return new HumanPlayer(getName(), getTeam(), getCopiedShips(), getMaxBudget(), arena);
 			}else
 				return super.getPlayer();
 		}

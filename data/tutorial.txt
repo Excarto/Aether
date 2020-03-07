@@ -25,7 +25,7 @@ In Strategic mode, commands are given to all selected units using the right mous
 Commands can be queued by holding shift (by default), and queued commands can be canceled by holding ctrl and right clicking on them.<br>
 A unit which has no other commands will automatically turn to put its weapons in arc. This is indicated by an "F" below the unit. To clear a selected unit's orders, press the E key (by default).<br>
 <br><b>Weapon Modes</b><br>
-Each unit has a single primary target, which can be set by right clicking an enemy unit. In addition, each weapon can be individually assigned a secondary target. A secondary target can be a different unit, or it can be a subcomponent of the primary target. If a subcomponent is targeted by a weapon, it is more likely to take damage from that weapon. Weapons can be used in one of three modes:<br>
+The weapon management tab is labeled "WEP" in the top right of the screen, and can be accessed when a single unit is selected. Each unit has a single primary target, which can be set by right clicking an enemy unit. In addition, each weapon can be individually assigned a secondary target. A secondary target can be a different unit, or it can be a subcomponent of the primary target. If a subcomponent is targeted by a weapon, it is more likely to take damage from that weapon. Weapons can be used in one of three modes:<br>
 <blockquote>
 <u>Disabled</u> - The weapon will not function or be automatically repaired. This will save a small amount of power.<br>
 <u>Manual Targeting</u> - The weapon will ony fire at the ship's primary target when it is within range. The range is specified in seconds to impact.<br>
@@ -34,4 +34,14 @@ Each unit has a single primary target, which can be set by right clicking an ene
 </blockquote>
 In addition, a weapon in any fire mode can be overriden by having the weapon selected and holding the Manual Fire button (default F). In this case, the weapon will attempt to point toward the mouse cursor, and the left mouse button can be used to fire.<br>
 Missiles have a special Volley Fire mode. When the volley size of a missile launcher is set to a value higher than 1, the launcher will deploy multiple missiles without attacking the target, and then the entire volley of missiles will attack the target simultaneously. This may be useful to overwhelm enemy point defence weapons.<br> 
+<br><b>Power Management</b><br>
+The power management tab is labeled "POW" in the top right of the screen, and can be accessed when a single unit is selected. A unit's energy capacitor can be partitioned into different categories, with the "Unreserved" category being accessible to all of the unit's systems.<br>
+By reserving some percent of the capacitor for a specific category (or subcategory), it is possible to guarantee some amount of power is always available to a specific system. The unit's total power output will always go into the capacitor unless the unit's overall capacitor is 100% full, so power ouput is never wasted by reserving some of the capacitor. <br>
+<br><b>Repair Management</b><br>
+The repair management tab is labeled "REP" in the top right of the screen, and can be accessed when a single ship is selected.<br>
+<br><b>Craft Management</b><br>
+The craft management tab is labeled "CFT" in the top right of the screen, and can be accessed when a single ship is selected, so long as the ship class has a craft bay. By default, crafts that are in the mothership's bay will be repaired, recharged, and rearmed, so long as the mothership has the necessary resources available.<br>
+Dedicated carriers can optionally catapult crafts at high speed when launching them, which can be useful if you need the craft to get somewhere quickly.<br>
+Selected crafts can be ordered to return to the bay by double right clicking on the mothership. Crafts will automatically return when they run out of ammunition.<br>
+
 </html>

@@ -1,6 +1,6 @@
 import java.io.*;
 
-public class GameStartMsg extends Message {
+public class GameStartMsg extends Message{
 	public byte getId(){return MsgId.GAME_START.id;}
 	
 	//int[] playerPositions;

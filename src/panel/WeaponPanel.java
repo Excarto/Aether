@@ -5,7 +5,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 public class WeaponPanel extends JPanel{
-	static final Font MODE_FONT = new Font("Arial", Font.BOLD, 9);
+	static final Font MODE_FONT = Main.getDefaultFont(9);
 	
 	Weapon weapon;
 	
@@ -30,7 +30,7 @@ public class WeaponPanel extends JPanel{
 	JSlider volleySlider;
 	
 	public WeaponPanel(){
-		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, 294));
+		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-4, 308));
 		this.setBorder(BorderFactory.createEtchedBorder());
 		this.setOpaque(false);
 		
@@ -61,7 +61,7 @@ public class WeaponPanel extends JPanel{
 		conditionPanel.add(timeLabel);
 		
 		disabled = new JRadioButton("Weapon Disabled");
-		disabled.setPreferredSize(new Dimension(128, 14));
+		disabled.setPreferredSize(new Dimension(130, 14));
 		disabled.setOpaque(false);
 		disabled.setFont(MODE_FONT);
 		disabled.addActionListener(new ActionListener(){
@@ -85,7 +85,7 @@ public class WeaponPanel extends JPanel{
 		}});
 		automatic = new JRadioButton("Prefer Manual Target");
 		automatic.setOpaque(false);
-		automatic.setPreferredSize(new Dimension(128, 14));
+		automatic.setPreferredSize(new Dimension(130, 14));
 		automatic.setFont(MODE_FONT);
 		//automatic.setToolTipText("Fire when the target is within the specified range");
 		automatic.addActionListener(new ActionListener(){
@@ -156,7 +156,7 @@ public class WeaponPanel extends JPanel{
 		
 		modeOptionsPanel = new JPanel();
 		modeOptionsPanel.setOpaque(false);
-		modeOptionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-8, 80));
+		modeOptionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-8, 88));
 		
 		volleyLabel = new JLabel();
 		volleyLabel.setPreferredSize(new Dimension(82, 16));
@@ -174,7 +174,7 @@ public class WeaponPanel extends JPanel{
 		volleyPanel.add(volleySlider);
 		
 		JPanel optionsPanel = new JPanel();
-		optionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-8, 117));
+		optionsPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-8, 124));
 		optionsPanel.setOpaque(false);
 		optionsPanel.add(disabled);
 		optionsPanel.add(manual);
@@ -248,7 +248,7 @@ public class WeaponPanel extends JPanel{
 		weapon = newWeapon;
 		
 		if (weapon != null){
-			typeLabel.setText(weapon.type.typeClass);
+			typeLabel.setText(weapon.type.className);
 			img.select(weapon.type);
 			
 			disabled.setSelected(newWeapon.getFireMode() == Weapon.FireMode.DISABLED);

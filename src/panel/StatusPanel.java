@@ -33,7 +33,7 @@ public abstract class StatusPanel extends JPanel{
 				target.repair = repairBox.isSelected();
 		}});
 		
-		rechargeBox = new JCheckBox("Capacitor");
+		rechargeBox = new JCheckBox("Energy");
 		rechargeBox.setPreferredSize(new Dimension(110, 13));
 		rechargeBox.setBackground(Window.PANEL_LIGHT);
 		rechargeBox.addActionListener(new ActionListener(){
@@ -63,7 +63,7 @@ public abstract class StatusPanel extends JPanel{
 	public void update(){
 		repairBox.setText("Hull: " + (int)(100*target.unit.hull/target.unit.type.hull) + "%");
 		repairBox.setSelected(target.repair);
-		rechargeBox.setText("Capacitor: " + (int)(100*target.unit.totalCap/target.unit.type.capacitor) + "%");
+		rechargeBox.setText("Energy: " + (int)(100*target.unit.totalCap/target.unit.type.capacitor) + "%");
 		rechargeBox.setSelected(target.recharge);
 		double totalAmmo = 0;
 		for (int x = 0; x < target.unit.ammo.length; x++)

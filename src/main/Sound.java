@@ -6,15 +6,14 @@ import javax.sound.sampled.*;
 public class Sound{
 	private final static int BUFFER_SIZE = 8192;
 	private final static double VOLUME_RANGE = 35.0;
-	private final static int SEPARATION_TIME = 250;
+	private final static int MAX_SEPARATION_TIME = 220;
 	
 	private static AudioChannel[] channels;
-	private static boolean[] allPlaying = new boolean[]{true};
-	//private static AudioFormat format;
 	private static double masterVolume;
 	private static boolean paused;
 	
-	private final File soundFile;
+	public final File soundFile;
+	
 	private AudioFormat format;
 	private DataLine.Info info;
 	private byte[] data;
@@ -43,7 +42,7 @@ public class Sound{
 				format = stream.getFormat();
 				info = new DataLine.Info(SourceDataLine.class, format);
 				length = (int)(stream.getFrameLength()*1000/format.getFrameRate());
-				separationTime = min(SEPARATION_TIME, length/3);
+				separationTime = min(MAX_SEPARATION_TIME, length/3);
 			}catch(Exception e){
 				Main.crash(soundFile.getPath());
 			}
@@ -66,6 +65,13 @@ public class Sound{
 				delay = (int)((0.25 + 0.75*random())*(separationTime - difference));
 			lastPlayTime = playTime;
 			playSound(this, delay, volume);
+		}
+	}
+	
+	public void stop(){
+		for (int x = 0; x < channels.length; x++){
+			if (channels[x].sound == this)
+				channels[x].interrupt();
 		}
 	}
 	
@@ -93,6 +99,11 @@ public class Sound{
 		}
 	}
 	
+	public static void stopAll(){
+		for (int x = 0; x < channels.length; x++)
+			channels[x].interrupt();
+	}
+	
 	public static void initialize(int numChannels, double masterVolume){
 		deinitialize();
 		Sound.masterVolume = masterVolume;
@@ -108,21 +119,14 @@ public class Sound{
 		}
 	}
 	
-	public static void stopAll(){
-		allPlaying[0] = false;
-		allPlaying = new boolean[]{true};
-	}
-	
 	public static void setPause(boolean paused){
 		Sound.paused = paused;
 	}
 	
 	private static class AudioChannel extends Thread{
 		long priority;
-		boolean[] allPlaying;
 		boolean interrupted, running;
 		Sound sound;
-		//SourceDataLine line;
 		byte[] buffer;
 		CountDownLatch latch;
 		int delay;
@@ -137,30 +141,10 @@ public class Sound{
 		}
 		
 		void play(Sound sound, int delay, double volume){
-			allPlaying = Sound.allPlaying;
 			this.sound = sound;
 			this.delay = delay;
 			this.playVolume = volume;
 			sound.runCount++;
-			
-			/*if (line == null){
-				AudioInputStream stream = sound.getStream();
-				try {
-					line = (SourceDataLine)AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, format));
-					line.open(format);
-				}catch (LineUnavailableException ex){
-					ex.printStackTrace();
-				}
-				line.start();
-				try{
-					stream.close();
-				}catch (IOException e){}
-			}
-			
-			float gain = (float)(2*(sound.volume*masterVolume-0.5)*VOLUME_RANGE);
-			try{
-				((FloatControl)line.getControl(FloatControl.Type.MASTER_GAIN)).setValue(gain);
-			}catch (Exception e){}*/
 			
 			if (sound.followSound != null){
 				priority = Long.MAX_VALUE;
@@ -187,6 +171,7 @@ public class Sound{
 				SourceDataLine line = null;
 				try{
 					stream = sound.getStream();
+					stream.mark(Integer.MAX_VALUE);
 					
 					line = (SourceDataLine)AudioSystem.getLine(sound.info);
 					line.open(sound.format);
@@ -198,7 +183,7 @@ public class Sound{
 					}catch (Exception e){}
 					
 					int bytesRead = 0;
-					while (allPlaying[0] && running && !interrupted){
+					while (running && !interrupted){
 						if (delay > 0){
 							try{
 								Thread.sleep(delay);
@@ -214,16 +199,14 @@ public class Sound{
 							if ((bytesRead = stream.read(buffer, 0, BUFFER_SIZE)) > 0){
 								line.write(buffer, 0, bytesRead);
 							}else{
-								break;
-								//if (sound.loop){
-								//	stream.close();
-								//	stream = sound.getStream();
-								//}else
-								//	break;
+								if (sound.followSound == sound){
+									stream.reset();
+								}else
+									break;
 							}
 						}
 					}
-					if (allPlaying[0] && running && !interrupted){
+					if (running && !interrupted){
 						line.drain();
 						if (sound.followSound != null)
 							play(sound.followSound, 0, playVolume);
@@ -241,16 +224,17 @@ public class Sound{
 				}
 				
 				sound.runCount = max(0, sound.runCount-1);
-				//if (sound.followSound != null && allPlaying[0] && running && !interrupted)
-				//	play(sound.followSound);
 			}
+		}
+		
+		public void interrupt(){
+			interrupted = true;
+			priority = 0;
 		}
 		
 		public void deinitialize(){
 			running = false;
 			latch.countDown();
-			//if (line != null)
-			//	line.close();
 		}
 	}
 	

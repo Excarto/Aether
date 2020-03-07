@@ -12,13 +12,14 @@ public class CraftPanel extends SidePanel{
 	
 	public CraftPanel(){
 		super();
+		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, Unit.CONTROLS_HEIGHT));
 		
 		bayPanel = new JPanel(Window.DEFAULT_LAYOUT){
 			public void paintComponent(Graphics g){
 				g.drawImage(background, 0, 0, null);
 			}
 		};
-		bayPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-24, 520));
+		bayPanel.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH-24, 535));
 		JScrollPane launchScrollPane = new JScrollPane(bayPanel);
 		launchScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		
@@ -94,6 +95,7 @@ public class CraftPanel extends SidePanel{
 	private static final Color LAUNCH_COLOR = Color.BLACK;
 	private static final Color CATAPULT_COLOR = new Color(40, 150, 40);
 	private static final Color CANCEL_COLOR = new Color(150, 40, 40);
+	//public static Font launchButtonFont;
 	private class CraftStatusPanel extends StatusPanel{
 		
 		private final JButton launchButton;
@@ -103,7 +105,7 @@ public class CraftPanel extends SidePanel{
 			
 			launchButton = new JButton();
 			launchButton.setPreferredSize(new Dimension(60, 20));
-			launchButton.setFont(new Font("Arial", Font.PLAIN, 11));
+			//launchButton.setFont(launchButtonFont);
 			launchButton.setMargin(new Insets(1, 1, 1, 1));
 			launchButton.addActionListener(new ActionListener(){
 				public void actionPerformed(ActionEvent e){

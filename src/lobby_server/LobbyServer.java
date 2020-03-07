@@ -116,7 +116,7 @@ public class LobbyServer{
 						public void confirmed(){
 							byte[] address = connection.remoteAddress.getAddress();
 							InetAddress hostAddress;
-							if (address[0] == (byte)192 && address[1] == (byte)168 && address[2] == (byte)1){
+							if (address[0] == (byte)10 && address[1] == (byte)0 && address[2] == (byte)0){
 								try{
 									hostAddress = InetAddress.getByName(SERVER_HOSTNAME);
 								}catch (UnknownHostException e){
@@ -143,14 +143,15 @@ public class LobbyServer{
 	private void cleanupLobbies(){
 		while (running){
 			try{
-				Thread.sleep(1000*60*5);
+				Thread.sleep(1000*30);
 			}catch (InterruptedException ex){}
 			
 			try{
 				Connection toKick = null;
 				for (Connection connection : lobbies.keySet()){
 					Lobby lobby = lobbies.get(connection);
-					if (lobby.minutesAlive() > LOBBY_MINUTES_TO_LIVE)
+					int timeout = lobby == NO_INFO ? 10 : 60*LOBBY_MINUTES_TO_LIVE;
+					if (lobby.secondsAlive() > timeout)
 						toKick = connection;
 				}
 				if (toKick != null){

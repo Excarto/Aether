@@ -13,10 +13,11 @@ public class MovePastTarget extends TrackOrder{
 		setAngleTime = 0;
 		targetVelX = this.target.getVelX();
 		targetVelY = this.target.getVelY();
+		setDrawArrow(true);
 	}
 	
 	public void act(){
-		if (abs(Game.fixAngle(targetAngle-host.getAngle())) < 18)
+		if (abs(Utility.fixAngle(targetAngle-host.getAngle())) < 18)
 			((Controllable)host).accelForward();
 		
 		if (Main.game.turn-setAngleTime > 5){
@@ -25,7 +26,7 @@ public class MovePastTarget extends TrackOrder{
 		}
 	}
 	
-	static final double TANGENTIAL_INCREASE = 0.35;
+	static final double TANGENTIAL_INCREASE = 0.40;
 	public void setTimeAndAngle(){
 		double Dx = getDx(), Dy = getDy(), Vx = getVx(), Vy = getVy();
     	
@@ -53,6 +54,6 @@ public class MovePastTarget extends TrackOrder{
 	}
 	
 	public Color getColor(){
-		return new Color(255, 0, 0, OPAQUE);
+		return new Color(255, 0, 0, OPAQUE_ALPHA);
 	}
 }

@@ -27,9 +27,11 @@ public class AttackSlow extends MoveToTarget{
 		Unit host = (Unit)this.host;
 		distance = host.distance(target);
 		
-		if (time%9 == 0){
+		if (runTime%8 == 0){
 			double targetAngle = faceOrder.getFaceAngle(target);
-			double leadTime = targetAngle != FaceWeapons.NO_ANGLE ? 1.05*TurnTo.approxTurnTime(host, targetAngle) : 0;
+			double leadTime = 0;
+			if (targetAngle != FaceWeapons.NO_ANGLE)
+				leadTime = Main.TPS/4 + 1.1*TurnTo.approxTurnTime(host, targetAngle);
 			
 			if (isFacing && (targetAngle == FaceWeapons.NO_ANGLE || !target.isVisible() || !host.weaponsInRange(target, leadTime))){
 				host.orders().finish(faceOrder);
@@ -44,7 +46,7 @@ public class AttackSlow extends MoveToTarget{
 		if (!isFacing)
 			super.act();
 		if (isFacing && abs(host.bearing(target)) < 20 &&
-				host.drdt(target) > -host.getAccel()*Main.TPS/8 && distance > 300)
+				host.radVel(target) > -host.getAccel()*Main.TPS/8 && distance > 300)
 			host.accelForward();
 		if (distance < host.getSize()/2 && host.speed(target)*Main.TPS*2 < host.getSize()){
 			if (target.isVisible()){
@@ -55,7 +57,7 @@ public class AttackSlow extends MoveToTarget{
 	}
 	
 	public Color getColor(){
-		return new Color(255, 0, 0, TRANSPARENT);
+		return new Color(255, 0, 0, TRANSLUCENT_ALPHA);
 	}
 	
 	public double getPosX(){

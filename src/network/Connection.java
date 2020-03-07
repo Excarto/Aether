@@ -1,7 +1,9 @@
 import java.net.*;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.*;
+import javax.swing.*;
 
 public class Connection{
 	static final int PACKET_SIZE = 512;
@@ -10,17 +12,20 @@ public class Connection{
 	private static List<Connection> UDPConnections = new CopyOnWriteArrayList<Connection>();
 	private static byte[] UDPBuffer = new byte[PACKET_SIZE];
 	
+	public final InetAddress remoteAddress;
+	
 	private Socket TCPSocket;
 	private Message[] messageListeners;
+	private boolean[] isSwingListener;
 	private byte[] writeBuffer, TCPBuffer;
 	private boolean onlyTCP;
 	private CloseListener closeListener;
 	private boolean running;
-	public final InetAddress remoteAddress;
 	
 	public Connection(Socket socket, boolean onlyTCP) throws IOException{
 		this.onlyTCP = onlyTCP;
-		messageListeners = new Message[100];
+		messageListeners = new Message[256];
+		isSwingListener = new boolean[256];
 		writeBuffer = new byte[PACKET_SIZE];
 		TCPBuffer = new byte[PACKET_SIZE];
 		running = true;
@@ -52,9 +57,9 @@ public class Connection{
 		}else{
 			try{
 				if (UDPSocket == null){
-					UDPSocket = new DatagramSocket(Main.UDPPort);
+					UDPSocket = new DatagramSocket(Main.options.UDPPort);
 					UDPSocket.setBroadcast(false);
-					Main.UPnPHandler.enableUPnP(Main.UDPPort, Protocol.UDP);
+					Main.UPnPHandler.enableUPnP(Main.options.UDPPort, Protocol.UDP);
 					new Thread("UDPListenThread"){
 						public void run(){
 							listenForUDPMsg();
@@ -101,7 +106,6 @@ public class Connection{
 		this.addListener(new UDPConfirmMsg(){
 			public void confirmed(){
 				UDPConfirmed[0] = true;
-				//Test.p("UDP confirmed");
 		}});
 		
 		for (int x = 0; x < 20; x++){
@@ -120,9 +124,21 @@ public class Connection{
 	}
 	
 	public void receive(byte[] message){
-		//Test.p(message[0]+" "+message[1]+" "+messageListeners[message[0]]+" "+onlyTCP);
-		if (messageListeners[message[0]] != null)
-			messageListeners[message[0]].read(message);
+		Message listener = messageListeners[message[0]];
+		if (listener != null){
+			if (!isSwingListener[message[0]]){
+				listener.read(message);
+			}else{
+				try{
+					SwingUtilities.invokeAndWait(new Runnable(){
+						public void run(){
+							listener.read(message);
+					}});
+				}catch (InvocationTargetException e){
+					e.printStackTrace();
+				}catch (InterruptedException e){}
+			}
+		}
 	}
 	
 	public synchronized void send(Message message){
@@ -132,7 +148,7 @@ public class Connection{
 				TCPSocket.getOutputStream().write(writeBuffer, 0, length);
 			}else{
 				DatagramPacket packet = new DatagramPacket(writeBuffer, length,
-						remoteAddress, Main.UDPPort);
+						remoteAddress, Main.options.UDPPort);
 				UDPSocket.send(packet);
 			}
 		}catch (IOException e){
@@ -142,6 +158,12 @@ public class Connection{
 	
 	public void addListener(Message message){
 		messageListeners[message.getId()] = message;
+		isSwingListener[message.getId()] = false;
+	}
+	
+	public void addSwingListener(Message message){
+		messageListeners[message.getId()] = message;
+		isSwingListener[message.getId()] = true;
 	}
 	
 	public void close(){
@@ -166,8 +188,12 @@ public class Connection{
 				TCPSocket.close();
 			}catch (IOException e){}
 			UDPConnections.remove(this);
-			if (closeListener != null)
-				closeListener.closed();
+			if (closeListener != null){
+				SwingUtilities.invokeLater(new Runnable(){
+					public void run(){
+						closeListener.closed();
+				}});
+			}
 		}
 	}
 	
@@ -180,7 +206,7 @@ public class Connection{
 			DatagramPacket packet = new DatagramPacket(UDPBuffer, PACKET_SIZE);
 			while (UDPSocket != null){
 				UDPSocket.receive(packet);
-				if (packet.getPort() == Main.UDPPort){
+				if (packet.getPort() == Main.options.UDPPort){
 					//if(packet.getAddress().equals(TCPSocket.getInetAddress()) &&
 					//		messageListeners[UDPBuffer[0]] != null)
 					//	messageListeners[UDPBuffer[0]].read(UDPBuffer);

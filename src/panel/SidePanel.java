@@ -7,10 +7,11 @@ import java.io.*;
 public abstract class SidePanel extends JPanel{
 	
 	public static BufferedImage background;
+	public static BufferedImage spacer;
 	
 	public SidePanel(){
 		this.setLayout(Window.DEFAULT_LAYOUT);
-		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, Main.RES_Y-2));
+		this.setPreferredSize(new Dimension(GameWindow.MENU_WIDTH, Main.resY-2));
 	}
 	
 	public void refresh(){}
@@ -26,5 +27,12 @@ public abstract class SidePanel extends JPanel{
 		}catch(IOException e){
 			background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 		}
+		
+		try{
+			spacer = Main.convert(ImageIO.read(new File("data/panel_spacer.png")));
+		}catch(IOException e){
+			spacer = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+		}
 	}
+	
 }

@@ -9,156 +9,199 @@ import javax.imageio.*;
 
 public class Menu extends Window{
 	
-	private final static int OPTION_SPACING = 48;
-	private final static int OPTION_START = 580;
-	private final static int TEXT_SIZE = 28;
-	private final static Font OPTION_FONT = new Font("Courier", Font.BOLD, TEXT_SIZE);
-	private final static Font VERSION_FONT = new Font("Arial", Font.PLAIN, 12);
-	private final static Color OPTION_COLOR = new Color(100, 100, 100);
+	final static int OPTION_SPACING = 48;
+	final static int TEXT_SIZE = 28;
+	final static Font OPTION_FONT = new Font("Courier", Font.BOLD, TEXT_SIZE);
+	final static Color OPTION_COLOR = new Color(100, 100, 100);
+	final static int ANIMATION_SPEED = 1500;
+	final static int MIN_LINE_SIZE = 80;
+	
+	private static BufferedImage title;
+	private static Sound music;
+	private static Font versionFont;
 	
 	private List<Option> options;
-	
-	private static BufferedImage background;
-	private static Sound music;
-	
-	private boolean running;
+	private PeriodicTimer timer;
+	protected boolean drawTitle;
 	
 	public Menu(){
-		super(false);
+		super(Size.FULL);
 		
+		drawTitle = true;
 		options = new ArrayList<Option>();
-		
-		if (music == null){
-			music = new Sound(new File("data/menu_music.wav"));
-			music.setFollowSound(music);
-			music.load();
-		}
-		
-		if (background == null){
-			try{
-				background = Main.convert(ImageIO.read(new File("data/main_menu.png")));
-			}catch(IOException e){
-				background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-			}
-		}
 		
 		this.addMouseListener(new MouseAdapter(){
 			public void mousePressed (MouseEvent e){
-				for (int x = 0; x < options.size(); x++){
-					Option option = options.get(x);
-					if (abs(e.getX()-Main.resX/2) < option.name.length()*TEXT_SIZE*0.32 &&
-							abs(e.getY()+TEXT_SIZE/3-(OPTION_START+x*OPTION_SPACING)) < TEXT_SIZE/2)
-						option.act();
+				if (!Main.isStarting){
+					for (int x = 0; x < options.size(); x++){
+						Option option = options.get(x);
+						if (option.highlighted){
+							option.playSound();
+							option.act();
+						}
+					}
 				}
 			}
 		});
+		
+		timer = new PeriodicTimer(1000/Main.options.menuFramesPerSec, 5, 50){
+			public void runTimerTask(){
+				animateFrame();
+				repaint((1000/Main.options.menuFramesPerSec)/2);
+		}};
 	}
 	
-	public void addOption(Option option){
-		options.add(option);
+	public void addOption(Option newOption){
+		options.add(newOption);
+		newOption.lineSize = MIN_LINE_SIZE;
+		newOption.highlighted = false;
+		int bottomSpace = 100 + ((Main.resY - Main.RES_Y_SHORT)/2)/2;
+		int posY = Main.resY - bottomSpace - OPTION_SPACING*(options.size()+1)/2;
+		if (options.size() > 5)
+			posY -= OPTION_SPACING*(options.size()-5)/2;
+		for (Option option : options){
+			option.posY = posY;
+			posY += OPTION_SPACING;
+		}
 	}
 	
-	public void paint(Graphics g){
-		((Graphics2D)g).setRenderingHints(Main.menuHints);
-		g.drawImage(background, -(background.getWidth()-Main.resX)/2, 0, null);
+	public void clearOptions(){
+		options.clear();
+	}
+	
+	public int getNumOptions(){
+		return options.size();
+	}
+	
+	public void paint(Graphics graphics){
+		Graphics2D g = (Graphics2D)graphics;
+		g.setRenderingHints(Main.menuHints);
 		
-		g.setColor(Color.GRAY);
-		g.setFont(VERSION_FONT);
-		g.drawString("v"+(Main.VERSION/100.0)+"."+Main.SUBVERSION, Main.resX-50, Main.RES_Y-15);
+		if (drawTitle){
+			g.drawImage(title,
+					-(title.getWidth() - Main.resX)/2,
+					20 + Main.resY/20,
+					null);
+			
+			g.setColor(Color.GRAY);
+			g.setFont(versionFont);
+			g.drawString("v"+(Main.VERSION/100.0)+"."+Main.SUBVERSION, Main.resX-55, Main.resY-15);
+		}
 		
-		g.setFont(OPTION_FONT);
-		if (running){
+		
+		
+		if (!Main.isStarting){
 			for (int x = 0; x < options.size(); x++){
 				Option option = options.get(x);
+				g.setFont(option.font);
+				int posY = option.posY;
 				
-				int posX = Main.resX/2-(int)(option.name.length()*TEXT_SIZE*0.3);
-				int posY = OPTION_START+x*OPTION_SPACING;
-				g.setColor(Color.BLACK);
-				for (int offsetX = -1; offsetX <= 1; offsetX++){
-					for (int offsetY = -1; offsetY <= 1; offsetY++)
-						g.drawString(option.name, posX+offsetX, posY+offsetY);
-				}
-				g.setColor(option.highlighted ? Color.LIGHT_GRAY : OPTION_COLOR);
-				g.drawString(option.name, posX, posY);
+				Utility.drawOutlinedText(g, option.text,
+						Main.resX/2, posY,
+						option.highlighted ? Color.LIGHT_GRAY : OPTION_COLOR, Color.BLACK);
 				
 				g.setColor(new Color(30, 180, 30));
-				g.drawLine(0, OPTION_START+x*OPTION_SPACING-TEXT_SIZE/3,
-						option.size, OPTION_START+x*OPTION_SPACING-TEXT_SIZE/3);
-				g.drawLine(Main.resX, OPTION_START+x*OPTION_SPACING-TEXT_SIZE/3,
-						Main.resX-option.size, OPTION_START+x*OPTION_SPACING-TEXT_SIZE/3);
+				g.drawLine(0, posY-TEXT_SIZE/3,
+						option.lineSize, posY-TEXT_SIZE/3);
+				g.drawLine(Main.resX, posY-TEXT_SIZE/3,
+						Main.resX-option.lineSize, posY-TEXT_SIZE/3);
 				
-				g.drawLine(option.size, OPTION_START+x*OPTION_SPACING-TEXT_SIZE*5/6,
-						option.size, OPTION_START+x*OPTION_SPACING+TEXT_SIZE/6);
-				g.drawLine(Main.resX-option.size, OPTION_START+x*OPTION_SPACING-TEXT_SIZE*5/6,
-						Main.resX-option.size, OPTION_START+x*OPTION_SPACING+TEXT_SIZE/6);
+				g.drawLine(option.lineSize, posY-TEXT_SIZE*5/6,
+						option.lineSize, posY+TEXT_SIZE/6);
+				g.drawLine(Main.resX-option.lineSize, posY-TEXT_SIZE*5/6,
+						Main.resX-option.lineSize, posY+TEXT_SIZE/6);
 				
-				g.drawLine(option.size, OPTION_START+x*OPTION_SPACING-TEXT_SIZE*5/6,
-						option.size+10, OPTION_START+x*OPTION_SPACING-TEXT_SIZE*5/6);
-				g.drawLine(option.size, OPTION_START+x*OPTION_SPACING+TEXT_SIZE/6,
-						option.size+10, OPTION_START+x*OPTION_SPACING+TEXT_SIZE/6);
-				g.drawLine(Main.resX-option.size, OPTION_START+x*OPTION_SPACING-TEXT_SIZE*5/6,
-						Main.resX-option.size-10, OPTION_START+x*OPTION_SPACING-TEXT_SIZE*5/6);
-				g.drawLine(Main.resX-option.size, OPTION_START+x*OPTION_SPACING+TEXT_SIZE/6,
-						Main.resX-option.size-10, OPTION_START+x*OPTION_SPACING+TEXT_SIZE/6);
+				g.drawLine(option.lineSize, posY-TEXT_SIZE*5/6,
+						option.lineSize+10, posY-TEXT_SIZE*5/6);
+				g.drawLine(option.lineSize, posY+TEXT_SIZE/6,
+						option.lineSize+10, posY+TEXT_SIZE/6);
+				g.drawLine(Main.resX-option.lineSize, posY-TEXT_SIZE*5/6,
+						Main.resX-option.lineSize-10, posY-TEXT_SIZE*5/6);
+				g.drawLine(Main.resX-option.lineSize, posY+TEXT_SIZE/6,
+						Main.resX-option.lineSize-10, posY+TEXT_SIZE/6);
 			}
 		}
 	}
 	
 	public void suspend(){
-		running = false;
+		timer.stop(false);
 		if (!(Main.getCurrentWindow() instanceof Menu))
-			Sound.stopAll();
+			music.stop();
 	}
 	
 	public void resume(){
-		start();
+		startAnimation();
 		Toolkit.getDefaultToolkit().sync();
 	}
 	
 	public void start(){
-		new Thread("MenuAnimateThread"){
-			public void run(){
-				animate();
-		}}.start();
-		music.setVolume(Main.musicVolume);
-		music.play();
-		this.setPreferredSize(new Dimension(Main.resX, Main.RES_Y));
-		repaint();
+		startAnimation();
 	}
 	
-	public void animate(){
-		running = true;
-		while(running){
-			try{
-				Thread.sleep(1000/Main.framesPerSec);
-			}catch (InterruptedException e){}
-			for (int x = 0; x < options.size(); x++){
-				Option option = options.get(x);
-				Point mousePosition = Main.getMousePosition();
-				option.highlighted = mousePosition != null &&
-						abs(mousePosition.x-Main.resX/2) < option.name.length()*TEXT_SIZE*0.32 &&
-						abs(mousePosition.y+TEXT_SIZE/3-(OPTION_START+x*OPTION_SPACING)) < TEXT_SIZE/2;
-				
-				if (option.highlighted){
-					option.size = (int)min(option.size+800/Main.framesPerSec, Main.resX/2-option.name.length()*TEXT_SIZE*0.288-10);
-				}else
-					option.size = max(80, option.size-400/Main.framesPerSec);
-			}
-			
-			repaint();
-			//repaint(0, OPTION_START-TEXT_SIZE, Main.resX, options.size()*OPTION_SPACING);
+	private void startAnimation(){
+		timer.start();
+		music.setVolume(Main.options.musicVolume);
+		music.play();
+	}
+	
+	public void animateFrame(){
+		for (int x = 0; x < options.size(); x++){
+			Option option = options.get(x);
+			Point mousePosition = Main.getMousePosition();
+			option.highlighted = mousePosition != null && option.isSelected(mousePosition);
+			if (option.highlighted){
+				option.lineSize = (int)min(option.lineSize + ANIMATION_SPEED/Main.options.menuFramesPerSec,
+						Main.resX/2-option.textWidth/2-8);
+			}else
+				option.lineSize = max(MIN_LINE_SIZE, option.lineSize-(ANIMATION_SPEED/2)/Main.options.menuFramesPerSec);
 		}
+	}
+	
+	protected String getBackgroundFile(){
+		return "data/main_menu_background.png";
+	}
+	
+	public static void load(){
+		music = new Sound(new File("data/menu_music.wav"));
+		music.setFollowSound(music);
+		music.load();
+		
+		try{
+			title = Main.convert(ImageIO.read(new File("data/title.png")));
+		}catch(IOException e){
+			title = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+		}
+		
+		versionFont = Main.getDefaultFont(12);
 	}
 	
 	public abstract class Option{
-		private String name;
-		private int size;
+		private String text;
+		private int lineSize;
+		private int posY;
 		private boolean highlighted;
-		public Option(String name){
-			this.name = name;
-			this.size = 80;
+		private int textWidth;
+		private Font font;
+		
+		public Option(String text){
+			this.text = text;
 			this.highlighted = false;
+			
+			int maxWidth = Main.resX - 2*MIN_LINE_SIZE - 40;
+			font = OPTION_FONT;
+			while ((textWidth = getFontMetrics(font).stringWidth(text)) > maxWidth)
+				font = new Font(font.getFamily(), font.getStyle(), font.getSize()-1);
 		}
+		
+		public boolean isSelected(Point pos){
+			return abs(pos.x - Main.resX/2) < textWidth/2 &&
+					abs(pos.y+TEXT_SIZE/3 - posY) < TEXT_SIZE/2;
+		}
+		
+		public void playSound(){
+			clickSound.play();
+		}
+		
 		public abstract void act();
 	}
 }

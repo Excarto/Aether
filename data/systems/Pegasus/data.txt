@@ -3,7 +3,7 @@ description = A radar with average range and low power consumption.
 
 type = sensor
 mass= 45
-cost= 40
+cost= 45
 hull= 500
 stealth_resistance= 0.9
 range= 14000

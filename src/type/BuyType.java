@@ -12,7 +12,7 @@ public abstract class BuyType extends Type{
 	
 	public final String name;
 	public final BufferedImage perspectiveImg, sideImg;//, frontImg;
-	public final String typeClass;
+	public final String className;
 	public final String description;
 	public final ExplosionType deathExplosion;
 	public final Sound deathSound;
@@ -27,7 +27,7 @@ public abstract class BuyType extends Type{
 		super(folder + "/" + name);
 		this.name = name;
 		
-		typeClass = getString("class");
+		className = getString("class");
 		description = getString("description");
 		
 		int numDeathExplosions = 0;
@@ -84,6 +84,10 @@ public abstract class BuyType extends Type{
 				maxDebrisPiece = x;
 			}
 		}
+	}
+	
+	public String getFullName(){
+		return name + " class " + className;
 	}
 	
 	public String toString(){

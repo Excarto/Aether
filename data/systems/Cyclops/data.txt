@@ -3,7 +3,7 @@ description = An extremely long range radar. It has poor accuracy and a slow ref
 
 type = sensor
 mass= 150
-cost= 85
+cost= 80
 hull= 750
 stealth_resistance= 0.85
 range= 26000

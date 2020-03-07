@@ -49,8 +49,7 @@ public class ContactMsg extends InGameMsg{
 		projectile.place(sprite.getPosX()+posX, sprite.getPosY()+posY,
 				sprite.getVelX()+velX, sprite.getVelY()+velY,
 				projectile.getAngle(), projectile.getTurnSpeed());
-		projectile.contact(target);
-		if (Main.server != null && target.getHull() <= 0)
+		if (projectile.contact(target) && Main.server != null)
 			explodes = true;
 		if (explodes)
 			target.explode();

@@ -8,8 +8,8 @@ hull= 550
 stealth_resistance= 0.95
 power_use= 1.3E3
 energy_to_engage= 10E3
-position_accuracy= 0.78
-velocity_accuracy= 0.74
+position_accuracy= 0.86
+velocity_accuracy= 0.78
 repair_per_material= 20
 ping_lifetime= 20
 

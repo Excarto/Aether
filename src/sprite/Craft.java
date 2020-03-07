@@ -10,6 +10,7 @@ public class Craft extends Unit{
 	public Craft(CraftType type){
 		super(type);
 		this.type = type;
+		setName(type.className);
 	}
 	
 	public void act(){
@@ -21,7 +22,7 @@ public class Craft extends Unit{
 				if (weapon.type.ammoType == -1 || ammo[weapon.type.ammoType] > 0)
 					noAmmo = false;
 			}
-			if (noAmmo || getHull() < type.hull/4){
+			if (noAmmo){// || getHull() < type.hull/4){
 				returnToMothership();
 				returnToMothership = false;
 			}

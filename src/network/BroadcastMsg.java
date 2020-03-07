@@ -24,7 +24,7 @@ public class BroadcastMsg extends Message{
 		}catch (IOException ex){
 			address = null;
 		}
-		gameName = Main.filter(stream.readUTF(), VALID_NAME_CHARS);
+		gameName = Utility.filter(stream.readUTF(), VALID_NAME_CHARS);
 		numClients = stream.readInt();
 	}
 	

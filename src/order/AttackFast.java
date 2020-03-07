@@ -37,7 +37,7 @@ public class AttackFast extends MovePastTarget{
 		if (!isFacing){
 			super.act();
 		}else{
-			if (abs(Game.fixAngle(targetAngle-host.getAngle())) < 10)
+			if (abs(Utility.fixAngle(targetAngle-host.getAngle())) < 10)
 				((Controllable)host).accelForward();
 			if (Main.game.turn-setAngleTime > 5)
 				setTimeAndAngle();

@@ -1,5 +1,5 @@
 class = Multi Rotary Cannon
-description = Three cutlasses on a stick. It is very dangerous to any lightly armored targets in its range. It is also effective point defense against large swarms of missiles approaching from the same direction, but its slow tracking rate makes it less useful agaist missiles approaching from multiple direcitons.
+description = Three sabers on a stick. It is very dangerous to any lightly armored targets in its range. It is also effective point defense against large swarms of missiles approaching from the same direction, but its slow tracking rate makes it less useful agaist missiles approaching from multiple direcitons.
 
 type = gun
 cost= 55
@@ -11,13 +11,13 @@ velocity= 580
 inaccuracy= 1.32
 explosive_damage= 0
 EM_damage= 0
-kinetic_damage= 320
+kinetic_damage= 340
 kinetic_damage_exponent = 0.7
 reload_time= 0.16
 energy_per_shot= 0
-tracking_rate= 36
+tracking_rate= 34
 ammo_type= 4
-ammo_mass= 0.094
+ammo_mass= 0.095
 projectile_mass= 0.04
 repair_per_material= 20
 arc_resource_base= 0.18

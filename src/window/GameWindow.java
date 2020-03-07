@@ -1,33 +1,33 @@
 import static java.lang.Math.*;
-
 import javax.swing.*;
-import javax.imageio.*;
-
 import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 
 public final class GameWindow extends Window{
-	public static final int MENU_WIDTH = 270, WINDOW_RES_Y = Main.RES_Y;
+	public static final int MENU_WIDTH = 270;
 	public static final int DIVIDER_WIDTH = 4;
 	public static final int MENU_REFRESH_PER_SEC = 8;
-	public final static Font UNIT_LABEL_FONT = new Font("Arial", Font.PLAIN, 12);
-	private static final Font DISPLAY_FONT = new Font("Arial", Font.BOLD, 40), CHAT_FONT = new Font("Arial", Font.PLAIN, 15);
 	private static final int MAX_CHAT_LINES = 6, CHAT_LINE_SPACING = 20, CHAT_LIFETIME = 6*Main.TPS;
 	
-	private static Music music;
-	public static double framesPerTurn;
-	public static int turnsPerFrame;
+	private static final double FRAMERATE_ADJUST_RATE = 0.008;
+	private static final double FRAMERATE_INCREASE_THRESH = 0.98;
+	private static final double FRAMERATE_DECREASE_THRESH = 0.80;
 	
-	public final int windowResX;
+	public static Font unitLabelFont;
+	public static Font displayFont;
+	public static Font chatFont, missionChatFont;
+	
+	private static Music music;
+	private static Sound notification;
+	
+	public final int windowResX, windowResY;
 	public final HumanPlayer player;
 	public final int inscribeRadius;
 	
-	//private GLG2DCanvas GLG2DWrapper;
 	private ViewWindow window;
 	private MenuPanel menu;
 	private TutorialPanel tutorial;
@@ -47,7 +47,7 @@ public final class GameWindow extends Window{
 	private InputHandler inputHandler;
 	private boolean frameStarted, frameReady;
 	private boolean hasMenu;
-	private Queue<ChatLine> chatLines;
+	private ArrayDeque<ChatLine> chatLines;
 	private List<Controllable> frameVisibleControllables;
 	private List<Sprite> frameVisibleGraphics;
 	private List<SensorTarget> frameRadarVisibleSprites;
@@ -55,20 +55,25 @@ public final class GameWindow extends Window{
 	private List<Controllable> frameControllables;
 	private List<Controllable> frameSelected;
 	private List<Beam> frameBeams;
+	private int turnsPerFrame;
+	private int minTurnsPerFrame, maxTurnsPerFrame;
 	private int framesPerInterfaceRefresh, turnsUntilShow;
 	private int frameCount;
+	private double frameHitRate;
 	private CountDownLatch renderLatch;
 	private boolean menuUpdatePending;
 	private boolean victory, defeat;
+	private boolean drawGrid, menuDisabled;
 	
 	public GameWindow(HumanPlayer player, double gameSpeed, int randomSeed){
-		super(false);
+		super(Size.FULL);
 		this.setLayout(null);
 		this.setOpaque(true);
 		this.player = player;
 		
 		windowResX = Main.resX - MENU_WIDTH - DIVIDER_WIDTH;
-		inscribeRadius = (int)hypot(windowResX/2, WINDOW_RES_Y/2);
+		windowResY = Main.resY;
+		inscribeRadius = (int)hypot(windowResX/2, windowResY/2);
 		zoomToPosX = zoomToPosY = -1;
 		selected = new ArrayList<Controllable>();
 		chatLines = new ArrayDeque<ChatLine>();
@@ -77,15 +82,19 @@ public final class GameWindow extends Window{
 		frameVisibleGraphics = new ArrayList<Sprite>();
 		frameRadarVisibleSprites = new ArrayList<SensorTarget>();
 		frameTargets = new ArrayList<Target>();
-		frameControllables = new ArrayList<>();
+		frameControllables = new ArrayList<Controllable>();
 		frameSelected = new ArrayList<Controllable>();
 		frameBeams = new ArrayList<Beam>();
 		frameReady = false;
 		frameStarted = false;
 		isTactical = false;
-		turnsPerFrame = Window.getTurnsPerFrame(Main.framesPerSec, gameSpeed);
-		framesPerTurn = 1.0/turnsPerFrame;
-		framesPerInterfaceRefresh = (int)round(Main.framesPerSec/(double)MENU_REFRESH_PER_SEC);
+		drawGrid = false;
+		menuDisabled = false;
+		minTurnsPerFrame = Window.getTurnsPerFrame(Main.options.framesPerSec, gameSpeed);
+		maxTurnsPerFrame = minTurnsPerFrame+1;
+		turnsPerFrame = minTurnsPerFrame;
+		frameHitRate = 1.0;
+		framesPerInterfaceRefresh = (int)round(Main.options.framesPerSec/(double)MENU_REFRESH_PER_SEC);
 		renderLatch = new CountDownLatch(1);
 		
 		Unit.createMenu();
@@ -101,7 +110,7 @@ public final class GameWindow extends Window{
 		window = new ViewWindow();
 		
 		rightPanel = new JPanel(NO_BORDER);
-		rightPanel.setPreferredSize(new Dimension(MENU_WIDTH, Main.RES_Y));
+		rightPanel.setPreferredSize(new Dimension(MENU_WIDTH, Main.resY));
 		defaultPanel = new DefaultPanel(player);
 		
 		menu = new MenuPanel();
@@ -109,19 +118,19 @@ public final class GameWindow extends Window{
 		budgetLabel = new JLabel();
 		budgetLabel.setPreferredSize(new Dimension(60, 18));
 		budgetLabel.setHorizontalAlignment(JLabel.CENTER);
-		budgetLabel.setFont(new Font("Arial", Font.BOLD, 14));
+		budgetLabel.setFont(Main.getDefaultFont(14));
 		budgetLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		
 		inputHandler = new InputHandler(this, window);
 		
 		this.add(window);
 		this.add(rightPanel);
-		window.setBounds(0, 0, windowResX, WINDOW_RES_Y);
-		rightPanel.setBounds(windowResX + DIVIDER_WIDTH, 0, MENU_WIDTH, Main.RES_Y);
+		window.setBounds(0, 0, windowResX, windowResY);
+		rightPanel.setBounds(windowResX+DIVIDER_WIDTH, 0, MENU_WIDTH, Main.resY);
 		
 		queueMenuUpdate();
 		
-		music.randomize(randomSeed);
+		music.randomize(randomSeed, Main.game.mission == null ? null : Main.game.mission.musicName);
 	}
 	
 	public void move(){
@@ -170,7 +179,7 @@ public final class GameWindow extends Window{
 			velY = sprite.getVelY();
 		
 			posX = sprite.getPosX()-windowResX/2;
-			posY = sprite.getPosY()-WINDOW_RES_Y/2;
+			posY = sprite.getPosY()-windowResY/2;
 		}else{
 			Point mousePosition = Main.getMousePosition();
 			Point middleButtonPos = inputHandler.getMiddleButtonHoldPos();
@@ -180,11 +189,11 @@ public final class GameWindow extends Window{
 				inputHandler.setMiddleButtonHoldPos(mousePosition);
 			}
 			
-			double scrollAmount = Main.scrollSpeed/scrollSpeedZoomRatio;
-			double accelAmount = Main.accelRate/scrollSpeedZoomRatio;
+			double scrollAmount = Main.options.scrollSpeed/scrollSpeedZoomRatio;
+			double accelAmount = Main.options.accelRate/scrollSpeedZoomRatio;
 			if (inputHandler.controlPressed(Control.FUNCTION1)){
-				scrollAmount *= Main.cameraMoveMultiplier;
-				accelAmount *= Main.cameraMoveMultiplier;
+				scrollAmount *= Main.options.cameraMoveMultiplier;
+				accelAmount *= Main.options.cameraMoveMultiplier;
 			}
 			
 			if (zoomToPosX != -1){
@@ -219,16 +228,10 @@ public final class GameWindow extends Window{
 	public void paint(Graphics g){
 		super.paint(g);
 		
-		try{
-			BufferedImage border = ImageIO.read(new File("data/divider.png"));
-			g.drawImage(border, windowResX, 0, null);
-			border.flush();
-		}catch (IOException e){}
+		g.drawImage(dividerImg, windowResX, 0, null);
 	}
 	
-	//int count; long sum; long startTime; long firstFrameTime; int firstFrame; int framesMissed;
 	public void renderFrame(){
-		//currentMilis = java.lang.System.nanoTime()/1000;
 		
 		boolean startNewFrame;
 		synchronized (GameWindow.this){
@@ -236,10 +239,11 @@ public final class GameWindow extends Window{
 			if (turnsUntilShow <= 0 && frameStarted){
 				if (frameReady){
 					frameStarted = false;
-				}//else{
-				//	framesMissed++;
-				//	this.receiveChat("frame missed "+(100*1000*framesMissed/frameCount)/1000.0+"%", 0);
-				//}
+				}else{
+					if (Main.DEBUG)
+						this.receiveMessage("frame missed " + turnsPerFrame + " " + Main.game.turn, 0, Main.TPS);
+				}
+				updateTurnsPerFrame(frameReady);
 				turnsUntilShow = turnsPerFrame;
 				renderLatch.countDown();
 			}
@@ -253,7 +257,6 @@ public final class GameWindow extends Window{
 		
 		if (startNewFrame){
 			frameCount++;
-			//milisShow = java.lang.System.nanoTime()/1000 + turnsUntilShow*1000/Main.TPS;
 			
 			recordFrameState();
 			
@@ -265,7 +268,6 @@ public final class GameWindow extends Window{
 			
 			SwingUtilities.invokeLater(new Runnable(){
 				public void run(){
-					//startTime = java.lang.System.nanoTime();
 					
 					if (frameMenuUpdate)
 						updateMenu();
@@ -276,11 +278,11 @@ public final class GameWindow extends Window{
 						if (frameCount%2 == 0)
 							Main.paintDirtyRegions();
 						
-						Graphics frameGraphics = Main.getFrameGraphics();
+						Graphics2D frameGraphics = Main.getFrameGraphics();
 						if (frameGraphics == null)
 							return;
 						
-						frameGraphics.setClip(0, 0, windowResX, WINDOW_RES_Y);
+						frameGraphics.setClip(0, 0, windowResX, windowResY);
 						window.paintFrame(frameGraphics);
 						
 						frameGraphics.dispose();
@@ -289,20 +291,6 @@ public final class GameWindow extends Window{
 						ex.printStackTrace();
 						java.lang.System.err.println();
 					}
-					
-					/*long time = (java.lang.System.nanoTime()-startTime);
-					count++;
-					sum += time;
-					if (frameCount%101 == 0){
-						if (firstFrameTime == 0){
-							firstFrame = frameCount;
-							firstFrameTime = java.lang.System.nanoTime();
-						}
-						java.lang.System.out.println(sum*1.0e-6/count
-								+" "+(frameCount-firstFrame)*1.0e9/(java.lang.System.nanoTime()-firstFrameTime));
-						sum = 0;
-						count = 0;
-					}*/
 					
 					frameReady = true;
 					try{
@@ -345,7 +333,7 @@ public final class GameWindow extends Window{
 		framePosX = posX;
 		framePosY = posY;
 		frameZoomRatio = zoomRatio;
-		frameRenderZoomRatio = pow(zoomRatio, Main.renderSizeScaling);
+		frameRenderZoomRatio = pow(zoomRatio, Main.options.renderSizeScaling);
 		
 		for (Arena.ForegroundObject object : Main.game.arena.foregroundObjects)
 			object.recordPos();
@@ -378,6 +366,17 @@ public final class GameWindow extends Window{
 		frameSelected.addAll(selected);
 	}
 	
+	private void updateTurnsPerFrame(boolean frameHit){
+		frameHitRate = frameHitRate*(1 - FRAMERATE_ADJUST_RATE) + (frameHit ? 1.0 : 0.0)*FRAMERATE_ADJUST_RATE;
+		if (frameHitRate > FRAMERATE_INCREASE_THRESH && turnsPerFrame > minTurnsPerFrame){
+			turnsPerFrame--;
+			frameHitRate = (FRAMERATE_INCREASE_THRESH + FRAMERATE_DECREASE_THRESH)/2;
+		}else if (frameHitRate < FRAMERATE_DECREASE_THRESH && turnsPerFrame < maxTurnsPerFrame){
+			turnsPerFrame++;
+			frameHitRate = (FRAMERATE_INCREASE_THRESH + FRAMERATE_DECREASE_THRESH)/2;
+		}
+	}
+	
 	public void exit(){
 		Main.setDispatcherEnabled(false);
 		Main.setHighPerformance(false);
@@ -389,29 +388,29 @@ public final class GameWindow extends Window{
 	}
 	public void suspend(){}
 	
-	public static void load(){
-		//File[] musicFiles = new File("data/music/").listFiles();
-		//music = new Sound(musicFiles[(int)(random()*musicFiles.length)]);
-		//music.setFollowSound(music);
-		//music.load();
-		music = new Music("data/music");
-		
-		SidePanel.load();
+	protected String getBackgroundFile(){
+		return null;
 	}
 	
 	public void initialize(){
-		posX = Main.game.arena.teamPositions[player.position][0] - windowResX/2;
-		posY = Main.game.arena.teamPositions[player.position][1] - WINDOW_RES_Y/2;
+		posX = Main.game.arena.teamPos[player.position][0] - windowResX/2;
+		posY = Main.game.arena.teamPos[player.position][1] - windowResY/2;
+		velX = Main.game.arena.teamVel[player.position][0];
+		velY = Main.game.arena.teamVel[player.position][1];
 		
-		music.setVolume(Main.musicVolume);
+		music.setVolume(Main.options.musicVolume);
 		music.play();
 		updateBudget();
+	}
+	
+	public void setMenuDisabled(boolean menuDisabled){
+		this.menuDisabled = menuDisabled;
 	}
 	
 	public void toggleMenu(){
 		SwingUtilities.invokeLater(new Runnable(){
 			public void run(){
-				if (window.getComponentCount() == 0){
+				if (window.getComponentCount() == 0 && !menuDisabled){
 					window.add(menu);
 					window.revalidate();
 					if (Main.game.isLocal())
@@ -419,7 +418,7 @@ public final class GameWindow extends Window{
 				}else{
 					window.removeAll();
 					window.revalidate();
-					Main.game.arena.drawBackground((Graphics2D)getGraphics(), GameWindow.this);
+					drawBackground((Graphics2D)getGraphics());
 					if (Main.game.isLocal())
 						Main.game.setPause(false);
 				}
@@ -428,9 +427,9 @@ public final class GameWindow extends Window{
 	}
 	
 	public int setZoomLevel(int level){
-		level = max(0, min(Main.zoomLevels, level));
-		zoomRatio = pow(Main.zoomRatio, level);
-		scrollSpeedZoomRatio = pow(Main.moveZoomRatio, level);
+		level = max(0, min(Main.options.zoomLevels, level));
+		zoomRatio = pow(Main.options.zoomRatio, level);
+		scrollSpeedZoomRatio = pow(Main.options.moveZoomRatio, level);
 		multiPosOrderDist = 160+(int)(20/zoomRatio);
 		return level;
 	}
@@ -452,7 +451,6 @@ public final class GameWindow extends Window{
 		defeat = true;
 	}
 	
-	
 	public InputHandler getInputHandler(){
 		return inputHandler;
 	}
@@ -472,19 +470,21 @@ public final class GameWindow extends Window{
 		return (int)((gamePosX-framePosX)*frameZoomRatio+(1-frameZoomRatio)*windowResX/2);
 	}
 	public int posYOnScreen(double gamePosY){
-		return (int)((gamePosY-framePosY)*frameZoomRatio+(1-frameZoomRatio)*WINDOW_RES_Y/2);
+		return (int)((gamePosY-framePosY)*frameZoomRatio+(1-frameZoomRatio)*windowResY/2);
 	}
 	
 	public int posXInGame(Point point){
 		return (int)((point.getX()-(1-zoomRatio)*windowResX/2)/zoomRatio+framePosX);
 	}
 	public int posYInGame(Point point){
-		return (int)((point.getY()-(1-zoomRatio)*WINDOW_RES_Y/2)/zoomRatio+framePosY);
+		return (int)((point.getY()-(1-zoomRatio)*windowResY/2)/zoomRatio+framePosY);
 	}
 	
 	public boolean isInWindow(Point position){
-		return position != null && position.x < windowResX && position.x >= 0 &&
-				position.y < WINDOW_RES_Y && position.y >= 0;
+		return position != null && isInWindow(position.x, position.y);
+	}
+	public boolean isInWindow(int posX, int posY){
+		return posX < windowResX && posX >= 0 && posY < windowResY && posY >= 0;
 	}
 	
 	public int getMousePosX(){
@@ -541,11 +541,6 @@ public final class GameWindow extends Window{
 		return frameCount;
 	}
 	
-	public double renderTimeLeft(){
-		//return (milisShow - currentMilis)*framePerMilis;
-		return turnsUntilShow*framesPerTurn;
-	}
-	
 	public void setStrategic(boolean strategic){
 		isTactical = !strategic;
 	}
@@ -557,7 +552,7 @@ public final class GameWindow extends Window{
 	
 	public void zoomTo(double posX, double posY, double velX, double velY){
 		zoomToPosX = posX-windowResX/2;
-		zoomToPosY = posY-WINDOW_RES_Y/2;
+		zoomToPosY = posY-windowResY/2;
 		this.velX = velX;
 		this.velY = velY;
 	}
@@ -579,38 +574,49 @@ public final class GameWindow extends Window{
 	}
 	
 	public void drawPointerLine(Graphics g, int posX, int posY, String label){
-		if (posX < 0 || posX > windowResX || posY < 0 || posY > WINDOW_RES_Y){
+		if (posX < 0 || posX > windowResX || posY < 0 || posY > windowResY){
 			double centerPosX = posX-windowResX/2;
-			double centerPosY = posY-WINDOW_RES_Y/2;
+			double centerPosY = posY-windowResY/2;
 			
-			int startX = (int)(centerPosX*(WINDOW_RES_Y/2)/abs(0.5+centerPosY)+windowResX/2);
+			int startX = (int)(centerPosX*(windowResY/2)/abs(0.5+centerPosY)+windowResX/2);
 			startX = max(0, min(windowResX, startX));
-			int startY = (int)(centerPosY*(windowResX/2)/abs(0.5+centerPosX)+WINDOW_RES_Y/2);
-			startY = max(0, min(WINDOW_RES_Y, startY));
+			int startY = (int)(centerPosY*(windowResX/2)/abs(0.5+centerPosX)+windowResY/2);
+			startY = max(0, min(windowResY, startY));
 			
 			double rateX = startX-windowResX/2;
-			double rateY = startY-WINDOW_RES_Y/2;
-			double norm = sqrt(rateX*rateX + rateY*rateY);
-			rateX /= norm;
-			rateY /= norm;
+			double rateY = startY-windowResY/2;
+			double normInv = 1.0/sqrt(rateX*rateX + rateY*rateY);
+			rateX *= normInv;
+			rateY *= normInv;
 			
-			double length = Main.maxPointerLineLength-pow(centerPosX*centerPosX+centerPosY*centerPosY, 0.3)/8;
-			length = max(length, Main.maxPointerLineLength/4);
-			
-			double offset = label == null ? 0 : 19;
+			double offset = label == null ? 0 : 20;
+			double length = Main.options.maxPointerLineLength - 0.1*pow(centerPosX*centerPosX+centerPosY*centerPosY, 0.3);
+			length = max(length, offset+Main.options.maxPointerLineLength/4);
 			
 			g.drawLine(startX-(int)(offset*rateX), startY-(int)(offset*rateY),
 					startX-(int)(length*rateX), startY-(int)(length*rateY));
 			
 			if (label != null){
-				g.setFont(UNIT_LABEL_FONT);
-				g.drawString(label, startX-(int)(10*rateX)-4*label.length(), startY-(int)(8*rateY)+4);
+				g.setFont(unitLabelFont);
+				g.drawString(label, startX-(int)(12*rateX)-4*label.length(), startY-(int)(10*rateY)+4);
 			}
 		}
 	}
 	
+	public void drawBackground(Graphics2D g){
+		g.setClip(0, 0, Main.resX-MENU_WIDTH-DIVIDER_WIDTH, Main.resY);
+		if (Main.game.mission == null){
+			Arena.background.drawBackground(g, this);
+		}else
+			Main.game.mission.drawBackground(g, this);
+	}
+	
 	public void updateBudget(){
 		budgetLabel.setText("$"+player.getBudget());
+	}
+	
+	public void setGridEnabled(boolean drawGrid){
+		this.drawGrid = drawGrid;
 	}
 	
 	public void receiveChat(String message, int team){
@@ -620,6 +626,8 @@ public final class GameWindow extends Window{
 	public void receiveMessage(String message, int team, int lifetime){
 		if (team == 0 || team == player.team){
 			synchronized (chatLines){
+				if (chatLines.isEmpty() || chatLines.peekLast().age > 10)
+					notification.play();
 				chatLines.offer(new ChatLine(message, lifetime));
 				if (chatLines.size() > MAX_CHAT_LINES)
 					chatLines.poll();
@@ -631,37 +639,78 @@ public final class GameWindow extends Window{
 		toSelect = controllable;
 	}
 	
+	public boolean isOptimizedDrawingEnabled(){
+		return true;
+	}
+	
+	public static void load(){
+		notification = new Sound(new File("data/notification.wav"));
+		notification.load();
+		music = new Music("data/music", "data/music/mission");
+		SidePanel.load();
+	}
+	
 	static final int BAR_WIDTH = 70, BAR_HEIGHT = 17;
 	static final int BAR_YPOS = 3, BAR_SPACING = 6;
+	static final int GRID_SPACING = 40;
 	static final Color BAR_COLOR1_FRIENDLY = new Color(50, 200, 50, 255);
 	static final Color BAR_COLOR1_HOSTILE = new Color(200, 50, 50, 255);
 	static final Color BAR_COLOR2_FRIENDLY = new Color(100, 180, 100, 255);
 	static final Color BAR_COLOR2_HOSTILE = new Color(180, 100, 100, 255);
-	static final Font BAR_FONT = new Font("Arial", Font.BOLD, 14);
+	static final Color GRID_COLOR1 = new Color(0, 200, 0, 12);
+	static final Color GRID_COLOR2 = new Color(0, 200, 0, 22);
 	private class ViewWindow extends JComponent{
+		Font barFont;
+		
 		public ViewWindow(){
-			this.setPreferredSize(new Dimension(windowResX, WINDOW_RES_Y));
+			this.setPreferredSize(new Dimension(windowResX, windowResY));
 			this.setOpaque(true);
+			barFont = Main.getDefaultFont(14);
 		}
 		
 		public void paint(Graphics g){
-			Main.game.arena.drawBackground((Graphics2D)g, GameWindow.this);
+			drawBackground((Graphics2D)g);
 		}
 		
 		public void paintFrame(Graphics graphics){
 			Graphics2D g = (Graphics2D)graphics;
 			g.setRenderingHints(Main.inGameHints);
+			
+			boolean isWarpGame = Main.game.arena.startBudget < 1.0 && player.totalBudget > 0;
+			
 			Point mousePosition = Main.getMousePosition();
 			if (!isInWindow(mousePosition))
 				mousePosition = null;
 			
 			if (!Main.game.isRunning()){
 				g.setColor(Color.BLACK);
-				g.fillRect(0, 0, windowResX, WINDOW_RES_Y);
+				g.fillRect(0, 0, windowResX, windowResY);
 				return;
 			}
 			
-			Main.game.arena.draw(g, GameWindow.this);
+			Main.game.arena.draw(g, GameWindow.this, isWarpGame);
+			
+			if (drawGrid){
+				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+				Random rand = new Random(Main.game.turn);
+				
+				int ngridX = windowResX/GRID_SPACING;
+				int posX = (windowResX - ngridX*GRID_SPACING)/2;
+				for (int x = 0; x < ngridX; x++){
+					g.setColor(rand.nextBoolean() ? GRID_COLOR1 : GRID_COLOR2);
+					g.drawLine(posX, 0, posX, windowResY);
+					posX += GRID_SPACING;
+				}
+				
+				int ngridY = windowResY/GRID_SPACING;
+				int posY = (windowResY - ngridY*GRID_SPACING)/2;
+				for (int y = 0; y < ngridY; y++){
+					g.setColor(rand.nextBoolean() ? GRID_COLOR1 : GRID_COLOR2);
+					g.drawLine(0, posY, windowResX, posY);
+					posY += GRID_SPACING;
+				}
+				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, Main.inGameHints.get(RenderingHints.KEY_ANTIALIASING));
+			}
 			
 			for (Controllable controllable : frameControllables){
 				if (inputHandler.controlPressed(Control.FUNCTION2) || frameSelected.contains(controllable) ||
@@ -704,7 +753,7 @@ public final class GameWindow extends Window{
 				target.draw(g, GameWindow.this);
 			
 			for (SensorTarget target : frameRadarVisibleSprites){
-				if (!frameVisibleControllables.contains(target.sprite))
+				if (!frameVisibleControllables.contains((Controllable)target.sprite))
 					target.draw(g, GameWindow.this);
 			}
 			
@@ -739,21 +788,14 @@ public final class GameWindow extends Window{
 				text = String.valueOf(1+Main.game.turnsToStart()/Main.TPS);
 			}
 			if (text != null){
-				g.setFont(DISPLAY_FONT);
-				int posX = windowResX/2-g.getFontMetrics().stringWidth(text)/2;
-				int posY = WINDOW_RES_Y/2-200;
-				g.setColor(Color.BLACK);
-				for (int x = -2; x <= 2; x++){
-					for (int y = -2; y <= 2; y++)
-						g.drawString(text, posX+x, posY+y);
-				}
-				g.setColor(Color.LIGHT_GRAY);
-				g.drawString(text, posX, posY);
+				g.setFont(displayFont);
+				Utility.drawOutlinedText(g, text, windowResX/2, windowResY/2-200, Color.LIGHT_GRAY, Color.BLACK);
 			}
 			
 			g.setColor(Color.WHITE);
-			g.setFont(CHAT_FONT);
-			int chatPosY = WINDOW_RES_Y-50;
+			g.setFont(Main.game.mission == null ? chatFont : missionChatFont);
+			
+			int chatPosY = windowResY-50;
 			int chatPosX = 50;
 			if (inputHandler.getChat() != null)
 				g.drawString((inputHandler.isChatToAll() ? "To All:" : "To Allies:")+inputHandler.getChat(), chatPosX, chatPosY);
@@ -762,6 +804,8 @@ public final class GameWindow extends Window{
 				synchronized (chatLines){
 					chatPosY -= CHAT_LINE_SPACING*chatLines.size() + 10;
 					for (ChatLine line : chatLines){
+						int opacity = line.opacity();
+						g.setColor(opacity >= 255 ? Color.WHITE : new Color(255, 255, 255, opacity));
 						g.drawString(line.string, chatPosX, chatPosY);
 						chatPosY += CHAT_LINE_SPACING;
 					}
@@ -785,16 +829,16 @@ public final class GameWindow extends Window{
 				g.drawRect(xStart, BAR_YPOS, BAR_WIDTH, BAR_HEIGHT);
 				
 				g.setColor(Color.BLACK);
-				g.setFont(BAR_FONT);
+				g.setFont(barFont);
 				g.drawString("+ " + String.valueOf((int)round(Main.game.getScoreIncrement(x)*Main.TPS)),
-						xStart+BAR_WIDTH/2-12, BAR_YPOS+BAR_HEIGHT/2+6);
+						xStart+BAR_WIDTH/2-13, BAR_YPOS+BAR_HEIGHT/2+6);
 				
 				xStart += BAR_SPACING+BAR_WIDTH;
 			}
 			
-			if (Main.game.arena.startBudget < 1.0){
+			if (isWarpGame){
 				int posX = windowResX-55, posY = 15;
-				g.setFont(BAR_FONT);
+				g.setFont(barFont);
 				g.setColor(Color.BLACK);
 				String string = "$" + player.getBudget();
 				g.drawString(string, posX-1, posY);
@@ -810,15 +854,20 @@ public final class GameWindow extends Window{
 		}
 	}
 	
-	static final int MENU_PANEL_WIDTH = 140, MENU_PANEL_HEIGHT = 162;
+	static final int MENU_PANEL_WIDTH = 145, MENU_PANEL_HEIGHT = 162;
 	private class MenuPanel extends JPanel{
 		public MenuPanel(){
-			this.setPreferredSize(new Dimension(MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT));
-			this.setBounds(windowResX/2-MENU_PANEL_WIDTH/2, WINDOW_RES_Y/2-MENU_PANEL_HEIGHT/2,
-					MENU_PANEL_WIDTH, MENU_PANEL_HEIGHT);
+			Mission mission = Main.game.mission;
+			
+			int height = MENU_PANEL_HEIGHT;
+			if (mission != null)
+				height += 29;
+			this.setPreferredSize(new Dimension(MENU_PANEL_WIDTH, height));
+			this.setBounds(windowResX/2-MENU_PANEL_WIDTH/2, windowResY/2-height/2,
+					MENU_PANEL_WIDTH, height);
 			this.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 3));
 			
-			Dimension buttonSize = new Dimension(MENU_PANEL_WIDTH-20, 25);
+			Dimension buttonSize = new Dimension(MENU_PANEL_WIDTH-15, 25);
 			
 			JLabel menuLabel = new JLabel();
 			menuLabel.setPreferredSize(buttonSize);
@@ -835,19 +884,31 @@ public final class GameWindow extends Window{
 					window.revalidate();
 			}});
 			
-			JButton leaveButton = new JButton("Leave Game");
-			leaveButton.setPreferredSize(buttonSize);
-			leaveButton.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent e){
-					Main.game.stop();
-					Main.removeWindow();
-			}});
-			
 			JButton exitButton = new JButton("Exit Aether");
 			exitButton.setPreferredSize(buttonSize);
 			exitButton.addActionListener(new ActionListener(){
 				public void actionPerformed(ActionEvent e){
 					Main.exit();
+			}});
+			
+			JButton restartButton = null;
+			if (mission != null){
+				restartButton = new JButton("Restart Mission");
+				restartButton.setPreferredSize(buttonSize);
+				restartButton.addActionListener(new ActionListener(){
+					public void actionPerformed(ActionEvent e){
+						Main.game.stop();
+						Main.removeWindow();
+						mission.start(mission.getPilot());
+				}});
+			}
+			
+			JButton leaveButton = new JButton(Main.game.mission == null ? "Leave Game" : mission.getEndString());
+			leaveButton.setPreferredSize(buttonSize);
+			leaveButton.addActionListener(new ActionListener(){
+				public void actionPerformed(ActionEvent e){
+					Main.game.stop();
+					Main.removeWindow();
 			}});
 			
 			JButton resumeButton = new JButton("Resume");
@@ -859,19 +920,22 @@ public final class GameWindow extends Window{
 			
 			this.add(menuLabel);
 			this.add(exitButton);
+			if (restartButton != null)
+				this.add(restartButton);
 			this.add(leaveButton);
 			this.add(tutorialButton);
 			this.add(resumeButton);
 		}
 	}
 	
-	static final int TUTORIAL_WIDTH = 550, TUTORIAL_HEIGHT = 700;
+	static final int TUTORIAL_WIDTH = 550, TUTORIAL_PANEL_HEIGHT = 800;
+	static final int TUTORIAL_HEIGHT = 1530;
 	private class TutorialPanel extends JScrollPane{
 		public TutorialPanel(){
 			super(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-			this.setPreferredSize(new Dimension(TUTORIAL_WIDTH, TUTORIAL_HEIGHT));
+			this.setPreferredSize(new Dimension(TUTORIAL_WIDTH, TUTORIAL_PANEL_HEIGHT));
 			this.setBounds(max(MENU_PANEL_WIDTH, (windowResX-TUTORIAL_WIDTH)/2),
-					(WINDOW_RES_Y-TUTORIAL_HEIGHT)/2, TUTORIAL_WIDTH, TUTORIAL_HEIGHT);
+					(windowResY-TUTORIAL_PANEL_HEIGHT)/2, TUTORIAL_WIDTH, TUTORIAL_PANEL_HEIGHT);
 			this.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 3));
 			
 			File file = new File("data/tutorial.txt");
@@ -883,21 +947,28 @@ public final class GameWindow extends Window{
 			}catch (Exception e){}
 			
 			JLabel label = new JLabel();
-			label.setFont(new Font("Arial", Font.PLAIN, 12));
+			label.setFont(Main.getPlainFont(12));
 			label.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 			label.setHorizontalAlignment(JLabel.LEFT);
-			label.setPreferredSize(new Dimension(TUTORIAL_WIDTH-30, 1160));
+			label.setPreferredSize(new Dimension(TUTORIAL_WIDTH-30, TUTORIAL_HEIGHT));
 			label.setText(new String(buffer));
 			this.setViewportView(label);
 		}
 	}
 	
+	static final int FADE_TIME = Main.TPS/3;
 	private class ChatLine{
 		public String string;
 		public int age, maxAge;
 		public ChatLine(String string, int maxAge){
-			this.string = string;
+			this.string = "> " + string;
 			this.maxAge = maxAge;
+			age = 0;
+		}
+		
+		public int opacity(){
+			int time = maxAge - age;
+			return time > FADE_TIME ? 255 : max(0, time*255/FADE_TIME);
 		}
 	}
 	

@@ -21,7 +21,7 @@ public class Orbit extends TrackOrder{
 			setTimeAndAngle();
 			((Controllable)host).orders().stackOrder(new TurnTo(targetAngle), this);
 		}
-		if (turnsAccel > 0 && abs(Game.fixAngle(host.getAngle()-targetAngle)) < 30){
+		if (turnsAccel > 0 && abs(Utility.fixAngle(host.getAngle()-targetAngle)) < 30){
 			((Controllable)host).accelForward();
 			turnsAccel--;
 		}
@@ -52,6 +52,6 @@ public class Orbit extends TrackOrder{
 	}
 	
 	public Color getColor(){
-		return new Color(240, 125, 0, TRANSPARENT);
+		return new Color(240, 125, 0, TRANSLUCENT_ALPHA);
 	}
 }

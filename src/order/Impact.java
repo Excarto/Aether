@@ -28,7 +28,7 @@ public class Impact extends TrackOrder{
 		if (!finalApproach){
 			if (turnsSetVars++%10 == 0){
 				finalApproachOrder.setTimeAndAngle();
-				if (finalApproachOrder.getTime()*((Missile)host).type.thrust*Main.energyPerThrust <
+				if (finalApproachOrder.getTime()*((Missile)host).type.thrust*Main.config.energyPerThrust <
 						0.95*((Missile)host).getEnergy()){
 					finalApproach = true;
 					((Controllable)host).orders().stackOrder(finalApproachOrder, this);
@@ -39,7 +39,7 @@ public class Impact extends TrackOrder{
 				}
 			}
 			
-			double deltaTarget = abs(Game.fixAngle(targetAngle-host.getAngle()));
+			double deltaTarget = abs(Utility.fixAngle(targetAngle-host.getAngle()));
 			if (timeToAccel > 0){
 				double angleThresh = max(3, min(10, 500/timeToAccel));
 				if (deltaTarget < angleThresh){
@@ -57,7 +57,7 @@ public class Impact extends TrackOrder{
     	
     	distance = sqrt(Dx*Dx+Dy*Dy);
     	closingSpeed = -(Dx*Vx+Dy*Vy)/distance;
-    	double deltaVRemaining = ((Missile)host).getEnergy()/Main.energyPerThrust/((Missile)host).type.projectileMass;
+    	double deltaVRemaining = ((Missile)host).getEnergy()/Main.config.energyPerThrust/((Missile)host).type.projectileMass;
     	double targetClosingSpeed = (closingSpeed + deltaVRemaining)/(1.0+((Missile)host).type.closingFuel);
     	double Sc = max(closingSpeed, targetClosingSpeed);
     	
@@ -83,6 +83,6 @@ public class Impact extends TrackOrder{
 	}
 	
 	public Color getColor(){
-		return new Color(255, 0, 0, finalApproach ? OPAQUE : TRANSPARENT);
+		return new Color(255, 0, 0, finalApproach ? OPAQUE_ALPHA : TRANSLUCENT_ALPHA);
 	}
 }

@@ -18,8 +18,7 @@ public class HostPlayer extends HumanPlayer{
 	
 	public void contact(Projectile projectile, Controllable controllable){
 		ContactMsg msg = projectile.getContactMsg(controllable);
-		projectile.contact(controllable);
-		if (controllable.getHull() <= 0){
+		if (projectile.contact(controllable)){
 			controllable.explode();
 			msg.explodes = true;
 		}
@@ -28,8 +27,7 @@ public class HostPlayer extends HumanPlayer{
 	
 	public void contact(Beam beam, Controllable controllable, double posX, double posY){
 		BeamContactMsg msg = beam.getContactMsg(controllable, posX, posY);
-		beam.contact(controllable, posX, posY);
-		if (controllable.getHull() <= 0){
+		if (beam.contact(controllable, posX, posY)){
 			controllable.explode();
 			msg.explodes = true;
 		}

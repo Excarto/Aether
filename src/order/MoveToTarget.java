@@ -1,7 +1,7 @@
 import static java.lang.Math.*;
 
 public class MoveToTarget extends TrackOrder{
-	static final int TURNS_SET_ACCEL = 8;
+	static final int TURNS_SET_ACCEL = 5;
 	
 	final MoveTo moveOrder;
 	double targetVelX, targetVelY;
@@ -28,13 +28,13 @@ public class MoveToTarget extends TrackOrder{
 	}
 	
 	public void act(){
-		if (time%TURNS_SET_ACCEL == 0){
+		if (runTime%TURNS_SET_ACCEL == 0){
 			if (!((Controllable)host).orders().isActive(moveOrder))
 				((Controllable)host).orders().stackOrder(moveOrder, this);
 			
 			double newTargetVelX = target.getVelX(), newTargetVelY = target.getVelY();
-			targetAccelX = targetAccelX*15/16 + Game.maxAbs((newTargetVelX-targetVelX)/TURNS_SET_ACCEL, 0.05)/16;
-			targetAccelY = targetAccelY*15/16 + Game.maxAbs((newTargetVelY-targetVelY)/TURNS_SET_ACCEL, 0.05)/16;
+			targetAccelX = targetAccelX*15/16 + Utility.clamp((newTargetVelX-targetVelX)/TURNS_SET_ACCEL, 0.05)/16;
+			targetAccelY = targetAccelY*15/16 + Utility.clamp((newTargetVelY-targetVelY)/TURNS_SET_ACCEL, 0.05)/16;
 			targetVelX = newTargetVelX;
 			targetVelY = newTargetVelY;
 			

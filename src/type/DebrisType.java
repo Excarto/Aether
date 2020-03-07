@@ -31,11 +31,11 @@ public class DebrisType{
 					opaquePixels++;
 		}
 		size = (int)round(opaquePixels);
-		visionSize = pow(size*Main.debrisVisionSize, 0.2);
+		visionSize = pow(size*Main.config.debrisVisionSize, 0.2);
 		
-		renderable = new Renderable(1,
-				(int)(Main.debrisRenderAnglesMultiplier*Main.renderAnglesMultiplier*
-						max(origImage.getWidth(), origImage.getHeight())));
+		int numRenders = (int)(Main.options.debrisRenderAnglesMultiplier*Main.options.renderAnglesMultiplier*
+						max(origImage.getWidth(), origImage.getHeight()));
+		renderable = new Renderable(1, numRenders, false);
 	}
 	
 	public void load(){

@@ -1,4 +1,5 @@
 import java.util.*;
+import java.io.*;
 
 public abstract class Type{
 	
@@ -9,7 +10,13 @@ public abstract class Type{
 	public Type(String folder){
 		directory = "data/" + folder;
 		file = directory + "/data.txt";
-		data = Main.readDataFile(file);
+		Map<String, String> data = null;
+		try{
+			data = Utility.readDataFile(file);
+		}catch (IOException ex){
+			Main.crash(file);
+		}
+		this.data = data;
 		
 		Main.appendData(data, folder);
 	}

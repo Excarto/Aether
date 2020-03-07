@@ -1,0 +1,3 @@
+size= 322
+posx= 253
+posy= -3

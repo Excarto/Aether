@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
+import java.util.*;
 
 public class ArenaWindow extends Window{
 	
@@ -14,7 +15,7 @@ public class ArenaWindow extends Window{
 	private Arena arena;
 	
 	public ArenaWindow (SetupWindow setupWindow){
-		super(true);
+		super(Size.NORMAL);
 		arena = setupWindow.arena;
 		parentWindow = setupWindow;
 		
@@ -41,7 +42,12 @@ public class ArenaWindow extends Window{
 		rightPanel.add(startBudgetLabel);
 		rightPanel.add(scoreLabel);
 		
-		arenaList = new JList<Arena>(Main.arenas);
+		Vector<Arena> availArenas = new Vector<Arena>(Main.arenas.length);
+		for (Arena arena : Main.arenas){
+			if (!arena.missionOnly)
+				availArenas.add(arena);
+		}
+		arenaList = new JList<Arena>(availArenas);
 		arenaList.setPreferredSize(new Dimension(160, 250));
 		arenaList.setBorder(BorderFactory.createEtchedBorder());
 		arenaList.addListSelectionListener(new ListSelectionListener(){
@@ -56,7 +62,7 @@ public class ArenaWindow extends Window{
 		
 		JPanel exitPanel = new JPanel();
 		exitPanel.setPreferredSize(new Dimension(700, 50));
-		exitPanel.setOpaque(false); //.setBackground(BACKGROUND_COLOR);
+		exitPanel.setOpaque(false);
 		JButton exitButton = new JButton("Select");
 		exitButton.setPreferredSize(new Dimension(120, 40));
 		exitButton.addActionListener(new ActionListener(){

@@ -1,9 +1,10 @@
 
-public abstract class TrackOrder extends Order implements Locatable{
+public abstract class TrackOrder extends LocatableOrder{
 	public final Locatable target;
 	double renderPosX, renderPosY;
 	
 	public TrackOrder(Locatable target){
+		super();
 		this.target = target;
 		renderPosX = Double.NaN;
 		renderPosY = Double.NaN;
