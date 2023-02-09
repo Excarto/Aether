@@ -2,6 +2,11 @@ import static java.lang.Math.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+// Contains the full state of an in-game player. Player objects are instntiated when the round starts
+// and are discarded when returning to the lobby. In-game events that require possible network synchronization
+// are implemented as methods in this class, so that appropriate behavior can be implemented by child classes
+// that represent networked players.
+
 public class Player{
 	static final int WARP_DELAY = Main.TPS/3;
 	static final int BUDGET_UPDATE_INTERVAL = 10*Main.TPS;
@@ -57,6 +62,7 @@ public class Player{
 		targets = new HashMap<Controllable,Target>();
 		warpQueue = new ConcurrentLinkedQueue<Ship>();
 		
+		// Convenience iterator for looping through all units once, including ships not warped in
 		units = new Iterable<Unit>(){
 			public Iterator<Unit> iterator(){
 				return new Iterator<Unit>(){
@@ -166,6 +172,7 @@ public class Player{
 	
 	public void gameEnd(int victoryTeam){}
 	
+	// Periodic update of visible sprite list
 	public void setVisibleSprites(){
 		visibleControllables.clear();
 		for (Player player : Main.game.players){
@@ -194,6 +201,7 @@ public class Player{
 	
 	public void removeEffect(Sprite effect){}
 	
+	// Called when any Controllable is removed from the game
 	public void removeControllable(Controllable removed){
 		if (controllables.contains(removed))
 			controllables.remove(removed);
@@ -289,6 +297,7 @@ public class Player{
 		return false;
 	}
 	
+	// Whether or not the player has information about an enemy unit status
 	public boolean knowHealth(Unit unit){
 		if (unit.player.team == team)
 			return true;
@@ -320,9 +329,11 @@ public class Player{
 		return false;
 	}
 	
-	static final double COST_REJECTION_STD = 1.1;
-	static final double COST_REJECTION_BIAS = 0.0;
-	static final double CARRIER_REJECTION_PROB = 0.35;
+	// Randomly generate fleet, with probability of picking a given ship type weighted in favor
+	// of less expensive ships using Gaussin distribution
+	static final double COST_REJECTION_STD = 1.1; // Gaussin width
+	static final double COST_REJECTION_BIAS = 0.0; // Value of 0 and 1 center the Gaussian on least- and most- expensive ship types, respectively
+	static final double CARRIER_REJECTION_PROB = 0.35; // Less likely to pick carriers
 	public static void makeFleet(Vector<Ship> ships, int budget, long randomSeed){
 		Random rand = randomSeed == 0 ? new Random() : new Random(randomSeed);
 		

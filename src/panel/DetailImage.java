@@ -2,6 +2,8 @@ import java.awt.*;
 import java.awt.image.*;
 import javax.swing.*;
 
+// Small panel that just displays an image of a Component
+
 public class DetailImage extends JComponent{
 	private BufferedImage img;
 	

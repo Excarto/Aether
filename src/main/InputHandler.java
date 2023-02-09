@@ -6,6 +6,8 @@ import java.util.concurrent.*;
 import java.util.List;
 import javax.swing.*;
 
+// Handles in-game koeyboard and mouse inputs
+
 public class InputHandler{
 	private static final int DOUBLE_CLICK_INTERVAL = 220;
 	
@@ -13,21 +15,29 @@ public class InputHandler{
 	
 	private boolean mousePressedLeft, singleClick;
 	private List<Controllable> orderSelected;
+	
+	// Queues filled with events by Swing thread and processed by main game thread
 	private Queue<MouseEvent> mousePressedQueue, mouseReleasedQueue;
 	private Queue<KeyEvent> keyPressedQueue, keyReleasedQueue;
 	private Queue<MouseWheelEvent> mouseWheelQueue;
-	private TimerThread leftMouseTimer, rightMouseTimer, middleMouseTimer;
+	
+	private TimerThread leftMouseTimer, rightMouseTimer, middleMouseTimer; // Timers for double-clicking mouse buttons
+	
 	private Point leftClickStartPos, middleButtonHoldPos;
 	private Locatable rightClickStart;
 	private Sprite middleClickStartSprite;
-	private Map<Control, Boolean> controlPressed;
-	private TimerThread groupTimer;
-	private int timedGroup;
+	
+	private Map<Control, Boolean> controlPressed; // Is control currently being pressed
 	private Weapon weaponToSetTarget;
 	private int zoomLevel;
-	private List<List<Controllable>> groups;
+	
+	private TimerThread groupTimer; // Timer for double-pressing control group keys
+	private int timedGroup;
+	private List<List<Controllable>> groups; // Control groups 1-9
+	
 	private boolean chatToAll;
 	private String currentChat;
+	
 	private HungarianAlg assigner;
 	
 	public InputHandler(GameWindow window, JComponent viewWindow){
@@ -85,11 +95,14 @@ public class InputHandler{
 		if (rightClickStart instanceof MousePosition)
 			((MousePosition)rightClickStart).move();
 		
+		// Right click timer ran out, issue single-click command
 		if (rightMouseTimer.timeElapsed && rightMouseTimer.event != null){
 			issueMouseCommand(rightMouseTimer.event.getPoint(), DOUBLE_CLICK_INTERVAL, null, true);
 			rightMouseTimer.event = null;
 		}
 		
+		// Process mouse press events. Most of these just store data and wait for corresponding release event.
+		// Determine if single or double click based on previous timers and initiate new timers
 		while (!mousePressedQueue.isEmpty()){
 			MouseEvent e = mousePressedQueue.poll();
 			if (e.getButton() == MouseEvent.BUTTON2){
@@ -122,10 +135,12 @@ public class InputHandler{
 						rightClickStart = new MousePosition(e.getPoint());
 				}
 			}
-		}
+		}// End mouse button press loop
 		
 		while (!mouseReleasedQueue.isEmpty()){
 	 		MouseEvent e = mouseReleasedQueue.poll();
+	 		
+	 		// Middle mouse button zoom to sprite if clicked quickly
 			if (e.getButton() == MouseEvent.BUTTON2){
 				
 				middleButtonHoldPos = null;
@@ -136,17 +151,22 @@ public class InputHandler{
 					}
 				}
 				
+			
 			}else if (e.getButton() == MouseEvent.BUTTON1){
+				// Left mouse button released
 				
 				mousePressedLeft = false;
 				if (leftClickStartPos != null && !controlPressed(Control.MANUAL_AIM)){
 					if (e.getPoint() != null && leftClickStartPos.distance(e.getPoint()) < 5){
+						
+						// Account for motion of object on screen when determining what the click was targeting
 						Controllable closest = (Controllable)getVisibleSpriteAt(
 								leftClickStartPos, singleClick ? 0 : DOUBLE_CLICK_INTERVAL*5/8, true, false);
 						
 						if (closest != null){
 							if (window.isStrategic()){
 								if (singleClick){
+									// Simply select clicked object
 									if (!controlPressed(Control.FUNCTION1)){
 										selected.clear();
 										selected.add(closest);
@@ -154,12 +174,14 @@ public class InputHandler{
 										if (!selected.remove(closest))
 											selected.add(closest);
 									}
-								}else{
+								}else{ // Double click
 									if (!controlPressed(Control.FUNCTION1)){
+										// Enter tactical mode
 										selected.clear();
 										window.setStrategic(false);
 										selected.add(closest);
 									}else{
+										// Select all units of type
 										for (Controllable controllable2 : window.player.controllables){
 											Sprite sprite2 = (Sprite)controllable2;
 											if (closest.getType() == controllable2.getType() && 
@@ -169,18 +191,21 @@ public class InputHandler{
 										}
 									}
 								}
-							}else{
+							}else{ // Is tactical mode
 								selected.clear();
 								selected.add(closest);
 								if (singleClick)
 									window.setStrategic(true);
 							}
 						}else{
+							// Clicked on nothing
 							if (!controlPressed(Control.FUNCTION1) && window.isStrategic())
 								selected.clear();
 						}
 						
 					}else{
+						// Left click and mouse moved between button down and release. Do selection box
+						
 						if (!controlPressed(Control.FUNCTION1))
 							selected.clear();
 						
@@ -212,14 +237,16 @@ public class InputHandler{
 				}
 				
 			}else if (e.getButton() == MouseEvent.BUTTON3){
+				// Right mouse button released
 				
 				if (controlPressed(Control.FUNCTION1) && rightClickStart == null){
+					// Delete existing command
 					double posX = window.posXInGame(e.getPoint()), posY = window.posYInGame(e.getPoint());
 					for (Controllable controllable : selected)
 						controllable.orders().removeOrdersWithin(posX, posY, 5/window.getZoom());
 				}else{
 					if (!rightMouseTimer.timeElapsed){
-						//issueMouseOrder(e.getPoint(), DOUBLE_CLICK_INTERVAL*2/3, null, false);
+						// Issude double right click command
 						issueMouseCommand(rightMouseTimer.event.getPoint(), DOUBLE_CLICK_INTERVAL*2/3, null, false);
 						rightMouseTimer.event = null;
 					}else{
@@ -228,15 +255,18 @@ public class InputHandler{
 						if (rightClickStart != null &&
 								hypot(window.posXInGame(e.getPoint())-rightClickStart.getPosX(),
 										window.posYInGame(e.getPoint())-rightClickStart.getPosY()) > window.getMultiPosOrderDist()){
+							// Issue click-and-drag command
 							issueMouseCommand(e.getPoint(), 0, rightClickStart, true);
-						}else
+						}else{
+							// Don't do anything now, just start timer to see if it's a double click
 							rightMouseTimer = new TimerThread(e);
+						}
 					}
 					rightClickStart = null;
 				}
 				
 			}
-		}
+		} // End mouse button release loop
 		
 		while (!keyPressedQueue.isEmpty()){
 			KeyEvent e = keyPressedQueue.poll();
@@ -289,6 +319,7 @@ public class InputHandler{
 					}
 				}
 				
+				// Control group keys 0-9
 				int index = e.getKeyCode()-48;
 				if (index >= 0 && index <= 9){
 					List<Controllable> group = groups.get(index);
@@ -317,13 +348,14 @@ public class InputHandler{
 				}
 				
 			}
-		}
+		}// End key pressed loop
 		
 		while (!keyReleasedQueue.isEmpty()){
 			KeyEvent e = keyReleasedQueue.poll();
 			controlPressed.put(Main.controlVals.get(e.getKeyCode()), false);
 		}
 		
+		// Mouse wheel zoom in or out
 		while (!mouseWheelQueue.isEmpty()){
 			MouseWheelEvent e = mouseWheelQueue.poll();
 			if (e.getPoint() != null){
@@ -356,10 +388,11 @@ public class InputHandler{
 		}
 	}
 	
+	// Issue right-click mouse commands when in tactical mode
 	private void issueTacticalMouseCommand(Point mouseLocation, int locationTimeDelay, boolean singleClick){
 		int locX = window.posXInGame(mouseLocation), locY = window.posYInGame(mouseLocation);
-		
 		Controllable selected = orderSelected.get(0);
+		
 		if (selected instanceof Unit){
 			Sprite sprite = getVisibleSpriteAt(mouseLocation, locationTimeDelay, false, true);
 			if (sprite != null && sprite instanceof Unit){
@@ -367,10 +400,12 @@ public class InputHandler{
 				return;
 			}
 		}
+		
 		selected.orders().queueOrder(new TurnTo(
 				90-toDegrees(atan2(((Sprite)selected).getRenderPosY()-locY, locX-((Sprite)selected).getRenderPosX()))));
 	}
 	
+	// Issue right-clock mouse commands when clicking and dragging in strategic mode
 	private void issueStrategicDragMouseCommand(Point mouseLocation, int locationTimeDelay, Locatable startLocation, boolean singleClick){
 		int locX = window.posXInGame(mouseLocation), locY = window.posYInGame(mouseLocation);
 		
@@ -386,11 +421,13 @@ public class InputHandler{
 						selected.orders().queueOrder(new Orbit(startLocation, hypot(dx, dy)));
 					}else{
 						if (((Controllable)startLocation).getPlayer().team == window.player.team){
+							// Targeting friendly controllable
 							if (startLocation instanceof Unit){
 								selected.orders().queueOrder(new Escort((Unit)startLocation, Unit.ESCORT_SLACK,
 										90-toDegrees(atan2(-dy, dx)), hypot(dx, dy)));
 							}
 						}else{
+							// Targeting enemy controllable
 							if (startLocation instanceof Unit)
 								selected.orders().queueOrder(new Orbit(window.player.getTarget((Unit)startLocation), hypot(dx, dy)));
 						}
@@ -399,6 +436,7 @@ public class InputHandler{
 			}
 			
 		}else if (startLocation instanceof MousePosition){
+			// Targeting empty points in space. Order units to spread out in a line, using Hungarian Algorithm
 			
 			int incrementX = (locX-(int)startLocation.getPosX())/max(1, orderSelected.size()-1);
 			int incrementY = (locY-(int)startLocation.getPosY())/max(1, orderSelected.size()-1);
@@ -432,6 +470,7 @@ public class InputHandler{
 		}
 	}
 	
+	// Issue right-click mouse commands, single- or double-click on a single point in strategic mode
 	private void issueStrategicClickMouseCommand(Point mouseLocation, int locationTimeDelay, boolean singleClick){
 		int locX = window.posXInGame(mouseLocation), locY = window.posYInGame(mouseLocation);
 		
@@ -441,6 +480,7 @@ public class InputHandler{
 				if (selected != sprite){
 					
 					if (sprite instanceof Arena.Objective){
+						// Targeting an objective
 						if (singleClick){
 							selected.orders().queueOrder(new MoveToPoint(locX, locY, window.getVelX(), window.getVelY()));
 						}else{
@@ -449,6 +489,7 @@ public class InputHandler{
 						}
 					}else if (sprite instanceof Controllable){
 						if (((Controllable)sprite).getPlayer().team == window.player.team){
+							// Targeting friendly controllable
 							if (singleClick){
 								if (selected instanceof Unit && sprite instanceof Unit){
 									selected.orders().queueOrder(new Escort((Unit)sprite, Unit.ESCORT_SLACK,
@@ -471,6 +512,7 @@ public class InputHandler{
 								}
 							}
 						}else{
+							// Targeting enemy controllable
 							Target target = window.player.getTarget((Controllable)sprite);
 							if (selected instanceof Missile){
 								selected.orders().queueOrder(new Impact(target));
@@ -491,6 +533,7 @@ public class InputHandler{
 				}
 			}
 		}else{
+			// Targeting an empty point in space
 			for (Controllable selected : orderSelected){
 				if (singleClick){
 					selected.orders().queueOrder(new MoveToPoint(locX, locY, window.getVelX(), window.getVelY()));
@@ -500,6 +543,8 @@ public class InputHandler{
 		}
 	}
 	
+	// Find best choice of object at point on screen, accounting for motion during time delay.
+	// If nothing is closer than maximum defined by getScreenDistance, return null.
 	private Sprite getVisibleSpriteAt(Point point, int timeDelay, boolean isPlayer, boolean isntPlayer){
 		double turnsDelay = Main.TPS*timeDelay/1000.0;
 		Sprite closestSprite = null;
@@ -530,6 +575,9 @@ public class InputHandler{
 		}
 		return closestSprite;
 	}
+	
+	// Distance in pixels on screen between edge of sprite and given point
+	// If distance is greater than zoom-dependent maximum, return large value
 	private int getScreenDistance(Sprite sprite, Point point, double turnsDelay){
 		int timeShiftX = (int)(turnsDelay*(window.getVelX() - sprite.getVelX()));
 		int timeShiftY = (int)(turnsDelay*(window.getVelY() - sprite.getVelY()));
@@ -593,6 +641,7 @@ public class InputHandler{
 		return chatToAll;
 	}
 	
+	// Single-use timer thread
 	private class TimerThread extends Thread{
 		public boolean timeElapsed;
 		private MouseEvent event;
@@ -612,6 +661,7 @@ public class InputHandler{
 		}
 	}
 	
+	// Position of mouse click in physical space
 	private class MousePosition implements Locatable{
 		double posX, posY, velX, velY;
 		public MousePosition(Point point){

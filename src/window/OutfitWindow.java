@@ -1,12 +1,13 @@
 import static java.lang.Math.*;
-
 import javax.swing.*;
 import javax.swing.event.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.*;
+
+// Window for outfitting a unit with weapons and systems. Displays unit power use and generation
+// with the given loadout to help with outfitting
 
 public class OutfitWindow extends Window{
 	
@@ -281,6 +282,7 @@ public class OutfitWindow extends Window{
 		updateComponentUI();
 	}
 	
+	// Called when a higher window in the stack returns a value
 	public void returnValue(Object type){
 		if (type instanceof WeaponType){//(weapons.isSelected()){
 			unit.setWeapon((WeaponType)type, (WeaponHardpoint)selectedHardpoint, Weapon.MIN_ARC, 0);
@@ -304,6 +306,7 @@ public class OutfitWindow extends Window{
 		unitWindow.resume();
 	}
 	
+	// Called when a component is selected or deselected
 	protected void updateComponentUI(){
 		Component component = unit.getComponentAt(selectedHardpoint);
 		costLabel.setEnabled(component != null);
@@ -372,6 +375,7 @@ public class OutfitWindow extends Window{
 		unitWindow.select(null);
 	}
 	
+	// Open a window to select component type for selected hardpoint
 	protected void setHardpoint(){
 		if (selectedHardpoint != null){
 			Vector<BuyType> types = new Vector<BuyType>();
@@ -489,7 +493,7 @@ public class OutfitWindow extends Window{
 			g.fillRect(0, 0, this.getWidth(), this.getHeight());
 			g.drawImage(img, (this.getWidth()-img.getWidth())/2, (this.getHeight()-img.getHeight())/2, this);
 			
-			for (int drawSelected = 0; drawSelected <= 1; drawSelected++){
+			for (int drawSelected = 0; drawSelected <= 1; drawSelected++){ // Want to draw the selected hardpoint on top of others
 				for (Hardpoint[] hardpoints : new Hardpoint[][]{unit.type.weaponHardpoints, unit.type.systemHardpoints}){
 					for (Hardpoint hardpoint : hardpoints){
 						if ((hardpoint == selectedHardpoint) == (drawSelected == 1)){
@@ -543,9 +547,9 @@ public class OutfitWindow extends Window{
 							}
 						}
 						
-					}
-				}
-			}
+					} // End loop over hardpoints
+				} // End loop over weapon vs system hardpoint
+			} // Emd loop over selected vs non-selected
 			
 			g.setColor(new Color(40, 120, 40));
 			g.drawRect(0, 0, getWidth()-1, getHeight()-1);

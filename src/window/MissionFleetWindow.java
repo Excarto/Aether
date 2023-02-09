@@ -6,6 +6,9 @@ import java.util.Vector;
 import java.util.Arrays;
 import java.io.*;
 
+// Menu allowing fleet construction in single-player missions that allow it.
+// Some functionality is duplicated from the skirmish setup window
+
 public class MissionFleetWindow extends Window{
 	
 	final JList<Ship> shipList;

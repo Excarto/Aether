@@ -3,6 +3,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
 
+// A single instance of a game round. Contains all players, objects, and other aspects of the game state.
+
 public final class Game{
 	static final int START_COUNTDOWN_TIME = 10;
 	static final int START_COUNTDOWN_TIME_BUY = 20;
@@ -102,6 +104,7 @@ public final class Game{
 		
 		playerLeft = new boolean[players.size()];
 		
+		// Randomly assign player team positions
 		Random positionRand = gameSeed == 0 ? new Random() : new Random(gameSeed);
 		int[] teamPositions = new int[arena.teamPos.length];
 		for (int x = 0; x < teamPositions.length; x++){
@@ -150,6 +153,7 @@ public final class Game{
 	public void addPlayer(Player player){
 		if (player instanceof HostPlayer || player instanceof NetPlayerClient)
 			isLocal = false;
+		// Add players in alphabetical order, this order is assumed for network sychronization
 		for (int x = 0; x <= players.size(); x++){
 			if (x < players.size()){
 				if (players.get(x).name.compareTo(player.name) > 0){
@@ -179,6 +183,7 @@ public final class Game{
 		return gameStartTurn - turn;
 	}
 	
+	// Advance the game by one turn
 	private void runTurn(){
 		realTurn++;
 		turn = (int)round(realTurn);
@@ -350,6 +355,7 @@ public final class Game{
 		type.deathSound.play();
 	}
 	
+	// Generate cloud of debris, with velocity and frequency of each debris type determined by size
 	public void addDebris(int debrisSize, int maxDebrisPiece, double radius,
 			double posX, double posY, double velX, double velY){
 		int numPieces = (int)sqrt(3*Main.options.debrisAmount*debrisSize);
@@ -471,6 +477,7 @@ public final class Game{
 		deathSeqSound.load();
 	}
 	
+	// Ship that has been removed from the player's controllables but is still around for graphical purposes
 	static final int MIN_EXPLOSIONS = 4;
 	public class ExplodingShip{
 		public final Ship ship;

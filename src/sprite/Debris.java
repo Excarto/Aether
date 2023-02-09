@@ -1,5 +1,7 @@
 import static java.lang.Math.*;
 
+// Floating debris that is generated when a unit is destroyed, and disappears eventually
+
 public class Debris extends Sprite{
 	
 	final DebrisType type;

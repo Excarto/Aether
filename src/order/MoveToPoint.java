@@ -1,4 +1,6 @@
 
+// Order to move to a stationary point in space. Basically just a wrapper vor MoveOrder
+
 public class MoveToPoint extends StationaryOrder{
 	
 	final MoveTo moveOrder;

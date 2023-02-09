@@ -1,4 +1,6 @@
 
+// Item queued for repair or scrapping by a ship
+
 public class RepairQueueItem {
 	public final Repairable repairable;
 	public final RepairTarget target;

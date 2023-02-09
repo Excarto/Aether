@@ -1,6 +1,8 @@
 import java.util.*;
 import java.io.*;
 
+// Contains game configuration values that are read in from text file, but cannot be configured in-game
+
 public class Configuration{
 	
 	public final double kineticShieldDamage;

@@ -1,5 +1,7 @@
 import java.io.*;
 
+// Superclass for all Components that are not weapons
+
 public abstract class System extends Component{
 	
 	public final SystemType type;
@@ -30,6 +32,7 @@ public abstract class System extends Component{
 		return type.mass;
 	}
 	
+	// Try to read in a System from text file and equip the Unit with it if valid
 	public static void read(BufferedReader in, Unit unit, Hardpoint hardpoint){
 		try{
 			String typeName = in.readLine();

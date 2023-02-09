@@ -2,6 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
+// Side panel used when nothing is selected. Displays a list of all the player's ships
+
 public class DefaultPanel extends SidePanel{
 	static final int SHIP_PANEL_HEIGHT = 40;
 	

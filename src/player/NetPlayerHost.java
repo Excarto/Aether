@@ -1,6 +1,9 @@
 import static java.lang.Math.*;
 import java.util.*;
 
+// Client player on the host side. Periodically sends update messages for units of all other
+// players to the client side. Actions performed do nothing, as all actions are done via the message listeners
+
 public class NetPlayerHost extends Player{
 	
 	public final Connection connection;

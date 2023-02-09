@@ -4,6 +4,9 @@ import java.text.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+// The global lobby server which keeps track of all hosted internet games. Clients can
+// connect and receive a list of available servers, which they then connect to directly.
+
 public class LobbyServer{
 	
 	static final int CLIENT_PORT = 22886, SERVER_PORT = 22887;

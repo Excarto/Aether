@@ -4,6 +4,8 @@ import java.util.*;
 import java.io.*;
 import java.awt.*;
 
+// Superclass of all types of Weapon
+
 public abstract class Weapon extends Component{
 	public final static int ARC_INCREMENT = 5, MIN_ARC = 1;
 	public final static double AUTO_ANGLE = Double.POSITIVE_INFINITY;
@@ -17,18 +19,20 @@ public abstract class Weapon extends Component{
 	public final WeaponType type;
 	public final WeaponHardpoint hardpoint;
 	
-	public boolean autoMissiles, autoCraft, autoShips;
-	public int timePassed;
+	public int timePassed; // Separate for each weapon for load leveling
 	
+	// Options for what the weapon will shoot at
 	public FireMode mode;
+	public boolean autoMissiles, autoCraft, autoShips;
 	
-	private int arc, mountAngle;
-	private double mountAngleFrac;
-	private double angle;
+	
+	private int arc, mountAngle; // Width and relative center bearing of firing arc
+	private double mountAngleFrac; // Firing arc center angle represented from 0 to 1
+	private double angle; // Current relative weapon bearing
 	private int timeToLoaded;
 	private double targetAngle, targetDist;
 	private boolean hasTarget;
-	private boolean manualAim;
+	private boolean manualAim; // Usable only by humanPlayer
 	private Target autoTarget, overrideTarget;
 	private Component subTarget;
 	private boolean isReady, isInRange, triggerPulled;
@@ -39,7 +43,7 @@ public abstract class Weapon extends Component{
 	protected abstract double approxTime(Locatable locatable);
 	protected abstract double approxAngle(Locatable sprite, double time);
 	protected abstract boolean inRange(Locatable target);
-	protected abstract boolean inManualRange(double dist);
+	protected abstract boolean inManualRange(double dist); // Used only by HumanPlayer
 	
 	public Weapon(WeaponType type, WeaponHardpoint hardpoint, Unit unit, int arc, double mountAngleFrac){
 		super(type, hardpoint, unit);
@@ -63,6 +67,7 @@ public abstract class Weapon extends Component{
 		if (mode == FireMode.DISABLED)
 			return;
 		
+		// Determine weapon target given current mode
 		boolean newManualAim = unit.player.manualAim(unit) && selected;
 		if (manualAim != newManualAim)
 			isInRange = false;
@@ -77,6 +82,7 @@ public abstract class Weapon extends Component{
 					(manualAim && gameWindow.getInputHandler().isMousePressed()));
 		}
 		
+		// Calculate if target is in range, and firing angle
 		if (hasTarget){
 			if (timePassed%(isInRange ? TURNS_CALC_ANGLE : 2*TURNS_CALC_ANGLE) == 0){
 				if (manualAim){
@@ -102,10 +108,8 @@ public abstract class Weapon extends Component{
 		if (!Double.isNaN(targetAngle) && getHull() > 0)
 			trackTarget();
 		
-		isReady = determineIfReady();
-		//triggerPulled = determineIfTriggerPulled(firePressed);
-		triggerPulled = hasTarget && !Double.isNaN(targetAngle) && isInRange &&
-				(firePressed || !manualAim);
+		isReady = determineIfReady(); // Determine if weapon is able to fire now
+		triggerPulled = hasTarget && !Double.isNaN(targetAngle) && isInRange && (firePressed || !manualAim); // Determine if want to fire ASAP
 		if (isReady && triggerPulled && isAimed())
 			unit.player.fireWeapon(this);
 		
@@ -113,6 +117,7 @@ public abstract class Weapon extends Component{
 			timeToLoaded--;
 	}
 	
+	// Need to be able to specify angle and time for networking latency
 	public void fire(double angle, int time){
 		this.angle = angle;
 		fire(time);
@@ -127,6 +132,7 @@ public abstract class Weapon extends Component{
 		timeToLoaded = type.reloadTime;
 	}
 	
+	// Determine target given current mode. Also sets the autoTarget variable
 	private boolean findTarget(){
 		boolean targetFound = false;
 		if (mode != FireMode.DISABLED && manualAim)
@@ -159,6 +165,7 @@ public abstract class Weapon extends Component{
 		return targetFound;
 	}
 	
+	// Determine automatic target to engage given range, time needed to traverse, and target type
 	private void findAutoTarget(){
 		this.autoTarget = null;
 		double lowestPriority = Double.MAX_VALUE;
@@ -195,6 +202,7 @@ public abstract class Weapon extends Component{
 		}
 	}
 	
+	// Traverse weapon toward targetAngle, accounting for unit rotation when choosing direction
 	private void trackTarget(){
 		double deltaAngle = Utility.fixAngle(targetAngle-angle);
 		if (this.arc >= 180){
@@ -231,6 +239,7 @@ public abstract class Weapon extends Component{
 		targetAngle = Utility.fixAngle(targetAngle);
 	}
 	
+	// Determine if weapon is physically able to fire now
 	private boolean determineIfReady(){
 		return unit.player.isMaster() &&
 				timeToLoaded == 0 && getHull() > 0 && (type.ammoType == -1 || unit.ammo[type.ammoType] > 0) &&
@@ -253,6 +262,7 @@ public abstract class Weapon extends Component{
 		return false;
 	}*/
 	
+	// Determine if weapon is facing at a correct angle to fire
 	public boolean isAimed(){
 		if (Double.isNaN(targetAngle))
 			return false;
@@ -275,6 +285,7 @@ public abstract class Weapon extends Component{
 		return getTarget().getPosY()-getPosY();
 	}
 	
+	// How much is the given absolute angle outside of the weapon's arc, in absolute degrees
 	public double getArcViolation(double angle){
 		double leftBound = mountAngle-this.arc, rightBound = mountAngle+this.arc;
 		angle = Utility.centerAbout(angle-unit.getAngle(), mountAngle);
@@ -334,6 +345,7 @@ public abstract class Weapon extends Component{
 		this.subTarget = subTarget;
 	}
 	
+	// A Controllable as been removed grom the game
 	public void removeControllable(Controllable controllable){
 		if (this.overrideTarget != null && this.overrideTarget.target == controllable)
 			this.overrideTarget = null;
@@ -350,6 +362,7 @@ public abstract class Weapon extends Component{
 		this.angle = angle;
 	}
 	
+	// Needed for network play
 	public void updateAngle(double angle, int time){
 		if (lastAngleUpdateTime < time){
 			this.angle = angle;
@@ -362,6 +375,7 @@ public abstract class Weapon extends Component{
 		setMountAngle(mountAngleFrac);
 	}
 	
+	// Set firing arc center angle, given value from 0 to 1. Resulting mountAngle depends on both arc and mountAngleFrac
 	public void setMountAngle(double mountAngleFrac){
 		int range = hardpoint.arc;
 		if (hardpoint.arc < 180)
@@ -408,6 +422,7 @@ public abstract class Weapon extends Component{
 		return getHull() > 0 && (type.ammoType == -1 || unit.ammo[type.ammoType] > 0);
 	}
 	
+	// Used for AI
 	public double getPointDefenseEffect(){
 		return type.pointDefenseEffect*max(1.0, 0.3 + 0.7*arc/180.0);
 	}
@@ -438,12 +453,14 @@ public abstract class Weapon extends Component{
 		return weaponPanel;
 	}
 	
+	// Write weapon specification to text file
 	public void write(BufferedWriter out) throws IOException{
 		super.write(out);
 		out.write(arc+"\n");
 		out.write(mountAngleFrac+"\n");
 	}
 	
+	// Attempt to read in weapon from text file, and set unit's weapon if valid
 	public static void read(BufferedReader in, Unit unit, WeaponHardpoint hardpoint){
 		try{
 			String typeName = in.readLine();

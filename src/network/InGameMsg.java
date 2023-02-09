@@ -1,4 +1,7 @@
 
+// Message subclass used for events during game rounds. Synchronizes with the main game thread
+// and relays received messages on the server side to all clients.
+
 public abstract class InGameMsg extends Message{
 	
 	protected abstract boolean isGood();

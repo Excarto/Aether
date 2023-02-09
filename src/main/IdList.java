@@ -1,5 +1,7 @@
 import java.util.*;
 
+// Uniquely identifiable game objects are maintained across networked clients by storing them in IdLists
+
 public class IdList<T> extends Vector<T>{
 	
 	public IdList(){

@@ -7,6 +7,8 @@ import java.awt.image.*;
 import java.io.*;
 import javax.imageio.*;
 
+// Large units. Ships have sheilds, can store craft, can repair, and can warp into the arena.
+
 public class Ship extends Unit{
 	public enum QueueStatus{UNQUEUED, QUEUED, CATAPULT}
 	static final double WARP_POS_RADIUS = 1000.0, WARP_VEL_RADIUS = 0.4, WARP_DIST = 1.0E7;
@@ -137,12 +139,16 @@ public class Ship extends Unit{
 	}
 	
 	private void refreshRepairQueue(){
+		// For auto-repair, remove ship to make room for possible higher-priority items
 		if (repairQueue.size() == 1 && repairQueue.peek().repairable instanceof Ship && repairQueue.peek().isAuto)
 			repairQueue.poll();
+		
+		// For auto-repair, prioritize repairing weapons over systems
 		if (repairQueue.size() > 1 && repairQueue.peek().repairable instanceof System && repairQueue.peek().isAuto
 				&& repairQueue.get(1).repairable instanceof Weapon)
 			repairQueue.poll();
 		
+		// Finish repairing
 		for (RepairTarget target : repairTargets){
 			if (material <= 0){
 				target.doneRepair = true;
@@ -155,6 +161,8 @@ public class Ship extends Unit{
 		
 		// Add auto repair items
 		if (repairQueue.isEmpty()){
+			
+			// Find unit to repair, including self, or crafts in bay
 			int maxPriority = 0;
 			RepairTarget priorityTarget = null;
 			for (RepairTarget target : repairTargets){
@@ -179,6 +187,7 @@ public class Ship extends Unit{
 				}
 			}
 			
+			// If no units found to repair, check for Components
 			if (priorityTarget != null){
 				if (autoRepair > 0){
 					boolean searching = true;
@@ -611,6 +620,7 @@ public class Ship extends Unit{
 		
 		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){
 			
+			// Display shield status circle in bottom corner
 			if (getImage(window.getRenderZoom()) != null){
 				if (warpTime <= 0){
 					if (window.getPlayer().knowHealth(this)){
@@ -659,6 +669,7 @@ public class Ship extends Unit{
 		shieldRenderable.load(new BufferedImage[]{shieldImg}, 1.0);
 	}
 	
+	// Output ship to file
 	public void write(BufferedWriter out) throws IOException{
 		super.write(out);
 		out.write(ammoRatio+"\n");
@@ -667,6 +678,7 @@ public class Ship extends Unit{
 			craft.write(out);
 	}
 	
+	// Read in ship from file, checking for validity of outfits
 	public static Ship read(BufferedReader in){
 		try{
 			Unit unit = Unit.read(in);
@@ -703,6 +715,7 @@ public class Ship extends Unit{
 		}
 	}
 	
+	// Electrical arcing damage effect
 	static final int ARC_SEGMENT_LENGTH = 4, MIN_ARC_LENGTH = 10, MAX_ARC_LENGTH = 23;
 	static final Color ARC_COLOR = new Color(150, 225, 255);
 	private class ArcEffect implements Effect{
@@ -781,6 +794,7 @@ public class Ship extends Unit{
 		}
 	}
 	
+	// Gas venting damage effects
 	static final int MIN_VENT_LENGTH = 24, MAX_VENT_LENGTH = 54;
 	static final int VENT_START_OPACITY = 120, VENT_END_OPACITY = 1;
 	static final Color[][] VENT_COLOR_ARR = new Color[2][MAX_VENT_LENGTH];
@@ -863,6 +877,7 @@ public class Ship extends Unit{
 		}
 	}
 	
+	// Flash effect when shield takes a hit
 	static final int MAX_SHIELD_EFFECT_LIFETIME = (int)(0.9*Main.TPS);
 	private class ShieldEffect implements Effect{
 		int lifetime;
@@ -911,6 +926,7 @@ public class Ship extends Unit{
 		}
 	}
 	
+	// Fade in from white warp-in effect
 	static final Color WARP_COLOR = new Color(255, 255, 255);
 	private class WarpEffect implements Effect{
 		public void act(){

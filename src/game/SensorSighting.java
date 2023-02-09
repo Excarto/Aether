@@ -1,5 +1,8 @@
 import static java.lang.Math.*;
 
+// A recently detected enemy unit. Sensor sightings have some inaccuracy in position and velocity,
+// depending on the sensor, the target, and the range.
+
 public class SensorSighting{
 	public double posX, posY, velX, velY;
 	public double strength, decayRate;

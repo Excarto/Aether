@@ -5,6 +5,9 @@ import javax.imageio.*;
 import java.lang.System;
 import java.util.concurrent.*;
 
+// Window that appears if someone goes through the menu into the game quickly enough that the background
+// load thread is not yet done. This class also contains the implementation of the load thread itself
+
 public final class LoadWindow extends Window{
 	private static final int UNITS_LOAD = 20, WEAPONS_LOAD = 2, DEBRIS_LOAD = 2, ARENAS_LOAD = 2, EXPLOSIONS_LOAD = 10, SYSTEMS_LOAD = 1;
 	private static final int BAR_WIDTH = 400, BAR_HEIGHT = 12, BAR_YPOS = Main.resY*29/32;
@@ -44,6 +47,7 @@ public final class LoadWindow extends Window{
 		}
 	}
 	
+	// Launch a new thread that does the necessary loading in the background, before triggering the loadLatch
 	public static void start(){
 		numToLoad = Main.shipTypes.length*UNITS_LOAD+Main.craftTypes.length*UNITS_LOAD+
 				Main.weaponTypes.length*WEAPONS_LOAD+Main.debrisTypes.length*DEBRIS_LOAD+
@@ -103,6 +107,7 @@ public final class LoadWindow extends Window{
 		loadThread.start();
 	}
 	
+	// Adjust the load bar progress
 	private static void loadIncrement(int amount){
 		loaded += amount;
 		if (window != null)
@@ -113,6 +118,7 @@ public final class LoadWindow extends Window{
 		return loadLatch.getCount() == 0;
 	}
 	
+	// Wait for the load thread to finish
 	public static void awaitLoad(){
 		try{
 			loadLatch.await();

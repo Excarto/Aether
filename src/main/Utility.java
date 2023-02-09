@@ -7,6 +7,8 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.text.*;
 
+// Common utility functions
+
 public class Utility{
 	
 	public static double approxTime(Controllable startLocation, Locatable destination){
@@ -157,6 +159,8 @@ public class Utility{
 		return val;
 	}
 	
+	
+	// Simple method for finding polynomial zeros. Good enough for this purpose.
 	static final double MAX_VAL = Main.TPS*60*4;
 	static final double ITERATIONS = 15;
 	static final double X_SCALE = Main.TPS;

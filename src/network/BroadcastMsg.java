@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.*;
 
+// Used for both broadcasting hosted server on LAN, or to communicate hosted internet server to the LobbyServer
+
 public class BroadcastMsg extends Message{
 	public byte getId(){return MsgId.BROADCAST.id;}
 	

@@ -5,6 +5,8 @@ import java.awt.*;
 import java.awt.image.*;
 import java.awt.event.*;
 
+// Single-player campaign mission briefing window
+
 public class BriefMenu extends Menu{
 	
 	static final int WINDOW_WIDTH = 900;
@@ -67,6 +69,7 @@ public class BriefMenu extends Menu{
 		int windowPosX = Main.resX/2 - WINDOW_WIDTH/2;
 		int windowPosY = 100 + ((Main.resY - Main.RES_Y_SHORT)/2)/2;
 		if (windowShift > 0){
+			// Initial window appearance animation
 			double opacity = pow(1 - windowShift/(double)maxWindowShift, 4);
 			g.setColor(new Color(0f, 0f, 0f, (float)opacity));
 			for (int posY = windowPosY; posY < windowPosY+WINDOW_HEIGHT; posY++){
@@ -77,6 +80,7 @@ public class BriefMenu extends Menu{
 				}
 			}
 		}else{
+			// Display box and text
 			g.setColor(Color.BLACK);
 			g.fillRect(windowPosX, windowPosY, WINDOW_WIDTH, WINDOW_HEIGHT);
 			g.setColor(Color.GRAY);
@@ -106,8 +110,10 @@ public class BriefMenu extends Menu{
 	public void animateFrame(){
 		
 		if (windowShift > 0){
+			// Initial window appearance animation
 			windowShift = max(0, windowShift - WINDOW_ANIMATION_SPEED/Main.options.menuFramesPerSec);
 		}else if (textLine < state.lines.size()){
+			// Animation to print text one character at a time
 			textFrameCount++;
 			if (textFrameCount > Main.options.framesPerSec/TEXT_ANIMATION_SPEED){
 				textFrameCount = 0;
@@ -115,6 +121,7 @@ public class BriefMenu extends Menu{
 				if (textChar >= state.lines.get(textLine).length()){
 					textLine++;
 					if (textLine >= state.lines.size()){
+						// Done with text animation
 						setOptions();
 					}else{
 						if (state.lines.get(textLine).isBlank()){
@@ -139,6 +146,7 @@ public class BriefMenu extends Menu{
 		return "data/menu_background_blank.png";
 	}
 	
+	// Brief states present text and some number of options, which lead to other brief states or begin the game
 	public class BriefState{
 		ArrayList<Option> options;
 		ArrayList<String> lines;
@@ -178,6 +186,7 @@ public class BriefMenu extends Menu{
 			}});
 		}
 		
+		// Split text into lines to fit within the box
 		public void initLines(Graphics2D g){
 			String[] words = text.split(" ");
 			int iword = 0;

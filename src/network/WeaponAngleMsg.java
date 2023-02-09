@@ -1,9 +1,11 @@
 import java.io.*;
 
+// Sent periodically over UDP to update angle of a batch of weapons at a time
+
 public class WeaponAngleMsg extends UpdateMsg {
 	public byte getId(){return MsgId.WEAPON_ANGLE.id;}
 	
-	public static final int NUM_WEAPONS = 20;
+	public static final int NUM_WEAPONS = 20; // Determined by how many can fit in a network packet
 	
 	public int numWeapons;
 	public Weapon[] weapons;

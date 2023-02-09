@@ -6,6 +6,9 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import org.imgscalr.*;
 
+// Expolosions are stored as one image per frame, with each frame being constructed at load time
+// based on some number of input component images
+
 public class ExplosionType extends Type{
 	
 	static ArrayBlockingQueue<ImageCoords> toLoad = new ArrayBlockingQueue<ImageCoords>(20);
@@ -83,6 +86,8 @@ public class ExplosionType extends Type{
 		
 	}
 	
+	// The baseImage array is built out of some number of component images. For each frame, the
+	// scale and opacity of each component is determined by values read in from text file
 	public void load(){
 		
 		BufferedImage[] origImage = new BufferedImage[numComponents];
@@ -95,6 +100,7 @@ public class ExplosionType extends Type{
 			}
 		}
 		
+		// Compute explosion size and initialize baseImage array
 		size = 0;
 		for (int frame = 0; frame < duration; frame++){
 			int frameSize = 0;
@@ -121,32 +127,6 @@ public class ExplosionType extends Type{
 					
 					int width = img.getWidth(), height = img.getHeight();
 					double timeFrac = min(1.0, max(0.0, 1.3*(frame/(double)componentDuration[component] - 0.2)));
-					
-					/*BufferedImage imgCopy = Main.getCompatibleImage(width, height, true);
-					Graphics bufferGraphics = imgCopy.getGraphics();
-					bufferGraphics.setColor(new Color(0, 0, 0, 0));
-					bufferGraphics.fillRect(0, 0, width, height);
-					bufferGraphics.drawImage(img, 0, 0, null);
-					bufferGraphics.dispose();
-					
-					for (int x = 0; x < width; x++){
-						for (int y = 0; y < height; y++){
-							
-							int color1 = imgCopy.getRGB(x, y);
-							int color2 = imgCopy.getRGB(imgCopy.getWidth()-x-1, y);
-							
-							int newColor = 0;
-							for (int band = 0; band <= 3; band++){
-								int val1 = (color1 >> (8*band)) & 0xFF;
-								int val2 = (color2 >> (8*band)) & 0xFF;
-								int newVal = min(255, (int)round(val1*(1.0-timeFrac) + val2*timeFrac));
-								newColor |= newVal << (8*band);
-							}
-							
-				            img.setRGB(x, y, newColor);   
-						}
-					}
-					imgCopy.flush();*/
 					
 					for (int x = 0; x < width; x++){
 						for (int y = 0; y < height; y++){
@@ -179,11 +159,8 @@ public class ExplosionType extends Type{
 					
 					img.flush();
 				}
-			}
-		}
-		
-		//size = maxScale*sqrt(origImage.getHeight()*origImage.getWidth());
-		//largestExplosionSize = max(largestExplosionSize, max(origImage.getHeight(), origImage.getWidth()));
+			} // End loop over frames
+		} // End loop over components
 		
 		for (int component = 0; component < numComponents; component++)
 			origImage[component].flush();

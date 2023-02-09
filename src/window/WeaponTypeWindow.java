@@ -3,6 +3,8 @@ import javax.swing.event.*;
 import java.awt.Dimension;
 import java.util.*;
 
+// Extension of TypeWindow which allows for selecting which category of weapon to choose from
+
 public class WeaponTypeWindow extends TypeWindow{
 	static final String[] TYPE_NAMES = new String[]{"Gun", "Beam", "Missile"};
 	

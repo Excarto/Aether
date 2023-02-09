@@ -1,4 +1,6 @@
 
+// Base class for orders targeting a moving object
+
 public abstract class TrackOrder extends LocatableOrder{
 	public final Locatable target;
 	double renderPosX, renderPosY;

@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
 
+// Parent class of all the main panels displayed on the right side of the screen in-game
+
 public abstract class SidePanel extends JPanel{
 	
 	public static BufferedImage background;

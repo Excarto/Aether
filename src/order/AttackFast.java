@@ -1,5 +1,8 @@
 import static java.lang.Math.*;
 
+// Unit order that will move past the target as fast as possible, only turning to face weapons when
+// close enough that it has just enough time to turn before passing
+
 public class AttackFast extends MovePastTarget{
 	
 	final FaceWeapons faceOrder;

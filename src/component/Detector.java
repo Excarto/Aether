@@ -1,5 +1,7 @@
 import javax.swing.JPanel;
 
+// Buyable system used to detect enemy radars
+
 public class Detector extends System{
 	
 	public final DetectorType type;

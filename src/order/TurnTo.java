@@ -1,7 +1,9 @@
 import static java.lang.Math.*;
 
+// Order to turn to face a given angle
+
 public class TurnTo extends Order{
-	static final double STOP_DIST_SLACK = 0.5;
+	static final double STOP_DIST_SLACK = 0.5; // Larger value makes less aggressive approach to avoid overshoot
 	
 	public final int targetAngle;
 	
@@ -29,6 +31,7 @@ public class TurnTo extends Order{
 		stopDist = turnSpeed*turnSpeed/(2*turnAccel);
 		
 		if (stopDist > 170){
+			// Should never be turning too fast, stop before continuing
 			((Controllable)host).stopTurn();
 		}else{
 			double angleDiff = Utility.fixAngle(targetAngle-host.getAngle());
@@ -38,6 +41,7 @@ public class TurnTo extends Order{
 			}else
 				distToTarget = 360-abs(angleDiff);
 			
+			// Speed up or slow down phases of turn
 			if (isAccelerating){
 				if ((distToTarget > (1 + STOP_DIST_SLACK)*stopDist || distToTarget < stopDist) && accelTime > 0){
 					((Controllable)host).accelTurn(accelDirection > 0);
@@ -46,19 +50,26 @@ public class TurnTo extends Order{
 					isAccelerating = false;
 			}else{
 				if (abs(turnSpeed) < 0.0001 && distToTarget < 1){
+					// Done, finish order
 					((Controllable)host).orders().finish(this);
 				}else if (distToTarget > (1 + STOP_DIST_SLACK)*stopDist){
+					// Normal deccelration, maintaining extra buffer 
 					accelDirection = angleDiff > 0 ? 1 : -1;
 					((Controllable)host).accelTurn(accelDirection > 0);
 				}else if (distToTarget > stopDist && distToTarget < stopDist+10*abs(turnSpeed)){
+					// Approaching too fast, show down
 					accelDirection = turnSpeed > 0 ? -1 : 1;
 					((Controllable)host).stopTurn();
+				}else{
+					// Approaching at acceptable speed, just coast
 				}
 				
 			}
 		}
 	}
 	
+	// Check various approaches to find best: CW or CCW, and possibly looping all the way around
+	// For each possibility, compute time to arrival by two-stage constant acceleration formulas
 	private void setAccelTimeAndDirection(){
 		double distance = targetAngle-host.getAngle();
 		if (distance > 0)
@@ -76,7 +87,7 @@ public class TurnTo extends Order{
 				double timeToAccel = (sqrt(b*b-4*a*c)-b)/(2*a);
 				if (timeToAccel > 0 && !Double.isNaN(timeToAccel)){
 					double totalTime = timeToAccel+abs(turnSpeed/turnAccel+timeToAccel);
-					totalTime = totalTime*(1.0 + abs(target)/1200.0);
+					totalTime = totalTime*(1.0 + abs(target)/1200.0); // Prefer more dicect turn to target rather than loop around
 					if (totalTime < minTotalTime){
 						minTotalTime = (int)round(totalTime);
 						this.accelDirection = -direction;
@@ -105,6 +116,7 @@ public class TurnTo extends Order{
 		return -arc;
 	}
 	
+	// Faster, approximate turn time used by various other classes
 	public static double approxTurnTime(Controllable controllable, double angle){
 		double accel = controllable.getTurnAccel();
 		double deltaAngle = Utility.fixAngle(angle-((Sprite)controllable).getAngle());

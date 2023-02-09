@@ -5,6 +5,9 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+// Power management side panel. Maintains a list of general power categories, and if one is selected,
+// then a list of specific subcategories is populated
+
 class PowerPanel extends SidePanel{
 	static final int LINE_POS_X1 = 14, LINE_POS_X2 = 241;
 	static final int LINE_POS_Y1 = 261;
@@ -200,6 +203,7 @@ class PowerPanel extends SidePanel{
 	static final Color BAR_COLOR_DARK = new Color(40, 140, 40);
 	static final Color BAR_COLOR_LIGHT = new Color(20, 190, 20);
 	
+	// Special Unreserved category, there is one for General and one for Specific
 	private class UnreservedPanel extends JPanel{
 		private double[] data;
 		
@@ -237,6 +241,7 @@ class PowerPanel extends SidePanel{
 		}
 	}
 	
+	// Parent class for both PowerSettingGeneral and PowerSettingSpecific
 	private abstract class PowerSetting extends JPanel{
 		protected final PowerMeter meter;
 		protected final JSlider slider;
@@ -284,6 +289,8 @@ class PowerPanel extends SidePanel{
 		}
 	}
 	
+	// General categories of power settings. Each will have a list of associated PowerSettingSpecific if selected.
+	// The list will always at least contain the unreserved setting
 	private class PowerSettingGeneral extends PowerSetting{
 		
 		private final Map<String, double[]> data;
@@ -419,6 +426,7 @@ class PowerPanel extends SidePanel{
 		}
 	}
 	
+	// List of specific power settings for the selected general category, e.g. each weapon type for the weapon category
 	private class PowerSettingSpecific extends PowerSetting{
 		private final double[] data;
 		private final String title;
@@ -460,6 +468,7 @@ class PowerPanel extends SidePanel{
 			percentLabel.repaint();
 		}
 		
+		// Power setting was adjusted, so distribute necessary changes to all other power levels in this category so that they add to 1.0
 		protected void percentChanged(){
 			//data[Unit.RES] = slider.getValue()*selectedCategory.getPercent()/10;
 			double percent = slider.getValue()/10.0;
@@ -498,6 +507,7 @@ class PowerPanel extends SidePanel{
 		}
 	}
 	
+	// Colored bar element used by both general and specific power panels
 	private class PowerMeter extends JComponent{
 		private double[] data;
 		

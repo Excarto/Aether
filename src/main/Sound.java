@@ -3,6 +3,9 @@ import java.util.concurrent.*;
 import java.io.*;
 import javax.sound.sampled.*;
 
+// Class to load sound data from file, play/pause on demand via multiple sound channels
+// If all channels are taken, then choose one to stop based on priority
+
 public class Sound{
 	private final static int BUFFER_SIZE = 8192;
 	private final static double VOLUME_RANGE = 35.0;
@@ -58,6 +61,7 @@ public class Sound{
 	}
 	public void play(double volume){
 		if (data != null && (followSound == null || runCount == 0)){
+			// Delay if multiple sounds on top of each other so it's not just really loud
 			long playTime = java.lang.System.currentTimeMillis();
 			int difference = (int)(playTime - lastPlayTime);
 			int delay = 0;

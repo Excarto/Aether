@@ -1,4 +1,6 @@
 
+// A unit that is available for repairing or scrapping by a ship. The ship itself is always one of the RepairTargets
+
 public class RepairTarget{
 	public final Unit unit;
 	public final double repairRate;

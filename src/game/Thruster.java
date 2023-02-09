@@ -4,6 +4,9 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import java.awt.*;
 
+// Each UnitType and MissileType has some set of Thrusters defined, which are all initialized at load time.
+// On each draw frame, the thuster graphic switches from opaque to translucent to create flickering effect
+
 public class Thruster{
 	public static final int FORWARD = 0, LEFT = 1, RIGHT = 2;
 	public static final Composite TRANSLUCENT_COMPOSITE = AlphaComposite.SrcOver.derive((float)0.33);

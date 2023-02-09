@@ -1,6 +1,12 @@
 import static java.lang.Math.*;
 import java.util.*;
 
+// Local computer controlled player. All AI behavior is implemented in this class.
+// A list of available actions is maintained , e.g. attack a target or capture an objective.
+// Each unit periodically computes a priority for each action in the list and chooses the bese one.
+// Most complexity is in the calculation of action priorities. Priority values are in units of time,
+// with larger values being lower priority
+
 public class ComputerPlayer extends Player{
 	
 	static final int ACTION_REFRESH_PERIOD = 200;
@@ -23,9 +29,13 @@ public class ComputerPlayer extends Player{
 		setFireModes();
 		
 		boosterThreshold = 0.4 + 0.4*random();
+		
+		// Randomly generate parameter dictating overall strategy, with larger value causing the fleet
+		// to stick together more and smaller value causing more spreading out to capture objectives quickly
 		captureCaution = (0.40 + 0.60*random())*30000*Main.TPS;
 	}
 	
+	// Use combination of heuristics and randomness to set weapon fire modes at start of game
 	private void setFireModes(){
 		for (Ship ship : this.ships){
 			for (Component component : ship){
@@ -86,6 +96,7 @@ public class ComputerPlayer extends Player{
 			timeToLose = Main.game.getTimeToLose(team);
 			timeToWin = Main.game.getTimeToWin(team);
 			
+			// Compute proportion of map objectives currently being captured, used to compute priority of capture action
 			objectiveFracCapturing = 0.0;
 			for (Unit unit : units){
 				if (unit.orders().getOrder() instanceof Capture)
@@ -93,6 +104,7 @@ public class ComputerPlayer extends Player{
 			}
 			objectiveFracCapturing /= Main.game.arena.totalObjectiveValue;
 			
+			// Check if can afford the next ship in order
 			for (Ship ship : ships){
 				if (ship.outOfArena){
 					if (ship.getCost() <= getBudget())
@@ -101,6 +113,7 @@ public class ComputerPlayer extends Player{
 				}
 			}
 			
+			// Check to launch craft, or enable or disable systems
 			for (Controllable controllable : controllables){
 				if (controllable instanceof Ship){
 					Ship ship = (Ship)controllable;
@@ -124,6 +137,8 @@ public class ComputerPlayer extends Player{
 			}
 		}
 		
+		// Find and perform the best action for each unit. The best attack action is used to
+		// set the unit's target, even in the case that a non-attack action is performed
 		if (turnsPassed%ACTION_REFRESH_PERIOD == 0){
 			for (Controllable controllable : controllables){
 				if (controllable instanceof Unit){
@@ -158,8 +173,9 @@ public class ComputerPlayer extends Player{
 						unit.setTarget(bestAttackAction.target);
 				}
 			}
-		}
+		} // End action refresh
 		
+		// Compute and store priorities for each action for each unit at staggered intervals.
 		for (int x = 0; x < actions.size(); x++){
 			Action action = actions.get(x);
 			if ((turnsPassed + action.updateTime)%ACTION_REFRESH_PERIOD == 0){
@@ -213,6 +229,7 @@ public class ComputerPlayer extends Player{
 		return threat;
 	}
 	
+	// Heuristic for how well the AI knows the location of a given unit
 	private double unitKnowledge(Unit unit){
 		if (unit.getPlayer().team == team)
 			return 1.0;
@@ -227,6 +244,7 @@ public class ComputerPlayer extends Player{
 		return knowledge;
 	}
 	
+	// Heuristic for how powerful the AI judges an enemy unit, in units of money
 	private static double unitStrength(Unit unit){
 		int craftMass = 0;
 		double health = unit.getHull();
@@ -241,11 +259,13 @@ public class ComputerPlayer extends Player{
 				unit.getWeaponReadiness()/max(1.0, 0.8 + craftMass*2.0/unit.type.mass);
 	}
 	
+	// Heuristic for how much power a given unit is able to influence a given point in space with, in units of money
 	private static double unitPresence(Unit unit, Locatable location){
 		double time = Utility.approxTime(unit, location);
 		return unitStrength(unit)/(1+pow(max(0, time-0.8*unitRange(unit))/(25*Main.TPS), 1.4));
 	}
 	
+	// Approximate weapon range of a unit
 	private static double unitRange(Unit unit){
 		double sum = 0.0;
 		int count = 0;
@@ -265,6 +285,7 @@ public class ComputerPlayer extends Player{
 		return count > 0 ? sum/count : 0.0;
 	}
 	
+	// How far away a unit is from any objectives, used to avoid chasing an enemy pointlessly into empty space
 	private static double timeToObjective(Unit unit, Locatable location){
 		if (Main.game.arena.objectives.length == 0){
 			return 0;
@@ -276,6 +297,7 @@ public class ComputerPlayer extends Player{
 		}
 	}
 	
+	// Heuristic for how well suited one unit is for fighting another, based on the loadouts
 	private static double unitEffectiveness(Unit unit, Unit target){
 		double pointDefense = 0.0;
 		double defenseAngle = target.heading(unit);
@@ -308,6 +330,7 @@ public class ComputerPlayer extends Player{
 		return sumCost == 0 ? 0.0 : sumEffect/sumCost;
 	}
 	
+	// Huristic to compute how effective a given weapon type is against a given target
 	private static double weaponEffectiveness(WeaponType weapon, UnitType target, double pointDefense){
 		double baseExplosiveDamage = 0.0, baseKineticDamage = 0.0, EMDamage = 0.0, armor = 0.0;
 		if (weapon instanceof GunType){
@@ -361,6 +384,8 @@ public class ComputerPlayer extends Player{
 			return unitPriority;
 		}
 		
+		// Compute how much higher a given unit's priority is for performing this action than that of any other unit.
+		// Used to coordinate actions that only need to be done by a single unit
 		double getPriorityGap(Unit unit){
 			if (unit == null){
 				return 0.0;
@@ -382,6 +407,7 @@ public class ComputerPlayer extends Player{
 		abstract boolean isValid();
 	}
 	
+	// Action to capture a map objective
 	private class CaptureAction extends Action{
 		final Arena.Objective objective;
 		Unit currentUnit;
@@ -471,6 +497,7 @@ public class ComputerPlayer extends Player{
 		}
 	}
 	
+	// Order to attack an enemy unit
 	private class AttackAction extends Action{
 		final Target target;
 		
@@ -505,6 +532,7 @@ public class ComputerPlayer extends Player{
 			if (strength == 0)
 				return Double.MAX_VALUE;
 			
+			// Determine how much stuff is already attacking this target. Priority is reduced if either too much or too little is already engaged
 			double engagedStrength = 0.0;
 			for (Player player : Main.game.players){
 				if (player.team == team && player.isMaster()){
@@ -542,6 +570,8 @@ public class ComputerPlayer extends Player{
 		}
 		
 		void perform(Unit unit){
+			
+			// Decide whether to use AttackFast or AttackSlow depending on weapon loadout
 			int bombCount = 0, weaponCount = 0;
 			for (Weapon weapon : unit.weapons){
 				if (weapon.isOperational()){
@@ -561,7 +591,6 @@ public class ComputerPlayer extends Player{
 				if (!(order instanceof AttackSlow) || ((AttackSlow)order).target != target)
 					newOrder = new AttackSlow(target);
 			}
-			
 			
 			if (newOrder != null){
 				unit.setTarget(target);
@@ -583,6 +612,7 @@ public class ComputerPlayer extends Player{
 		}
 	}
 	
+	// Order to scout a sensor target
 	private class ScoutAction extends Action{
 		final SensorTarget target;
 		
@@ -617,6 +647,7 @@ public class ComputerPlayer extends Player{
 		}
 	}
 	
+	// Order to escort a friendly unit
 	private class EscortAction extends Action{
 		final Ship target;
 		
@@ -667,6 +698,7 @@ public class ComputerPlayer extends Player{
 		}
 	}
 	
+	// Order to defend an already captured objective
 	private class DefendObjectiveAction extends Action{
 		final Arena.Objective objective;
 		
@@ -731,6 +763,7 @@ public class ComputerPlayer extends Player{
 		}
 	}
 	
+	// Wrapper class for use with maps
 	private class Priority{
 		public double value;
 		public Priority(){

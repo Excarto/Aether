@@ -1,5 +1,7 @@
 import java.util.concurrent.*;
 
+// Ass-accurate-as-possible periodic timer. Behavior on each period defined by overriding runTimerTask()
+
 public abstract class PeriodicTimer{
 	static final int DEFAULT_MAX_SLEEP_MILIS = 8;
 	static final long MAX_YIELD_NANOS = 300*1000;

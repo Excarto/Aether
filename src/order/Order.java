@@ -1,5 +1,7 @@
 import java.awt.*;
 
+// Base class for all Orders
+
 public abstract class Order{		
 	protected static final int TRANSLUCENT_ALPHA = 75, OPAQUE_ALPHA = 170;
 	

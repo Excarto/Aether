@@ -1,6 +1,10 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Order for missile to impact target. Will adjust course to move past target while conserving
+// an amount of fuel determined by the MissileType. Once close enough, will switch to a
+// MovePastTarget order for final approach
+
 public class Impact extends TrackOrder{
 	
 	public final Target target;
@@ -27,6 +31,7 @@ public class Impact extends TrackOrder{
 	public void act(){
 		if (!finalApproach){
 			if (turnsSetVars++%10 == 0){
+				// Check if enough fuel to execute MovePastTarget order, otherwise continue initial approach
 				finalApproachOrder.setTimeAndAngle();
 				if (finalApproachOrder.getTime()*((Missile)host).type.thrust*Main.config.energyPerThrust <
 						0.95*((Missile)host).getEnergy()){
@@ -39,6 +44,7 @@ public class Impact extends TrackOrder{
 				}
 			}
 			
+			// Accelerate if necessary and if pointing right direction
 			double deltaTarget = abs(Utility.fixAngle(targetAngle-host.getAngle()));
 			if (timeToAccel > 0){
 				double angleThresh = max(3, min(10, 500/timeToAccel));
@@ -50,11 +56,12 @@ public class Impact extends TrackOrder{
 		}
 	}
 	
-	static final double TANGENTIAL_INCREASE = 0.26;
+	static final double TANGENTIAL_INCREASE = 0.26; // Larger value will make missile more concerned with eliminating tangential velocity
 	private void setTimeAndAngle(){
 		double Dx = getDx(), Dy = getDy(), Vx = getVx(), Vy = getVy();
 		double a = ((Controllable)host).getAccel();
     	
+		// Set cruising speed to maximum of current speed, and speed determined by closingFuel of host MissileType
     	distance = sqrt(Dx*Dx+Dy*Dy);
     	closingSpeed = -(Dx*Vx+Dy*Vy)/distance;
     	double deltaVRemaining = ((Missile)host).getEnergy()/Main.config.energyPerThrust/((Missile)host).type.projectileMass;

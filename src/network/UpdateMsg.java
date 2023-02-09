@@ -1,5 +1,7 @@
 import java.io.*;
 
+// Used for periodic in-game update messages
+
 public abstract class UpdateMsg extends InGameMsg{
 	public static final int TIME_UPDATE_FACTOR = 32;
 	public Protocol getProtocol(){

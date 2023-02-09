@@ -5,6 +5,9 @@ import java.util.*;
 import javax.swing.*;
 import java.io.*;
 
+// Units are the main object in the game. This class contians everything about the instantaneous state of the unit,
+// as well as various GUI elements associated with a selected unit
+
 public abstract class Unit extends Sprite implements Controllable, Repairable, Iterable<Component>{
 	public final static int ESCORT_SLACK = 6*Main.TPS;
 	public final static int RES = 0, CAP = 1, OFF = 2;
@@ -81,6 +84,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		if (orders != null)
 			orders.act();
 		
+		// Used for remote networked players, to manuever between update packets
 		if (netThrustTime[Thruster.FORWARD] > 0){
 			netThrustTime[Thruster.FORWARD]--;
 			accelForward();
@@ -140,24 +144,30 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 			component.setId();
 	}
 	
+	// Incrementally increase the energy contained in the capacitor, with energy divided between
+	// categories in proportion to the power setting dedicated to that category.
+	// Categoeis have a state defined by a double[2], with the CAP index giving the total energy currently
+	// in the capacitor, and RES giving the proportion from 0 to 1 of the unit's capacitor reverved for the category
 	public void addEnergy(double input){
-		totalCap = unreservedCap[1];
-		overflowPower = 0;
+		totalCap = unreservedCap[CAP];
+		overflowPower = 0; // Overflow power is used for approximating acceleration rate in case the unit is out of energy
 		double totalEmpty = 0;
-		LinkedList<double[]> nonFull = new LinkedList<double[]>();
+		LinkedList<double[]> nonFull = new LinkedList<double[]>(); // List of all categories that have space left
 		
-		for (String key : capacitor.keySet()){
+		for (String key : capacitor.keySet()){ // Loop over general category groups
 			Map<String, double[]> specific = capacitor.get(key);
 			double[] specificUnresCap = specific.get("Unreserved");
 			
-			for (String specificKey : specific.keySet()){
+			for (String specificKey : specific.keySet()){ // Loop over specific categories within the general group
 				double[] val = specific.get(specificKey);
 				
+				// Add the proportion of energy
 				val[CAP] += val[RES]*input;
 				totalCap += val[CAP];
 				
-				if (specificKey != "Unreserved")
+				if (specificKey != "Unreserved"){
 					if (val[CAP] > val[RES]*type.capacitor){
+						// If overfull, set to full and put the overflow into the unreserved category
 						specificUnresCap[CAP] += val[CAP]-val[RES]*type.capacitor;
 						val[CAP] = val[RES]*type.capacitor;
 						
@@ -165,19 +175,26 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 							overflowPower += val[RES];
 					}
 					else if (val[CAP] < val[RES]*type.capacitor){
+						// Take note that there is still space left here for later recycling
 						totalEmpty += val[RES]*type.capacitor-val[CAP];
 						nonFull.add(val);
 					}
-			}
+				}
+			} // End loop over specific category
+			
 			if (specificUnresCap[CAP] > specificUnresCap[RES]*type.capacitor){
+				// The unreserved for this specific group is overfull, so overflow into the global unreserved category
 				unreservedCap[CAP] += specificUnresCap[CAP]-specificUnresCap[RES]*type.capacitor;
 				specificUnresCap[CAP] = specificUnresCap[RES]*type.capacitor;
 				overflowPower += specificUnresCap[RES];
 			}else if (specificUnresCap[CAP] < specificUnresCap[RES]*type.capacitor){
+				// Take note that there is still space left here for later recycling
 				totalEmpty += specificUnresCap[RES]*type.capacitor-specificUnresCap[CAP];
 				nonFull.add(specificUnresCap);
 			}
-		}
+		}// End loop over general categories
+		
+		// If the global unreserved category is overfull after adding to it, then recycle back into all previously recorded non-full categories
 		unreservedCap[CAP] += unreservedCap[RES]*input;
 		if (unreservedCap[CAP] > unreservedCap[RES]*type.capacitor){
 			if (totalEmpty > 0){
@@ -189,6 +206,8 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		}
 	}
 	
+	// Drain energy, prioritizing first the specific category, then the unreserved category for the specific group,
+	// and finally the global unreserved category
 	public boolean drainEnergy(double energy, String category, String specific){
 		double[] specificCap = capacitor.get(category).get(specific);
 		double[] specificUnresCap = capacitor.get(category).get("Unreserved");
@@ -237,6 +256,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 				scannerRange = max(scannerRange, system.type.radius);
 		}
 		
+		// Determine radar size of the unit after accounting for cloaks
 		radarSize = type.radarSize;
 		for (Player player : Main.game.players)
 			if (player.team == this.player.team)
@@ -278,6 +298,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		accelLinear(getAngle()+angle, Main.config.maneuverThrust*type.thrust);
 	}
 	
+	// Accelerate, checking to make sue that we aren't accelerating twice in the same turn
 	private boolean accelLinear(double angle, double thrust){
 		if (accelLinearTime < Main.game.turn){
 			if (drainEnergy(thrust*Main.config.energyPerThrust, "Engines", "Forward")){
@@ -289,6 +310,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		return false;
 	}
 	
+	// Accelerate, checking to make sue that we aren't accelerating twice in the same turn
 	public void accelTurn(boolean direction){
 		if (accelRightTime < Main.game.turn && accelLeftTime < Main.game.turn){
 			if (drainEnergy(type.turnThrust*Main.config.energyPerTurnThrust, "Engines", "Turn")){
@@ -317,6 +339,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		boolean hasSubtarget = subTarget != null && (weapons.contains(subTarget) || systems.contains(subTarget));
 		boolean componentHit = false;
 		
+		// Explosive damage rolls to check dagamage against each component separately, with remaining damage going to hull
 		if (explosiveDamage > 0){
 			if (!componentHit && hasSubtarget && RANDOM.nextDouble() < Main.config.explosiveSubtargetChance){
 				double explosiveTargetDamage = (RANDOM.nextDouble()*Main.config.explosiveComponentDamage)*explosiveDamage;
@@ -340,6 +363,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 			this.hull -= damage(explosiveDamage, armor*Main.config.armorExplosiveEffectiveness);
 		}
 		
+		// Kinetic damage rolls to hit just a single component at most
 		if (kineticDamage > 0){
 			if (!componentHit && hasSubtarget && RANDOM.nextDouble() < Main.config.kineticSubtargetChance){
 				subTarget.takeHit(Main.config.kineticComponentDamage*kineticDamage);
@@ -354,6 +378,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 			this.hull -= damage(kineticDamage, armor*Main.config.armorKineticEffectiveness);
 		}
 		
+		// EM damage rolls to hit all components, without reducing after each hit
 		if (EMDamage > 0){
 			for (Component component : this){
 				if (RANDOM.nextDouble() > Main.config.EMComponentChance)
@@ -387,6 +412,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		return type.contactMap[Renderable.getAngleIndex(getAngle(), UnitType.NUM_CONTACT_MAPS)];
 	}
 	
+	// Approximate acceleration, accounting for the case that the unit is starved for energy
 	public double getAccel(){
 		double[] forward = capacitor.get("Engines").get("Forward");
 		double[] engines = capacitor.get("Engines").get("Unreserved");
@@ -402,6 +428,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		}
 	}
 	
+	// Approximate acceleration, accounting for the case that the unit is starved for energy
 	public double getTurnAccel(){
 		double[] turn = capacitor.get("Engines").get("Turn");
 		double[] engines = capacitor.get("Engines").get("Unreserved");
@@ -619,6 +646,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		return name;
 	}
 	
+	// Called at start of round
 	public void initialize(){
 		if (!manualAmmo)
 			setDefaultAmmoRatios();
@@ -703,6 +731,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		return null;
 	}
 	
+	// Convenience iterator going over both weapons and systems at the same time
 	public Iterator<Component> iterator(){
 		return new Iterator<Component>(){
 			Iterator<Weapon> weaponIterator = weapons.iterator();
@@ -731,6 +760,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 			
 			if (getImage(window.getRenderZoom()) != null){
 				
+				// Draw colored circle indicating hull status
 				if (window.getPlayer().knowHealth(this)){
 					g.setColor(Utility.getColor(1-(type.hull-getHull())/(0.9*type.hull), 0.0));
 					g.fillOval(posX+size*4/11+statSize/4, posY+size*4/11+statSize/4,
@@ -748,6 +778,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 						g.drawString(orders.getOrder().getClass().getName(), posX-size*4/11-2, posY+size*4/11+statSize+2);
 				}
 				
+				// Draw energy and ammo status bars at the bottom corner
 				if (player.team == window.getPlayer().team){
 					g.setColor(STATUS_OUTLINE_COLOR);
 					g.setFont(statusFont);
@@ -776,6 +807,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 							statSize/4-1, barHeight);
 				}
 				
+				// Draw physical weapon graphics
 				for (Weapon weapon : weapons){
 					Image weaponImg = weapon.getImage(window.getRenderZoom());
 					if (weaponImg != null){
@@ -794,6 +826,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 	
 	public void drawHudTop(Graphics2D g, GameWindow window){
 		if (target != null){
+			// Draw red X indicating targeted enemy unit
 			int targetPosX = window.posXOnScreen(target.renderPosX);
 			int targetPosY = window.posYOnScreen(target.renderPosY);
 			if (targetPosX > 0 && targetPosY > 0 && targetPosX < window.windowResX && targetPosY < window.windowResY){
@@ -810,6 +843,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		super.drawHudTop(g, window);
 	}
 	
+	// Draw circles indicating maximum range of vision and sensors
 	public void drawVision(Graphics2D g, GameWindow window){
 		int posX = window.posXOnScreen(renderPosX), posY = window.posYOnScreen(renderPosY);
 		
@@ -914,6 +948,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		menu.add(Unit.targetPanel);
 	}
 	
+	// Output unit to text file
 	public void write(BufferedWriter out) throws IOException{
 		out.write(type.name+"\n");
 		out.write(manualAmmo+"\n");
@@ -936,6 +971,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		}
 	}
 	
+	// Input unit to text file, checking for validity of outfits
 	public static Unit read(BufferedReader in){
 		try{
 			String typeName = in.readLine();
@@ -978,6 +1014,7 @@ public abstract class Unit extends Sprite implements Controllable, Repairable, I
 		}
 	}
 	
+	// Function to compute how much damage gets through a given armor value
 	private final static double ARMOR_BETA = 4+0.1, ARMOR_OMEGA0 = sqrt(ARMOR_BETA);
 	private final static double ARMOR_CMINUS = (-ARMOR_BETA-sqrt(ARMOR_BETA*ARMOR_BETA-4*ARMOR_OMEGA0*ARMOR_OMEGA0))/2;
 	private final static double ARMOR_CPLUS = (-ARMOR_BETA+sqrt(ARMOR_BETA*ARMOR_BETA-4*ARMOR_OMEGA0*ARMOR_OMEGA0))/2;

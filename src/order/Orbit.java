@@ -1,6 +1,9 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Order to orbit a target. Target orbital speed it C_SPEED times unit's maximum acceleration.
+// Direction of orbit determined by whatever the current tangential velocity direction is
+
 public class Orbit extends TrackOrder{
 	private static final double C_SPEED = 0.5, C_CLOSE = 1.2, C_ORBIT = 1.0;
 	private static final int TURNS_SET_ANGLE = 21;

@@ -1,5 +1,7 @@
 import static java.lang.Math.*;
 
+// Order to come to a stop at a target
+
 public class MoveTo extends Order{
 	static final int TURNS_SET_TIME = 5;
 	
@@ -17,6 +19,7 @@ public class MoveTo extends Order{
 		if (turnsUntilSetAngle-- < 0){
 			setTimeAndAngle();
 			if (timeToAccel > 1){
+				// Damping needed to eliminate oscillations when braking
 				double deltaTarget = Utility.fixAngle(targetAngle-host.getAngle());
 				double dampedTargetAngle = targetAngle;
 				if (abs(deltaTarget) < 5 && abs(host.bearing(target)) > 90)
@@ -27,6 +30,7 @@ public class MoveTo extends Order{
 			turnsUntilSetAngle = TURNS_SET_TIME;
 		}
 		
+		// Accelerate if necessary and facing right direction
 		if (timeToAccel > 0){
 			double deltaTarget = Utility.fixAngle(targetAngle-host.getAngle());
 			//double angleThresh = max(3, min(24, 4*Main.TPS/timeToAccel));
@@ -38,12 +42,14 @@ public class MoveTo extends Order{
 		}
 	}
 	
-	static final double TANGENTIAL_INCREASE = 0.23;
+	static final double TANGENTIAL_INCREASE = 0.23;// Larger value makes it more concerned with eliminating tangential velocity
 	private void setTimeAndAngle(){
 		double Dx = target.getPosX()-host.getPosX(), Dy = target.getPosY()-host.getPosY();
 		double Vx = target.getVelX()-host.getVelX(), Vy = target.getVelY()-host.getVelY();
     	double a = 0.85*((Controllable)host).getAccel();
     	
+    	// Set target closing speed such that there is enough time to turn around and accelerate to a stop.
+    	// There are a couple empirical values in order to get optimal behavior
     	double distance = sqrt(Dx*Dx+Dy*Dy);
     	double turnTime = 0.91*TurnTo.approxTurnTime((Controllable)host, 180+host.heading(target));
     	double bufferedTurnTime = turnTime + 3*Main.TPS/16;

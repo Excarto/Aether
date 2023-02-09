@@ -1,6 +1,8 @@
 import java.util.*;
 import java.io.*;
 
+// Types represent objects read in from data files at load time.
+
 public abstract class Type{
 	
 	public final String directory;

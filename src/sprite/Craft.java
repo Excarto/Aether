@@ -1,4 +1,6 @@
 
+// Craft class adds very little to the base unit class other than keeping track of and docking with the mothership
+
 public class Craft extends Unit{
 	
 	public final CraftType type;
@@ -72,12 +74,6 @@ public class Craft extends Unit{
 	}
 	
 	public SidePanel getMenu(){
-		/*for (int x = 0; x < controls.getTabCount(); x++)
-			if (controls.getTitleAt(x) == "Craft")
-				controls.removeTabAt(x);
-		for (int x = 0; x < controls.getTabCount(); x++)
-			if (controls.getTitleAt(x) == "Repair")
-				controls.removeTabAt(x);*/
 		return super.getMenu();
 	}
 }

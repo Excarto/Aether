@@ -2,6 +2,9 @@ import static java.lang.Math.*;
 import java.awt.*;
 import javax.swing.*;
 
+// Used for both Weapons and Systems side panels. Includes a UnitPanel for displaying and selecting
+// components, plus a region for the selected component's detail panel.
+
 public class ComponentsPanel extends SidePanel{
 	
 	public final SelectPanel unitPanel;
@@ -100,8 +103,6 @@ public class ComponentsPanel extends SidePanel{
 				g.drawLine(0, (int)(selectedComponent.hardpoint.posY*size), getHeight(), (int)(selectedComponent.hardpoint.posY*size));
 			}
 			
-			//super.paintWindow(g);
-			
 			g.setColor(SELECTION_COLOR);
 			for (Component component : (isWeapons ? unit.weapons : unit.systems)){
 				if (component.selected)
@@ -112,6 +113,7 @@ public class ComponentsPanel extends SidePanel{
 			
 			super.paintWindow(g);
 			
+			// Draw lines showing aiming and readiness state of weapons
 			if (isWeapons){
 				for (Weapon weapon : unit.weapons){
 					int posX = (int)(weapon.hardpoint.posX*size);

@@ -2,6 +2,8 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+// Small panel showing a unit and giving options to repair, rearm, or recharge it. Used by both RepairPanel and CraftPanel
+
 public abstract class StatusPanel extends JPanel{
 	public static final int HEIGHT = 48;
 	

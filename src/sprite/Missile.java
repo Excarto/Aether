@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Missile class consists mostly of a minimal implementation of Controllable on top of a Projectile
+
 public class Missile extends Projectile implements Controllable{
 	
 	public final MissileType type;
@@ -15,7 +17,7 @@ public class Missile extends Projectile implements Controllable{
 	private int accelForwardTime, accelTurnTime;
 	private Thruster[][] activeThrusters;
 	
-	boolean autoShips, autoCraft, autoMissiles;
+	boolean autoShips, autoCraft, autoMissiles; // These are stored for automatic target re-aquisition if the original is destroyed
 	Weapon.FireMode mode;
 	
 	public Missile(Gun gun){
@@ -95,6 +97,7 @@ public class Missile extends Projectile implements Controllable{
 		this.hull -= explosiveDamage+kineticDamage;
 	}
 	
+	// Automatic target selection based on time to impact
 	public void findTarget(boolean findShip, boolean findCraft, boolean findMissile){
 		Target minTarget = null;
 		double minTime = Double.MAX_VALUE;

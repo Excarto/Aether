@@ -1,6 +1,8 @@
 import java.util.*;
 import java.io.*;
 
+// Reads in, writes, and stores user-configurable options
+
 public class Options{
 	public final int resX, resY;
 	public final boolean useAntiAliasing;

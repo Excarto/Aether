@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Order to attack target by trying to get close, match speed, and when close enough, turn to face weapons.
+
 public class AttackSlow extends MoveToTarget{
 	public static final int STANDOFF_DIST = 300;
 	
@@ -27,6 +29,7 @@ public class AttackSlow extends MoveToTarget{
 		Unit host = (Unit)this.host;
 		distance = host.distance(target);
 		
+		// Update whether to face target vs. pursuit mode
 		if (runTime%8 == 0){
 			double targetAngle = faceOrder.getFaceAngle(target);
 			double leadTime = 0;
@@ -45,9 +48,13 @@ public class AttackSlow extends MoveToTarget{
 		
 		if (!isFacing)
 			super.act();
+		
+		// If facing target but moving away, accelerate
 		if (isFacing && abs(host.bearing(target)) < 20 &&
 				host.radVel(target) > -host.getAccel()*Main.TPS/8 && distance > 300)
 			host.accelForward();
+		
+		// If stuck right on top of target, just accelerate off
 		if (distance < host.getSize()/2 && host.speed(target)*Main.TPS*2 < host.getSize()){
 			if (target.isVisible()){
 				host.accelForward();

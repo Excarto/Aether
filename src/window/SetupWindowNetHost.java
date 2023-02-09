@@ -3,6 +3,8 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+// Game lobby window for the host side of multiplayer games
+
 public class SetupWindowNetHost extends SetupWindowHost{
 	
 	Connection connection;

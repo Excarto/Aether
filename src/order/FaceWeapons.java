@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import java.util.*;
 
+// Order to turn unit to face maximum firepower toward targets, used as suborder by many other orders
+
 public class FaceWeapons extends Order{
 	static final int MIN_NUM_ANGLES = 2;
 	public static final double NO_ANGLE = 1000;
@@ -29,6 +31,8 @@ public class FaceWeapons extends Order{
 			double lead = 0.0;
 			if (angle != NO_ANGLE){
 				if (previousAngle != NO_ANGLE && abs(Utility.fixAngle(angle - host.getAngle())) < 40){
+					// Numerically compute difference between target angle and true angle between turns, then compute lead term to try to compensate
+					// Otherwise it will lag behind the target angle
 					double targetAngleRate = Utility.fixAngle(angle - previousAngle);
 					double turnLag = Utility.fixAngle(previousAngle + previousLead - host.getAngle());
 					if (signum(turnLag) != signum(targetAngleRate))
@@ -58,6 +62,7 @@ public class FaceWeapons extends Order{
 		arcAngle.add(stopDist+90.0);
 		arcWeight.add(-0.1);
 		
+		// Compute all starting and ending angles of weapon arcs weighted by importance
 		for (Weapon weapon : host.weapons){
 			if (weapon.getHull() > 0 && !Double.isNaN(weapon.getTargetAngle()) && weapon.getArc() < 180 &&
 					(target == null || weapon.getTarget() == target)){
@@ -88,6 +93,7 @@ public class FaceWeapons extends Order{
 			}
 		}
 		
+		// Find angle segment with greatest sum of arc weights, and set face angle to midpoint of segment
 		if (arcAngle.size() > MIN_NUM_ANGLES){
 			double highestStart = 0, highestEnd = 0;
 			double currentWeight = 0;

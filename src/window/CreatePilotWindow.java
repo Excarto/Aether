@@ -2,6 +2,8 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 
+// Window for configuring a new Pilot for the single-player campaign
+
 public class CreatePilotWindow extends Window{
 	
 	private static final char[] VALID_NAME_CHARS =

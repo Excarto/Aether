@@ -17,6 +17,7 @@ public class Launcher extends Gun{
 	public void act(){
 		super.act();
 		
+		// If missile volley is ready to go, then send it
 		if (unit.player.isMaster()){
 			Target target = getTarget();
 			if (!volley.isEmpty() && target != null){
@@ -29,12 +30,15 @@ public class Launcher extends Gun{
 				}
 			}
 		}
+		
 	}
 	
+	// Override of method in Gun
 	protected Projectile createProjectile(){
 		return new Missile(this);
 	}
 	
+	//Override of method in Gun
 	protected void addProjectile(Projectile projectile){
 		unit.player.controllables.add((Missile)projectile);
 		if (unit.player.isMaster())
@@ -50,6 +54,7 @@ public class Launcher extends Gun{
 		volley.remove(controllable);
 	}
 	
+	// Approximate time to impact target
 	protected double approxTime(Locatable locatable){
 		double dx = locatable.getPosX()-unit.getPosX(), dy = locatable.getPosY()-unit.getPosY();
 		double vx = locatable.getVelX()-unit.getVelX(), vy = locatable.getVelY()-unit.getVelY();

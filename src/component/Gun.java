@@ -1,5 +1,7 @@
 import static java.lang.Math.*;
 
+// Weapon that shoots discrete projectiles
+
 public class Gun extends Weapon{
 	
 	public final GunType type;
@@ -29,6 +31,7 @@ public class Gun extends Weapon{
 		super.act();
 	}
 	
+	// Add projectile to the game. Time offset used to account for network lag
 	public void fire(int time){
 		super.fire(time);
 		
@@ -66,6 +69,7 @@ public class Gun extends Weapon{
 		}
 	}
 	
+	// Compute firing angle to intercept target assuming constant target acceleration
 	protected double calcTargetAngle(){
 		Sprite target = (Sprite)this.getTarget().target;
 		
@@ -90,6 +94,7 @@ public class Gun extends Weapon{
 		return type.velocity;
 	}
 	
+	// Approximate time to intercept target, assuming zero target acceleration
 	protected double approxTime(Locatable locatable){
 		double dx = locatable.getPosX()-unit.getPosX(), dy = locatable.getPosY()-unit.getPosY();
 		double vx = locatable.getVelX()-unit.getVelX(), vy = locatable.getVelY()-unit.getVelY();
@@ -106,6 +111,7 @@ public class Gun extends Weapon{
 		}
 	}
 	
+	// Approximate firing angle to intercept target assuming zero target acceleration. Faster than the full method
 	protected double approxAngle(Locatable locatable, double time){
 		double Dx = locatable.getPosX()-unit.getPosX();
 		double Dy = locatable.getPosY()-unit.getPosY();
@@ -123,6 +129,7 @@ public class Gun extends Weapon{
 		return true;
 	}
 	
+	// List of target velocities, used to compute average acceleration
 	private class VelocityRecord{
 		double[][] record;
 		int index;

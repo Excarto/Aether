@@ -1,5 +1,7 @@
 import static java.lang.Math.*;
 
+// Position for mounting weapons or systems. Each UnitType has some number of these associated.
+
 public class Hardpoint{
 	public static final double AUTO_RANDOMNESS = 1.2;
 	
@@ -29,6 +31,7 @@ public class Hardpoint{
 		return 0.5+centerDistance*cos(toRadians(centerAngle+angle)) + posYShift;
 	}
 	
+	// Randomly pick a compatible Component, weighted by mass
 	public ComponentType autoLoadout(Unit unit){
 		double highestVal = 0;
 		ComponentType highestType = null;

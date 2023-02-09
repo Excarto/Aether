@@ -1,5 +1,7 @@
 import java.awt.*;
 
+// Anything that can be given orders in-game
+
 public interface Controllable extends Id, Locatable{
 	public SidePanel getMenu();
 	public void restoreMenuState();

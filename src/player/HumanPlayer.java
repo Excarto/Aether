@@ -1,5 +1,7 @@
 import java.util.*;
 
+// Human player adds some graphics and interface functionality on top of base player
+
 public class HumanPlayer extends Player{
 	
 	private GameWindow window;

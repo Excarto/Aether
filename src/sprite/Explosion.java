@@ -1,5 +1,8 @@
 import java.awt.*;
 
+// Explosion sprite. Explosions are rendered as a series of pre-computed images,
+// with the next image in sequence being pre-cached in video memory before it is needed
+
 public class Explosion extends Sprite{
 	
 	public final ExplosionType type;

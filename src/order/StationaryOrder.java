@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Base class for orders targeting a stationary point in space
+
 public abstract class StationaryOrder extends LocatableOrder{
 	double completionDist;
 	double completionSpeed;

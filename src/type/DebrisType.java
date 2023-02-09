@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
+// This is not actually a child of Type, since the only data read in is the image
+
 public class DebrisType{
 	
 	public final Renderable renderable;
@@ -20,6 +22,7 @@ public class DebrisType{
 			Main.crash(file.getPath());
 		}
 		
+		// Count how many pixels it has to compute the size of the debris chunk
 		BufferedImage temp = new BufferedImage(
 				origImage.getWidth(), origImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		temp.getGraphics().drawImage(origImage, 0, 0, null);

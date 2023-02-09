@@ -4,6 +4,9 @@ import java.util.List;
 import java.awt.image.*;
 import java.awt.*;
 
+// An object that obeys Newtonian physics in-game. Also contains some mehtods common to all Controllables,
+// such as thrusters and drawing the interface
+
 public abstract class Sprite implements Id, Locatable{
 	public static final Thruster[] NO_THRUSTERS = new Thruster[]{};
 	public static final Thruster[][] NO_THRUSTERS_ALL = new Thruster[][]{NO_THRUSTERS, NO_THRUSTERS, NO_THRUSTERS};
@@ -61,6 +64,7 @@ public abstract class Sprite implements Id, Locatable{
 	
 	public abstract void act();
 	
+	// Used for sychronizing between rendering thread and main game thread
 	public void recordPos(){
 		renderPosX = posX;
 		renderPosY = posY;
@@ -171,6 +175,7 @@ public abstract class Sprite implements Id, Locatable{
 		this.renderAngle = angle;
 	}
 	
+	// Used to smoothly correct motion for networked games
 	public void adjustTo(double posX, double posY,
 			double velX, double velY,
 			double angle, double turnSpeed){
@@ -212,7 +217,7 @@ public abstract class Sprite implements Id, Locatable{
 		int posX = window.posXOnScreen(renderPosX), posY = window.posYOnScreen(renderPosY);
 		int size = getRenderSize(window.getRenderZoom());
 		
-		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){
+		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){ // Check if on-screen
 			Image img = getImage(window.getRenderZoom());
 			if (img != null){
 				int width = img.getWidth(null), height = img.getHeight(null);
@@ -256,7 +261,7 @@ public abstract class Sprite implements Id, Locatable{
 					if (!effects.get(x).drawToUnit())
 						effects.get(x).draw(g, window, 0, 0);
 				}
-			}else{
+			}else{ // Image is null, meeaning too zoomed out. Draw a box icon instead
 				
 				size = getIconSize();
 				if (size < 5){
@@ -272,6 +277,7 @@ public abstract class Sprite implements Id, Locatable{
 		}
 	}
 	
+	// HUD components that are drawn beneath others
 	static final Color TURN_COLOR = new Color(0, 255, 0, 150);
 	public void drawHudBottom(Graphics2D g, GameWindow window){
 		Controllable controllable = (Controllable)this;
@@ -287,6 +293,7 @@ public abstract class Sprite implements Id, Locatable{
 		}
 	}
 	
+	// HUD components that are drawn on top of others
 	static final Color HUD_COLOR = new Color(0, 255, 0, 150);
 	static final int GAP_SIZE = 40;
 	public void drawHudTop(Graphics2D g, GameWindow window){

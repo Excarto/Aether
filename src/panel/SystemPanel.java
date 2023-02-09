@@ -3,6 +3,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
+// Panel corresponding to the selected System within the Systems side panel
+
 public class SystemPanel extends JPanel{
 	
 	System system;

@@ -1,5 +1,7 @@
 import java.net.*;
 
+// Represents an actively hosted game
+
 public class Lobby{
 	String name;
 	InetAddress address;

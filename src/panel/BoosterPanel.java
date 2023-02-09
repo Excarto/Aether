@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 
+// Interface panel for Booster type system
+
 public class BoosterPanel extends SystemPanel{
 	
 	Booster booster;

@@ -2,6 +2,9 @@ import static java.lang.Math.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+// An OrderQueue contains both a list of currently active orders, e.g. a TurnTo stacked on top of a MoveTo order,
+// and a queue of inactive orders that move to active once it's empty
+
 public class OrderQueue implements Iterable<Order>{
 	
 	private final Controllable host;
@@ -44,6 +47,7 @@ public class OrderQueue implements Iterable<Order>{
 			queue.offer(order);
 	}
 	
+	// Put newOrder directly on top of oldOrder, clearing anything currently on top of oldOrder
 	public void stackOrder(Order newOrder, Order oldOrder){
 		if (isActive(oldOrder)){
 			while (!active.isEmpty() && active.peek() != oldOrder)
@@ -148,6 +152,7 @@ public class OrderQueue implements Iterable<Order>{
 		return defaultOrder;
 	}
 	
+	// Convenience iterator for looping through both active and queued orders
 	public Iterator<Order> iterator(){
 		return new Iterator<Order>(){
 			private Iterator<Order> queueIterator;

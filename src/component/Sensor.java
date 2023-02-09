@@ -1,5 +1,7 @@
 import javax.swing.*;
 
+// Buyable radar system
+
 public class Sensor extends System{
 	
 	public final SensorType type;
@@ -23,6 +25,8 @@ public class Sensor extends System{
 			if (timeToRefresh == 0){
 				if (unit.drainEnergy(type.refreshEnergy, "Systems", type.name)){
 					timeToRefresh = type.refreshPeriod;
+					
+					// Loop through all emeny units and get sighting from any that are in range
 					for (Player player : Main.game.players){
 						if (player.team != unit.player.team){
 							for (Controllable target : player.controllables){
@@ -36,12 +40,14 @@ public class Sensor extends System{
 							}
 						}
 					}
+					
 				}
 			}
 			
 		}
 	}
 	
+	// Return new SensorSighting if the target is in range, otherwise null
 	protected SensorSighting scan(Sprite target){
 		double strength = 1-(1-target.getRadarSize())/type.stealthResistance-unit.distance(target)/type.radius;
 		if (strength > 0)

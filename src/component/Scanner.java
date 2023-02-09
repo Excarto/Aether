@@ -1,5 +1,7 @@
 import javax.swing.JPanel;
 
+// Buyable system used to reveal enemy unit status
+
 public class Scanner extends System{
 	
 	public final ScannerType type;

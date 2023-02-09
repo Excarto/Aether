@@ -3,6 +3,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+// Window that allows setting how much of each ammo type a ship carries within the pre-game outfit window.
+// The sum of ammoRatios is restricted to <= 1.0
+
 public final class AmmoWindow extends Window{
 	static final int BAR_HEIGHT = 58;
 	
@@ -105,6 +108,7 @@ public final class AmmoWindow extends Window{
 				percent.setText("   " + slider.getValue() + "%   ");
 				shots.setText((int)(ammoRatios[type]*ammoSpace/Main.ammoMass[type]) + " shots");
 				
+				// If increasing a slider, decrease each other ammo type in turn until the total <= 1.0
 				if (!decreaseCalled){
 					double total = 0;
 					for (int x = 0; x < ammoRatios.length; x++)

@@ -1,4 +1,6 @@
 
+// Main menu consisting of a tree of other Menu objects
+
 public class MainMenu extends Menu{
 	
 	public MainMenu(){

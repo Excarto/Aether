@@ -7,6 +7,9 @@ import java.util.*;
 import java.util.List;
 import javax.imageio.*;
 
+// Menu displaying the background image and animated options at game launch.
+// Each submenu with different options is implemented as another instance of a Menu object
+
 public class Menu extends Window{
 	
 	final static int OPTION_SPACING = 48;

@@ -1,14 +1,15 @@
 import static java.lang.Math.*;
-
 import java.awt.*;
 import java.awt.event.*;
-
 import javax.swing.*;
 import javax.swing.event.*;
-
 import java.awt.image.*;
-
 import org.imgscalr.*;
+
+// Abstract class providing an overlay of a unit with all weapons or systems shown,
+// depending on state of isWeapons. Also provides mouse listener so a given component
+// can be selected, with selection behahior defined by abstract methods
+// May optionally incluse a selector for switching between Weapons and Systems
 
 public abstract class UnitPanel extends JPanel{
 	

@@ -6,6 +6,8 @@ import java.io.*;
 import javax.imageio.*;
 import org.imgscalr.*;
 
+// Generates components of the background image: starfield, planets, cloud layers, and nebula.
+
 public class BackgroundGenerator{
 	
 	final static String CLOUD_DIR = "data/backgrounds/clouds/";
@@ -125,6 +127,7 @@ public class BackgroundGenerator{
 		//return background;
 	}
 	
+	// Places starts uniformly randomly, plus a curved band of stars for "milky way" effect
 	private void drawBackgroundStars(Graphics2D g, int width, int height){
 		double[] colorMult = new double[3];
 		int[] pixel = new int[4];
@@ -144,6 +147,8 @@ public class BackgroundGenerator{
 		
 		int numStars = (int)(NUM_STARS*(1 + bandStrength));
 		for (int i = 0; i < numStars; i++){
+			
+			// Stars are slightly colored
 			colorMult[0] = 1.0-0.25*rand.nextDouble();
 			colorMult[1] = 1.0-0.12*rand.nextDouble();
 			colorMult[2] = 1.0-0.15*rand.nextDouble();

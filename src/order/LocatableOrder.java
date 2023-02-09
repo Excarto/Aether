@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Superclass of all Orders targeting something with a location in physical game space
+
 public abstract class LocatableOrder extends Order implements Locatable{
 	static final int BOX_SHRINK_RATE = max(1, 150/Main.TPS);
 	static final int BOX_MAX_SIZE = 17;
@@ -22,6 +24,7 @@ public abstract class LocatableOrder extends Order implements Locatable{
 		this.drawArrow = drawArrow;
 	}
 	
+	// Draw scrolling dotted line, possibly with scrolling arrows
 	public double draw(Graphics2D g, GameWindow window, double fromPosX, double fromPosY){
 		if (getColor() == null)
 			return 0.0;

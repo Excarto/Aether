@@ -1,6 +1,8 @@
 import java.io.*;
 import java.util.*;
 
+// Stores array of songs in randomized order
+
 public class Music{
 	
 	private Sound[] songs;

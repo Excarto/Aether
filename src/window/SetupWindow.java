@@ -6,6 +6,8 @@ import java.util.Vector;
 import java.util.Arrays;
 import java.io.*;
 
+// Main game lobby window for both single player and multiplayer
+
 public abstract class SetupWindow extends Window{
 	enum PlayerType{
 		AI('a'), HOST('h'), NET_HOST('n'), NET_CLIENT('n'), NET_AI('a');
@@ -33,6 +35,7 @@ public abstract class SetupWindow extends Window{
 	public SetupWindow(){
 		super(Size.NORMAL);
 		
+		// Drop down menu for loading and saving ship loadouts
 		final JMenu loadMenu = new JMenu();
 		loadMenu.setPreferredSize(new Dimension(0, 0));
 		loadMenu.addMenuListener(new MenuListener(){
@@ -237,6 +240,7 @@ public abstract class SetupWindow extends Window{
 		}
 	}
 	
+	// One PlayerPanel is created for each player in the game lobby
 	static final Color NEUTRAL_COLOR = new Color(230, 230, 230);
 	static final Color IN_GAME_COLOR = new Color(90, 160, 90);
 	protected class PlayerPanel extends JPanel{

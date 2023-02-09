@@ -1,5 +1,7 @@
 import java.awt.*;
 
+// Menu allowing choice of what mission to play out of those beaten so far by the pilot
+
 public class MissionMenu extends Menu{
 	
 	Pilot pilot;

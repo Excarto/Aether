@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Order to move past a point in space in as short a time as possible, regardless of velocity
+
 public class MovePastPoint extends StationaryOrder{
 		
 	private int turnsUntilSetAngle;
@@ -31,6 +33,7 @@ public class MovePastPoint extends StationaryOrder{
 		
 	}
 	
+	// Solve kinematic 2D equations intersecting constant-velocity trajectory with a point in space
 	private void setTargetAngle(){
 		double Dx = getDx(), Dy = getDy(), Vx = getVx(), Vy = getVy();
     	double a = ((Controllable)host).getAccel();

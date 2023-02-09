@@ -38,6 +38,7 @@ public class UnitDescriptionMsg extends Message {
 		for (int x = 0; x < unit.ammoRatios.length; x++)
 			stream.writeDouble(unit.ammoRatios[x]);
 	}
+	
 	public void decode(DataInputStream stream) throws IOException{
 		player = stream.readUTF();
 		unit = stream.readBoolean() ? new Ship(Main.shipTypes[stream.readByte()]) : new Craft(Main.craftTypes[stream.readByte()]);

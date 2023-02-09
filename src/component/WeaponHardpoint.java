@@ -20,6 +20,8 @@ public class WeaponHardpoint extends Hardpoint{
 		return maxArc;
 	}
 	
+	// Semi-randomly choose a WeaponType to put on this hardpoint, 
+	// accounting for WeaponType mass and commonality with ammo types of weapons already on the unit
 	public WeaponType autoLoadout(Unit unit){
 		double highestVal = 0;
 		WeaponType highestType = null;

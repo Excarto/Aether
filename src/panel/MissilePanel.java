@@ -3,6 +3,8 @@ import java.awt.Dimension;
 import java.awt.*;
 import javax.swing.*;
 
+// Side planel shown when a missile is selected
+
 public class MissilePanel extends SidePanel{
 	private Missile missile;
 	

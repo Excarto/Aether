@@ -1,10 +1,12 @@
 import java.io.*;
 
+// Send periodically over UDP to update status of a batch of sprites at a time
+
 public class SpriteStatusMsg extends UpdateMsg{
 	public byte getId(){return MsgId.SPRITE_STATUS.id;}
 	
 	public static final int UPDATE_INTERVAL = Main.TPS/10;
-	public static final int NUM_SPRITES = 15;
+	public static final int NUM_SPRITES = 15; // Determined by how many can fit in a network packet
 	
 	public int numSprites;
 	public Sprite[] sprites;

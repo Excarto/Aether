@@ -4,6 +4,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+// Panel displaying selected weapon within the Weapons side panel. Contains many options,
+// many of which are hidden depending on the seelected weapon type and the selected mode
+
 public class WeaponPanel extends JPanel{
 	static final Font MODE_FONT = Main.getDefaultFont(9);
 	
@@ -332,6 +335,7 @@ public class WeaponPanel extends JPanel{
 		modeOptionsPanel.repaint();
 	}
 	
+	// Listener defining functionality to apply settings of the current weapon to other weapons that match the specified conditions
 	private class ApplyListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			if (applyUnit.isSelected()){

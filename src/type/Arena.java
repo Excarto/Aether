@@ -6,6 +6,8 @@ import java.io.*;
 import javax.imageio.*;
 import org.imgscalr.*;
 
+// One of the maps/arenas usable for skirmishes and/or the campaign. Each Arena is read in from files
+
 public class Arena extends Type{
 	final static int MAX_PLAYERS = 10;
 	final static int OBJ_ICON_SIZE = 12;
@@ -130,6 +132,7 @@ public class Arena extends Type{
 			object.act();
 	}
 	
+	// Called at start of round
 	public void initialize(){
 		for (ForegroundObject object : foregroundObjects){
 			object.place(getInt("foreground_object" + object.index + "_x_pos"),
@@ -162,6 +165,7 @@ public class Arena extends Type{
 		return renderables.get(imageName);
 	}
 	
+	// In-game draw function, the very bottom thing to get drawn
 	public void draw(Graphics2D g, GameWindow window, boolean isWarpGame){
 		
 		background.drawForegroundClouds(g, window);
@@ -191,6 +195,7 @@ public class Arena extends Type{
 		 background.drawBackground(g);
 	}*/
 	
+	// Used for previewing Arenas in the lobby setup
 	public void drawPreview(Graphics2D g, int size){
 		initialize();
 		double scale = size/(1.25*arenaSize);

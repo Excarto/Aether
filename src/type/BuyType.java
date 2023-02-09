@@ -3,6 +3,8 @@ import java.io.*;
 import java.awt.image.*;
 import javax.imageio.ImageIO;
 
+// Parent class for anything buyable at the start of the match, e.g. ships or weapons
+
 public abstract class BuyType extends Type{
 	
 	abstract void genSpecs();

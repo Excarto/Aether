@@ -2,6 +2,8 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+// Pre-game server lobby chat interface
+
 public class ChatPanel extends JPanel{
 	static final int WIDTH = 500, HEIGHT = 85;
 	

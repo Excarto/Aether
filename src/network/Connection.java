@@ -5,6 +5,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import javax.swing.*;
 
+// Maintains network connection, on either host or client side. Maintains a list of listener objects,
+// which have defined behaviors when receiving messages of the corresponding type. Listeners that affect
+// the Swing GUI are specified separately to maintain proper concurrency. Also contains methods to send Messages.
+// Both a TCP and UDP connection are maintained, unless the fallback TCP-only mode is enabled.
+// Which protocol is used is specified by the Message type.
+
 public class Connection{
 	static final int PACKET_SIZE = 512;
 	

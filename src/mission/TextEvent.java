@@ -1,4 +1,6 @@
 
+// Event that writes text to the screen
+
 public class TextEvent extends Event{
 	int lifetime;
 	String text;

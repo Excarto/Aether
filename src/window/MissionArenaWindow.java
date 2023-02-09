@@ -3,6 +3,8 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 
+// Menu showing a preview of the arena prior to starting a campaign mission
+
 public class MissionArenaWindow extends Window{
 	
 	public MissionArenaWindow(Mission mission){

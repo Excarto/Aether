@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import javax.swing.*;
 
+// Panel corresponding to selected Sensor type component within the Systems side panel
+
 public class SensorPanel extends SystemPanel{
 	
 	JLabel refreshTimeLabel;

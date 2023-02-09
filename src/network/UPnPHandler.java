@@ -4,6 +4,8 @@ import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.util.*;
 
+// Uses weupnp library to try to set up UPnP on host network, if enabled
+
 public class UPnPHandler{
 	
 	private GatewayDevice device;

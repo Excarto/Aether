@@ -7,6 +7,9 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.imageio.*;
 
+// Full-screen window used in the main game window stack. Includes spacers on the sides for windows
+// that don't take up the whole screen
+
 public abstract class Window extends JPanel{
 	public enum Size{
 		FULL, NORMAL, SMALL;

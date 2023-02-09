@@ -1,5 +1,10 @@
 import java.io.*;
 
+// Abstract class used for transferring network events between client and server.
+// All subclasses are listed in the MsgId enum, and the ID is used to interpret the message type.
+// Subclasses will ovten contain data fields, with the serialization and deserialization handled by read() and write().
+// The same class is also used for the corresponding listener to specify behavior on the receiving end.
+
 public abstract class Message{
 	
 	public enum MsgId{

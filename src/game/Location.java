@@ -1,4 +1,6 @@
 
+// A stationary point in space
+
 public class Location implements Locatable{
 	
 	private double posX, posY, velX, velY;

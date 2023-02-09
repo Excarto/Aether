@@ -1,10 +1,12 @@
 import java.io.*;
 
+// Send periodically over UDP to update status of a batch of units at a time
+
 public class UnitStatusMsg extends UpdateMsg{
 	public byte getId(){return MsgId.UNIT_STATUS.id;}
 	
 	public static final int UPDATE_INTERVAL = 2*Main.TPS;
-	public static final int NUM_UNITS = 5;
+	public static final int NUM_UNITS = 5; // Determined by how many can fit in a network packet
 	
 	public int numUnits;
 	public Unit[] units;

@@ -1,5 +1,7 @@
 import javax.swing.JPanel;
 
+// Buyable system used to temporarily increase thrust
+
 public class Booster extends System{
 	
 	private static BoosterPanel boosterPanel;

@@ -5,6 +5,8 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.util.*;
 
+// Window for selecting which arena to use in the pre-game lobby
+
 public class ArenaWindow extends Window{
 	
 	private final SetupWindow parentWindow;

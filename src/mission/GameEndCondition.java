@@ -1,4 +1,6 @@
 
+// Event condition that a team wins
+
 public class GameEndCondition extends Condition{
 	
 	final int victoryTeam;

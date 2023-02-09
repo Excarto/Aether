@@ -5,6 +5,8 @@ import java.awt.event.*;
 import java.util.*;
 import java.io.*;
 
+// Extension of the generic OutfitWindow for ships. Includes functionality to add crafts and repair material
+
 public final class ShipOutfitWindow extends OutfitWindow{
 	
 	private final JList<Craft> craftList;

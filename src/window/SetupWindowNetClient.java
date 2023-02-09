@@ -4,6 +4,8 @@ import java.awt.Dimension;
 import java.awt.event.*;
 import java.util.*;
 
+// Game lobby window for the client side of multiplayer games
+
 public class SetupWindowNetClient extends SetupWindow{
 	
 	Connection connection;

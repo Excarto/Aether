@@ -2,6 +2,7 @@ import static java.lang.Math.*;
 import java.awt.*;
 import java.awt.geom.*;
 
+// Beam-type weapon
 public class Beam extends Weapon{
 	
 	final static int CHECK_INTERVAL = 2;
@@ -36,6 +37,7 @@ public class Beam extends Weapon{
 	public void act(){
 		super.act();
 		
+		// Loop through all available targets
 		if (firingTimeLeft > 0){
 			double angle = toRadians(this.getAngle()+unit.getAngle()+shotAngle);
 			double xRate = sin(angle), yRate = -cos(angle);
@@ -43,6 +45,8 @@ public class Beam extends Weapon{
 				if (enemy.team != unit.player.team){
 					for (Controllable controllable : enemy.controllables){
 						if (controllable instanceof Missile || !hitMissileOnly){
+							
+							// Check along beam length for contact with target
 							boolean[][] map = controllable.getContactMap();
 							double posX = getPosX()-((Sprite)controllable).getPosX()+0.5*map.length;
 							double posY = getPosY()-((Sprite)controllable).getPosY()+0.5*map[0].length;
@@ -57,6 +61,7 @@ public class Beam extends Weapon{
 									}
 								}
 							}
+							
 						}
 					}
 				}
@@ -70,6 +75,7 @@ public class Beam extends Weapon{
 		renderAngle = getAngle()+unit.getAngle()+shotAngle;
 	}
 	
+	// Deal damage and do necessary graphics/sound work
 	public boolean contact(Controllable controllable, double posX, double posY){
 		boolean alive = controllable.getHull() > 0;
 		
@@ -90,6 +96,7 @@ public class Beam extends Weapon{
 		return alive && controllable.getHull() <= 0;
 	}
 	
+	// Initiate beam shot
 	public void fire(int time){
 		super.fire(time);
 		shotAngle = type.inaccuracy*(2*random.nextDouble()-1.0);
@@ -101,6 +108,7 @@ public class Beam extends Weapon{
 		hitMissileOnly = !isManualAim() && target != null && target.target instanceof Missile;
 	}
 	
+	// Construct network message for beam hit
 	public BeamContactMsg getContactMsg(Controllable controllable, double posX, double posY){
 		if (contactMsg == null){
 			contactMsg = new BeamContactMsg();
@@ -119,14 +127,17 @@ public class Beam extends Weapon{
 		return toDegrees(atan2(-getDy(), -getDx()))-unit.getAngle()-90;
 	}
 	
+	// Override, simple in case of beam
 	protected double approxAngle(Locatable locatable, double time){
 		return toDegrees(atan2(getPosY()-locatable.getPosY(), getPosX()-locatable.getPosX()))-90;
 	}
 	
+	// Override, simple in case of beam
 	protected double approxTime(Locatable locatable){
 		return unit.distance(locatable) < type.length ? 0 : Double.MAX_VALUE/8;
 	}
 	
+	// Decide if able to fire
 	protected boolean inRange(Locatable target){
 		return unit.distance(target) < type.length*7/8 && abs(unit.getTurnSpeed()) < type.trackRate*7/4;
 	}
@@ -134,6 +145,7 @@ public class Beam extends Weapon{
 		return dist < type.length*7/8;
 	}
 	
+	// Render beam graphic, accounding for termination at contact point
 	public void draw(Graphics2D g, GameWindow window){
 		int posX = window.posXOnScreen(renderPosX);
 		int posY = window.posYOnScreen(renderPosY);
@@ -141,6 +153,7 @@ public class Beam extends Weapon{
 		if (posX > -size && posX < window.windowResX+size && posY > -size && posY < window.windowResY+size){
 			Image img = type.renderable.getImage(window.getZoom(), 0, false, 0);
 			if (img != null){
+				
 				if (posX > -size && posY > -size && posX < window.windowResX+size && posY < window.windowResY+size){
 					int width = img.getWidth(null);
 					int height = img.getHeight(null);
@@ -171,6 +184,7 @@ public class Beam extends Weapon{
 						g.setTransform(origTransform);
 					}
 				}
+				
 			}
 		}
 	}

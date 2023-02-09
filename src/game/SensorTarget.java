@@ -3,6 +3,10 @@ import java.util.*;
 import java.awt.Graphics2D;
 import java.awt.Color;
 
+// Some enemy unit that has been detected by a sensor. Each SensorTarget contains at least one SensorSighting,
+// with more SensorSightings on the same unit giving a more accurave estimate of the true unit posision.
+// A unit can only have one associated SensorTarget for a given team, with different sensors aggregating to the same unit.
+
 public class SensorTarget implements Locatable{
 	
 	public final Sprite sprite;

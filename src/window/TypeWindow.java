@@ -8,6 +8,8 @@ import java.awt.Component;
 import java.util.*;
 import java.util.List;
 
+// Generic window for selecting which type of unit, weapon, or system to buy. Includes animated image frames
+
 public class TypeWindow extends Window{
 	
 	List<BuyType> types;

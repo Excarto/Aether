@@ -2,6 +2,9 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+// Side panel showing status off all crafts contained in the selected ship,
+// plus buttons for launching them
+
 public class CraftPanel extends SidePanel{
 	
 	Ship ship;
@@ -62,6 +65,7 @@ public class CraftPanel extends SidePanel{
 		bayPanel.removeAll();
 	}
 	
+	// Add or remove crafts that changed, and only revalidate the panel if necessary, for performance
 	public void refresh(){
 		if (ship != null){
 			
@@ -92,10 +96,10 @@ public class CraftPanel extends SidePanel{
 		}
 	}
 	
+	// Individual panel for each craft
 	private static final Color LAUNCH_COLOR = Color.BLACK;
 	private static final Color CATAPULT_COLOR = new Color(40, 150, 40);
 	private static final Color CANCEL_COLOR = new Color(150, 40, 40);
-	//public static Font launchButtonFont;
 	private class CraftStatusPanel extends StatusPanel{
 		
 		private final JButton launchButton;
@@ -141,4 +145,5 @@ public class CraftPanel extends SidePanel{
 			}
 		}
 	}
+	
 }

@@ -1,6 +1,8 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Order to move past a moving target, with no restriction on what speed
+
 public class MovePastTarget extends TrackOrder{
 	
 	int setAngleTime;
@@ -26,7 +28,8 @@ public class MovePastTarget extends TrackOrder{
 		}
 	}
 	
-	static final double TANGENTIAL_INCREASE = 0.40;
+	// Accelerate in order to set velocity to move toward target with radial component slightly larger than the current value
+	static final double TANGENTIAL_INCREASE = 0.40; // Larger values make it more concerned with eliminating tangential velocity
 	public void setTimeAndAngle(){
 		double Dx = getDx(), Dy = getDy(), Vx = getVx(), Vy = getVy();
     	
@@ -44,7 +47,7 @@ public class MovePastTarget extends TrackOrder{
     	deltaVx = (deltaVx - TANGENTIAL_INCREASE*deltaVRadX)/(1 - TANGENTIAL_INCREASE);
     	deltaVy = (deltaVy - TANGENTIAL_INCREASE*deltaVRadY)/(1 - TANGENTIAL_INCREASE);
     	
-    	targetAngle = 90-toDegrees(atan2(-deltaVy,deltaVx));
+    	targetAngle = 90-toDegrees(atan2(-deltaVy, deltaVx));
     	time = distance/max(0, closingSpeed);
     	setAngleTime = Main.game.turn;
 	}

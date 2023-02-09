@@ -4,6 +4,9 @@ import java.util.List;
 import java.io.*;
 import java.awt.*;
 
+// Mission in the single-player campaign. Each mission specifies a mission breifing,
+// in-game events, the arena and background, and the player's fleet
+
 public abstract class Mission{
 	
 	public static Vector<Ship> playerFleet = new Vector<Ship>();
@@ -90,6 +93,7 @@ public abstract class Mission{
 		for (Ship ship : playerFleet)
 			addShip(0, ship.copy());
 		
+		// If AI's fleets are not specified, randomly create them
 		for (int i = 1; i < players.size(); i++){
 			if (players.get(i).budget > 0 && players.get(i).ships.isEmpty())
 				Player.makeFleet(players.get(i).ships, players.get(i).budget, 0);

@@ -1,5 +1,8 @@
 import java.util.*;
 
+// Host player on server side in networked game. Events performed by the player are
+// performed locally and the corresponding network message is sent to all networked clients
+
 public class HostPlayer extends HumanPlayer{
 	
 	private final Connection connection;

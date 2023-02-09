@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.*;
 import java.io.*;
 
+// Window giving options that can be configured in-game, and saving them to the options.txt file
+
 public class OptionsWindow extends Window{
 	static final int OPTION_HEIGHT = 32, OPTION_WIDTH = 320, LABEL_WIDTH = 140;
 	

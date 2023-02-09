@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.util.*;
 
+// Game lobby window used for both single player and for the host of multiplayer games
+
 public class SetupWindowHost extends SetupWindow{
 	
 	static final Random random = new Random();

@@ -7,6 +7,8 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 
+// The in-game window. This implements rendering in a separate thread that is synchronized with the main game thread
+
 public final class GameWindow extends Window{
 	public static final int MENU_WIDTH = 270;
 	public static final int DIVIDER_WIDTH = 4;
@@ -48,6 +50,9 @@ public final class GameWindow extends Window{
 	private boolean frameStarted, frameReady;
 	private boolean hasMenu;
 	private ArrayDeque<ChatLine> chatLines;
+	
+	// State of game at start of frame is recorded in these variables so that the rendering
+	// thread can work independently of the game thread
 	private List<Controllable> frameVisibleControllables;
 	private List<Sprite> frameVisibleGraphics;
 	private List<SensorTarget> frameRadarVisibleSprites;
@@ -55,6 +60,7 @@ public final class GameWindow extends Window{
 	private List<Controllable> frameControllables;
 	private List<Controllable> frameSelected;
 	private List<Beam> frameBeams;
+	
 	private int turnsPerFrame;
 	private int minTurnsPerFrame, maxTurnsPerFrame;
 	private int framesPerInterfaceRefresh, turnsUntilShow;
@@ -231,6 +237,8 @@ public final class GameWindow extends Window{
 		g.drawImage(dividerImg, windowResX, 0, null);
 	}
 	
+	// Trigger the next frame to show as soon as it's ready and the turnsUntilShow counter has reached zero.
+	// If the frame has completed rendering on time, then begin rendering the next one. 
 	public void renderFrame(){
 		
 		boolean startNewFrame;
@@ -266,6 +274,8 @@ public final class GameWindow extends Window{
 			renderLatch.countDown();
 			renderLatch = new CountDownLatch(1);
 			
+			// Begin new Swing task that will render the frame to the buffer, then wait for renderLatch to trigger
+			// before showing it.
 			SwingUtilities.invokeLater(new Runnable(){
 				public void run(){
 					
@@ -329,6 +339,7 @@ public final class GameWindow extends Window{
 		rightPanel.repaint();
 	}
 	
+	// Save off the game state so that the rendering thread can work seprarately from the game thread
 	private void recordFrameState(){
 		framePosX = posX;
 		framePosY = posY;
@@ -366,6 +377,7 @@ public final class GameWindow extends Window{
 		frameSelected.addAll(selected);
 	}
 	
+	// Adjust how many game turns per thread to maintain a smooth frame rate
 	private void updateTurnsPerFrame(boolean frameHit){
 		frameHitRate = frameHitRate*(1 - FRAMERATE_ADJUST_RATE) + (frameHit ? 1.0 : 0.0)*FRAMERATE_ADJUST_RATE;
 		if (frameHitRate > FRAMERATE_INCREASE_THRESH && turnsPerFrame > minTurnsPerFrame){
@@ -557,6 +569,7 @@ public final class GameWindow extends Window{
 		this.velY = velY;
 	}
 	
+	// Set camera to center of mass of the given objects
 	public void matchCamera(List<Controllable> controllables){
 		if (!controllables.isEmpty()){
 			double totalPosX = 0, totalPosY = 0;
@@ -573,6 +586,7 @@ public final class GameWindow extends Window{
 		}
 	}
 	
+	// Draw line on the edge of the screen pointing to something off-screen
 	public void drawPointerLine(Graphics g, int posX, int posY, String label){
 		if (posX < 0 || posX > windowResX || posY < 0 || posY > windowResY){
 			double centerPosX = posX-windowResX/2;
@@ -650,6 +664,7 @@ public final class GameWindow extends Window{
 		SidePanel.load();
 	}
 	
+	// This is the main game rendering window
 	static final int BAR_WIDTH = 70, BAR_HEIGHT = 17;
 	static final int BAR_YPOS = 3, BAR_SPACING = 6;
 	static final int GRID_SPACING = 40;
@@ -854,6 +869,7 @@ public final class GameWindow extends Window{
 		}
 	}
 	
+	// Popup window when escape key is pressed
 	static final int MENU_PANEL_WIDTH = 145, MENU_PANEL_HEIGHT = 162;
 	private class MenuPanel extends JPanel{
 		public MenuPanel(){

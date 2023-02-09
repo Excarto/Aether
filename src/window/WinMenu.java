@@ -1,5 +1,7 @@
 import java.awt.*;
 
+// Menu displayed after winning the single-player campaign
+
 public class WinMenu extends Menu{
 	
 	final static Font LINES_FONT = new Font("Courier", Font.BOLD, 35);

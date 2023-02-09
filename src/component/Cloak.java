@@ -1,5 +1,6 @@
 import javax.swing.*;
 
+// Buyable system used to reduce radar detection range
 public class Cloak extends System {
 	
 	private static SystemPanel cloakPanel;

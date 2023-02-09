@@ -1,5 +1,7 @@
 import java.awt.*;
 
+// Order to repair a target. Just an Escort order at zero offset that repairs when close enough
+
 public class Repair extends Escort{
 	RepairTarget repairTarget;
 	

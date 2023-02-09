@@ -120,15 +120,17 @@ public class ClientJoinWindow extends Window{
 			queryLobbyServer();
 	}
 	
+	// Open socket to listen for server broadcasts. If a BroadcastMessage is received, either
+	// add a new AvailableServer to the list or update an existing one.
+	// This method is called in a separate thread
 	private void listenForServers(boolean[] running){
 		DatagramSocket socket = null;
 		try{
-			socket = new DatagramSocket(Main.options.clientBroadcastPort);
-			byte[] buffer = new byte[Connection.PACKET_SIZE];
-			DatagramPacket packet = new DatagramPacket(buffer, Connection.PACKET_SIZE);
+			
 			BroadcastMsg broadcastListener = new BroadcastMsg(){
 				public void confirmed(){
 					if (address != null && gameName.length() > 1){
+						// Check if server is already in the list
 						for (int x = 0; x < serverListModel.getSize(); x++){
 							AvailableServer server = serverListModel.getElementAt(x);
 							if (server.update(this)){
@@ -136,10 +138,16 @@ public class ClientJoinWindow extends Window{
 								return;
 							}
 						}
+						// Not found, so add new server
 						serverListModel.addElement(new AvailableServer(this));
 					}
 					serverList.repaint();
 			}};
+			
+			socket = new DatagramSocket(Main.options.clientBroadcastPort);
+			byte[] buffer = new byte[Connection.PACKET_SIZE];
+			DatagramPacket packet = new DatagramPacket(buffer, Connection.PACKET_SIZE);
+			
 			while (running[0]){
 				socket.receive(packet);
 				if (buffer[0] == broadcastListener.getId())
@@ -152,6 +160,8 @@ public class ClientJoinWindow extends Window{
 			socket.close();
 	}
 	
+	// If a given AvailableServer has not received a broadcast messasge in some time, remove it from the list
+	// This method is called in a separate thread
 	private void cleanupServerList(boolean[] running){
 		while (running[0]){
 			try {
@@ -184,6 +194,7 @@ public class ClientJoinWindow extends Window{
 		}}.start();
 	}
 	
+	// For internet mode, query the global lobby srever for a list of currently hosted games
 	private void queryLobbyServer(){
 		refreshButton.setEnabled(false);
 		serverListModel.clear();
@@ -203,6 +214,7 @@ public class ClientJoinWindow extends Window{
 			displayMessage("Cannot connect to lobby server");
 		}
 		
+		// Disable refresh button after pressing to avoid spamming it
 		new Thread("RefreshEnableThread"){
 			public void run(){
 				try{
@@ -289,6 +301,7 @@ public class ClientJoinWindow extends Window{
 		Main.print(message);
 	}
 	
+	// Objects added to the ListModel to represent available servers to join
 	private class AvailableServer{
 		InetAddress address;
 		String gameName;

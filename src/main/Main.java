@@ -25,11 +25,12 @@ public final class Main{
 	static final boolean IS_MAC = OS_NAME.contains("mac");
 	static final boolean IS_NIX = OS_NAME.contains("nix") || OS_NAME.contains("nux") || OS_NAME.contains("aix");
 	
-	public static Options options;
-	public static Configuration config;
+	public static Options options; // User-configurable options
+	public static Configuration config; // Non-unser configurable options read in from file
 	public static int resX, resY;
 	public static String saveDir;
 	
+	// Types loaded in from data files
 	public static ShipType[] shipTypes;
 	public static CraftType[] craftTypes;
 	public static WeaponType[] weaponTypes;
@@ -42,26 +43,30 @@ public final class Main{
 	public static double[] ammoMass;
 	public static String[] names;
 	
-	public static String dataHash;
-	public static Game game;
-	public static Server server;
-	public static Map<Integer, Control> controlVals;
+	public static String dataHash; // used to verify data compatibility between multiplayer clients
+	private static StringBuilder dataString; // Used to construct dataHash
+	public static Game game; // Represents a single game round instance
+	public static Server server; // Used when hosting a multiplayer match
+	public static Map<Integer, Control> controlVals; // Keyboard controls
 	public static DisplayMode[] displayModes;
 	public static RenderingHints menuHints, inGameHints, fastHints;
-	public static Scalr.Method scaleMethod;
+	public static Scalr.Method scaleMethod; // Image scaling method, represents tradeoff between quality and performance
 	public static Sound errorSound;
 	public static UPnPHandler UPnPHandler;
 	public static Font defaultFont;
-	public static boolean isExiting, isStarting;
+	public static boolean isExiting, isStarting; // Global program starting or exiting flags
 	
+	// Swing components for global program GUI
 	private static JComponent windowPanel;
 	private static JFrame frame;
 	private static Stack<Window> windowStack;
+	
 	private static KeyboardFocusManager manager;
 	private static KeyEventDispatcher dispatcher;
-	private static LinkedList<double[]> ammoMap;
+	
+	private static LinkedList<double[]> ammoMap; // List of ammo types and associated mass
+	
 	private static GraphicsConfiguration graphicsConfiguration;
-	private static StringBuilder dataString;
 	private static BufferStrategy bufferStrategy;
 	private static Graphics bufferGraphics;
 	private static BufferedImage backgroundBuffer;
@@ -97,9 +102,9 @@ public final class Main{
 		frame = new JFrame("Aether"){
 			public Graphics getGraphics(){
 				if (backgroundBuffer == null || bufferGraphics != null){
-					return super.getGraphics();
+					return super.getGraphics(); // Use normal graphics for menus
 				}else
-					return backgroundBuffer.getGraphics();
+					return backgroundBuffer.getGraphics(); // Using high-performance repainting strategy
 			}
 		};
 		frame.setUndecorated(options.borderless);//fullscreen);
@@ -215,6 +220,7 @@ public final class Main{
 		frame.setVisible(true);
 		Window.load();
 		
+		// Delay before starting as a hack to avoid some concurrency bug with Swing
 		new Thread("StartDelayThread"){
 			public void run(){
 				try{
@@ -268,6 +274,7 @@ public final class Main{
 		return new Font("Tahoma", Font.PLAIN, size);
 	}
 	
+	// Select best display mode for each compatible resolution
 	private static void findDisplayModes(){
 		GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 		
@@ -307,6 +314,7 @@ public final class Main{
 					selectedMode = mode;
 					break;
 				}
+				// Default to highest resolution available if selected option not found
 				if (mode.getWidth() > selectedMode.getWidth() || mode.getHeight() > selectedMode.getHeight())
 					selectedMode = mode;
 			}
@@ -325,6 +333,7 @@ public final class Main{
 		windowPanel.setPreferredSize(new Dimension(resX, resY));
 	}
 	
+	// Set various AWT hints depending on selected options
 	public static void setRenderQuality(){
 		menuHints = new RenderingHints(null);
 		menuHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -354,6 +363,7 @@ public final class Main{
 		fastHints.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 	}
 	
+	// Make sure directories exist
 	private static void readDirs(){
 		File file = new File("data/directory.txt");
 		try{
@@ -469,6 +479,7 @@ public final class Main{
 		}
 	}
 	
+	// Default player names
 	private static void readNames(){
 		File namesFile = new File("data/names.txt");
 		try{
@@ -491,6 +502,7 @@ public final class Main{
 		}
 	}
 	
+	// Configure PgsLookAndFeel library
 	private static void setTheme(){
 		PlafOptions.setCurrentTheme(new SilverTheme(){
 			public void addCustomEntriesToTable(UIDefaults table){
@@ -542,6 +554,7 @@ public final class Main{
 		dataString.append("]");
 	}
 	
+	// Put new GUI window onto stack
 	public static void addWindow(Window window){
 		windowPanel.removeAll();
 		windowPanel.add(window.getRootComponent());
@@ -553,6 +566,7 @@ public final class Main{
 		frame.repaint();
 	}
 	
+	// Pop top GUI window from stack
 	public static void removeWindow(){
 		windowStack.peek().exit();
 		windowStack.pop();
@@ -596,6 +610,7 @@ public final class Main{
 		}
 	}
 	
+	// Select high-performance mode using manualManager for in-game, or normal AWT repaint manager for in-menu
 	public static void setHighPerformance(boolean hp){
 		setIgnoreRepaint(frame, hp);
 		if (hp){
@@ -624,6 +639,8 @@ public final class Main{
 			}
 		}
 	}
+	
+	// Recursively set all children to ignore repaint. Needed for high-performance mode
 	private static void setIgnoreRepaint(Container container, boolean ignore){
 		container.setIgnoreRepaint(ignore);
 		java.awt.Component[] components = container.getComponents();
@@ -673,6 +690,7 @@ public final class Main{
 				transparent ? Transparency.TRANSLUCENT : Transparency.OPAQUE);
 	}
 	
+	// Get version of image with hardware acceleration enabled
 	public static BufferedImage convert(BufferedImage image){
 		if (graphicsConfiguration == null)
 			return image;
@@ -685,6 +703,7 @@ public final class Main{
 		return compatibleImage;
 	}
 	
+	// Get version of image with hardware acceleration enabled
 	public static VolatileImage convertVolatile(BufferedImage image){
 		VolatileImage compatibleImage = graphicsConfiguration.createCompatibleVolatileImage(
 				image.getWidth(), image.getHeight(), Transparency.TRANSLUCENT);
@@ -741,6 +760,7 @@ public final class Main{
 					}
 				}
 				
+				// Add and wait on load indow even when loading is complete
 				addWindow(new LoadWindow());
 				
 				new Thread("StartGameThread"){
@@ -769,6 +789,8 @@ public final class Main{
 		}});
 	}
 	
+	// This is a copy of some AWT code but modified to avaid unnecessary repaints.
+	// Ugly way of doing it but I couldn't find any other way.
 	private class ManualRepaintManager extends RepaintManager{
 		Queue<RegionNode> dirtyRegions;
 		

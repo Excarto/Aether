@@ -8,13 +8,15 @@ import java.util.concurrent.*;
 //import javax.imageio.stream.*;
 import org.imgscalr.*;
 
+// Stores caches of transformed images for high-performance rendering
+
 public class Renderable{
 	public static final int MIN_CACHE_MEMORY = 300;
 	private static final int MAX_NUM_SCALES = 30;
 	private static final int MAX_QUEUE_SIZE = 20;
 	private static final long START_CACHE_SIZE = 1000*1000*MIN_CACHE_MEMORY +
 				(Runtime.getRuntime().maxMemory()-1000*1000*Main.MIN_MEMORY)*3/4;
-	static final Queue<ImageNode> rotatedCache = new PriorityBlockingQueue<ImageNode>();
+	static final Queue<ImageNode> rotatedCache = new PriorityBlockingQueue<ImageNode>();  // Least recenty used removal of cached uscaled, rotated images
 	static long maxCacheSize = START_CACHE_SIZE;
 	static long cacheSize;
 	static int currentAge;
@@ -22,21 +24,21 @@ public class Renderable{
 	static ArrayBlockingQueue<VolatileImage> toFlush = new ArrayBlockingQueue<VolatileImage>(30);
 	static Thread loadThread;
 	
-	public final int numRenders;
-	public int size;
-	
 	double[] scaledZoom;
 	int numScaledZoom;
-	VolatileImage[][] scaledImg;
-	boolean[][] scaledQuality;
-	ImageNode[] unscaled;
+	VolatileImage[][] scaledImg; // Second level scaled and rotated images
+	boolean[][] scaledQuality; // Whether or not 2nd-level cache image is temporary low-quality image
+	ImageNode[] unscaled; // First cache level consists of unscaled images
 	
+	// Variables set at initialization
+	public final int numRenders;
 	int minSize;
+	double angleIncrement;
+	boolean queueQuality;
+	public int size;
+	boolean combine;
 	int numOrigRenders;
 	double minZoom;
-	double angleIncrement;
-	boolean combine;
-	boolean queueQuality;
 	
 	public Renderable(int minSize, int numRenders){
 		this(minSize, numRenders, true);
@@ -49,14 +51,16 @@ public class Renderable{
 		angleIncrement = 360.0/numRenders;
 	}
 	
+	// Return image at given angle and zoom level, either by retrieving from cache or generating it if not available
 	public Image getImage(double zoom, double angle, boolean useTemp, int preloadDirection){
 		if (zoom < minZoom)
 			return null;
 		
 		int angleIndex = getAngleIndex(angle, numRenders);
-		updateUnscaled(angleIndex);
+		updateUnscaled(angleIndex); // Update cache priority
 		
 		if (zoom >= 1.0){
+			// Unscaled
 			if (unscaled[angleIndex] != null){
 				queueSpeculativeQualityImage(zoom, angle, preloadDirection, -1);
 				return unscaled[angleIndex].img;
@@ -69,6 +73,7 @@ public class Renderable{
 			}
 			return makeQualityImage(zoom, angle);
 		}else{
+			// Scaled
 			int zoomIndex = getZoomIndex(zoom);
 			VolatileImage scaled = scaledImg[angleIndex][zoomIndex];
 			if (scaled != null && !scaled.contentsLost()){
@@ -90,6 +95,7 @@ public class Renderable{
 		}
 	}
 	
+	// Fast approximate image used temporarily if useTemp==true
 	private VolatileImage makeApproxImage(double zoom, double angle){
 		int angleIndex = getAngleIndex(angle, numRenders);
 		
@@ -132,6 +138,7 @@ public class Renderable{
 		return img;
 	}
 	
+	// High-quality slow image
 	private Image makeQualityImage(double zoom, double angle){
 		int angleIndex = getAngleIndex(angle, numRenders);
 		
@@ -187,6 +194,7 @@ public class Renderable{
 		return Main.convertVolatile(Scalr.resize(unscaledImg, Main.scaleMethod, width, height));
 	}
 	
+	// Make booleam map from image
 	public boolean[][] getContactMap(double angle, double scale){
 		Image image = this.getImage(scale, angle, false, 0);
 		BufferedImage snapshot = null;
@@ -207,6 +215,7 @@ public class Renderable{
 		return contactMap;
 	}
 	
+	// Convert from real zoom value to index
 	private int getZoomIndex(double zoom){
 		if (zoom >= 1.0)
 			return -1;
@@ -257,6 +266,7 @@ public class Renderable{
 		return (int)(0.5 + scale*(abs(cos(angle))*img.getHeight() + abs(sin(angle))*img.getWidth()));
 	}
 	
+	// Add uscaled, rotated image to 1st-level cache
 	private void addUnscaled(BufferedImage img, int angleIndex){
 		ImageNode node = new ImageNode(img, angleIndex);
 		unscaled[angleIndex] = node;
@@ -272,6 +282,7 @@ public class Renderable{
 		}
 	}
 	
+	// Update 1st-level cache priority of uscaled, rotated image
 	private void updateUnscaled(int angleIndex){
 		ImageNode node = unscaled[angleIndex];
 		if (node != null){
@@ -281,6 +292,7 @@ public class Renderable{
 		}
 	}
 	
+	// Remove from 1st-level cache
 	private void removeUnscaled(ImageNode node){
 		unscaled[node.angle] = null;
 		rotatedCache.remove(node);
@@ -293,6 +305,7 @@ public class Renderable{
 			toLoad.add(new ImageCoords(zoom, angle, false));
 	}
 	
+	// Speculative addition of quality images to cache
 	private void queueSpeculativeQualityImage(double zoom, double angle, int preloadDirection, int zoomIndex){
 		if (preloadDirection == 0 || toLoad.size() > MAX_QUEUE_SIZE/4)
 			return;
@@ -309,6 +322,7 @@ public class Renderable{
 		toLoad.add(new ImageCoords(zoom, angle, true));
 	}
 	
+	// Read in original images from files
 	public void load(BufferedImage[] inputImages, double scale){
 		numOrigRenders = inputImages.length;
 		
@@ -329,6 +343,7 @@ public class Renderable{
 					(int)max(1, scale*input.getWidth()), (int)max(1, scale*input.getHeight()));
 			Raster untrimmedAlpha = untrimmed.getAlphaRaster();
 			
+			// Shrink images to minimum bounding rectangle
 			int width = untrimmed.getWidth();
 			int dx = 1;
 			while (width > 2){
@@ -372,6 +387,7 @@ public class Renderable{
 		minZoom = 1.01*this.minSize/minSize;
 	}
 	
+	// Load thread generates quality images as demanded
 	public static void startLoadThread(){
 		loadThread = new Thread("ImageLoadThread"){
 			public void run(){
@@ -407,6 +423,7 @@ public class Renderable{
 			toFlush.poll().flush();
 	}
 	
+	// Image specifications for load thread
 	private class ImageCoords implements Comparable<ImageCoords>{
 		final double zoom;
 		final double angle;
@@ -427,6 +444,7 @@ public class Renderable{
 		}
 	}
 	
+	// Node for 1st-level cache priority queue
 	private class ImageNode implements Comparable<ImageNode>{
 		final BufferedImage img;
 		final int angle, size;

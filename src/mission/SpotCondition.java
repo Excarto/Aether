@@ -1,4 +1,6 @@
 
+// Even condition that a unit is spotted by the player
+
 public class SpotCondition extends Condition{
 	
 	public final Unit unit;

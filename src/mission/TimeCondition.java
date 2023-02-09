@@ -1,4 +1,6 @@
 
+// Event condition that some amount of time has passed
+
 public class TimeCondition extends Condition{
 	
 	public final int turn;

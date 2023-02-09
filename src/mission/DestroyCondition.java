@@ -1,4 +1,6 @@
 
+// Event condition that a given unit is destroyed
+
 public class DestroyCondition extends Condition{
 	
 	public final Unit unit;

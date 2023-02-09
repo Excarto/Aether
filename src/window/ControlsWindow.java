@@ -3,6 +3,10 @@ import java.io.*;
 import javax.swing.*;
 import java.awt.event.*;
 
+// Window for configuring keyboard controls. Window is dynamically populated based on
+// the Control enum.
+
+
 public class ControlsWindow extends Window{
 	
 	private JPanel controlsPanel;

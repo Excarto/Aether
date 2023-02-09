@@ -4,15 +4,18 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 
+// Handles networking for hosted game. Maintains a list of connected Clients. Also maintains a Client
+// object for the localhost player as well as Clients for any AI players. The AI Clients do not maintain Connections.
+
 public class Server{
 	public static final int MAX_GAME_NAME_LENGTH = 40;
 	public static final String DEFAULT_GAME_NAME = "BATTLE in SPACE";
 	
-	List<Client> clients;
+	List<Client> clients; // Contains only network players, not host or computers
 	Client localhost;
 	List<Client> computerPlayers;
 	ServerSocket listenSocket;
-	Connection lobbyServer;
+	Connection lobbyServer; // Connection to remote global LobbyServer for disseminating hosted game info
 	final boolean isLAN;
 	boolean inProgress;
 	boolean running;
@@ -40,6 +43,7 @@ public class Server{
 		clients = new ArrayList<Client>();
 		computerPlayers = new ArrayList<Client>();
 		
+		// Convenience iterator object, does not contain data
 		humans = new Iterable<Client>(){
 			public Iterator<Client> iterator(){
 				return new Iterator<Client>(){
@@ -59,6 +63,7 @@ public class Server{
 			}
 		};
 		
+		// Convenience iterator object, does not contain data
 		players = new Iterable<Client>(){
 			public Iterator<Client> iterator(){
 				return new Iterator<Client>(){
@@ -130,6 +135,9 @@ public class Server{
 							connection.close();
 							
 						}else{
+							// New player successfully joined. Initialize the client, send info about the new client to existing players,
+							// and send updated information to the LobbyServer
+							
 							connection.send(acceptMsg);
 							
 							final Client newClient = new Client(false);
@@ -166,7 +174,7 @@ public class Server{
 							}});
 						}
 				}});
-			}
+			} // End while(running)
 		}catch (IOException e){
 			if (running){
 				close();
@@ -175,6 +183,7 @@ public class Server{
 		}
 	}
 	
+	// For LAN games, attempt to periodically broadcast hosted server info
 	private void broadcast(){
 		DatagramSocket broadcastSocket = null;
 		try{
@@ -207,6 +216,7 @@ public class Server{
 			broadcastSocket.close();
 	}
 	
+	// For internet games, attempt to send information about hosted server to the global LobbyServer
 	private void connectToLobbyServer(){
 		Socket lobbyServerSocket = null;
 		try{
@@ -284,6 +294,7 @@ public class Server{
 		}
 	}
 	
+	// Initialize client with listeners to specify what to do when receiving messages from client
 	private void addListeners(final Client newClient){
 		newClient.connection.addListener(new GameSettingsMsg(){
 			public void confirmed(){
@@ -354,6 +365,7 @@ public class Server{
 		}});
 	}
 	
+	// Send info about client to connection (may be sending info about itself)
 	private void sendInfo(Connection connection, Client client){
 		if (connection != client.connection){
 			JoinMsg joinMsg = new JoinMsg();
@@ -496,6 +508,7 @@ public class Server{
 		
 		UnitDescriptionMsg msg = new UnitDescriptionMsg();
 		for (Client client : clients){
+			// Communicate units of all players to each other before starting
 			for (Client player : players){
 				if (client != player){
 					msg.player = player.name;

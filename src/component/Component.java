@@ -3,6 +3,8 @@ import javax.swing.*;
 import java.awt.image.*;
 import java.io.*;
 
+//Superclass of both Weapon and System
+
 public abstract class Component implements Repairable, Id{
 	
 	private static short currentId;

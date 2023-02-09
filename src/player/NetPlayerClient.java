@@ -1,6 +1,11 @@
 import static java.lang.Math.*;
 import java.util.*;
 
+// Remote player on the client side of a networked game, whether host, another client, or AI.
+// Periodically sends update messages for its own units to the server. Actions performed are
+// not performed locally, but rather the corresponding network message is sent to the server
+// and the action is performed when the server confirms the legality of it and sends the message back.
+
 public class NetPlayerClient extends HumanPlayer{
 	
 	Connection connection;

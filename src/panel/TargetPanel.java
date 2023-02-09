@@ -1,5 +1,7 @@
 import java.awt.*;
 
+// Panel displaying the targeted enemy unit at the bottom of the right-hand side panel.
+
 public class TargetPanel extends UnitPanel{
 	static final int SIZE_SMALL = GameWindow.MENU_WIDTH/2+2;
 	static final int SIZE_BIG = GameWindow.MENU_WIDTH-30;

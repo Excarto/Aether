@@ -1,5 +1,8 @@
 import java.io.*;
 
+// Menu giving list of currently existing Pilots for the single-player campaign,
+// and an option to create a new one
+
 public class CreatePilotMenu extends Menu{
 	
 	Pilot pilot;

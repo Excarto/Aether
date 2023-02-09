@@ -1,6 +1,9 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// A sighted enemy unit. Targets remain even after an enemy unit has left vision, and are then assumed to follow constant velocity.
+// After enough time out of vision, the target will dissapear.
+
 public class Target implements Locatable{
 	public static Font unitLabelFont;
 	
@@ -89,6 +92,8 @@ public class Target implements Locatable{
 		if (target instanceof Unit){
 			int size = getHUDSize(window.getRenderZoom());
 			int length;
+			
+			// Slowly fading color when out of vision
 			if (targetVisible){
 				length = max(1, size/10);
 				g.setColor(new Color(255, 0, 0, 150));

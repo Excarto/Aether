@@ -87,6 +87,8 @@ public class MissileType extends GunType{
 		return getDouble("delta_v")/Main.TPS;
 	}
 	
+	
+	// Approximate time for missile of this type to reach a target
 	public double approxTime(double dx, double dy, double vx, double vy, double bearing, double capacitor, double v0){
 		
 		double accel = thrust/projectileMass;

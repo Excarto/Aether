@@ -5,6 +5,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+// Side panel used for repairing a ship's own hull, its components, its fighters, or
+// the hull and components of another unit if the Repair order is being used.
+
 public class RepairPanel extends SidePanel{
 	public static Font autoFont;
 	
@@ -73,6 +76,8 @@ public class RepairPanel extends SidePanel{
 		this.add(repairQueue);
 	}
 	
+	// Update the list of RepairStatusPanels corresponding to the unit's current repairTargets.
+	// Only revalidate the gui if necessary, for performance.
 	public void refresh(){
 		if (ship != null){
 			boolean modified = false;
@@ -143,6 +148,8 @@ public class RepairPanel extends SidePanel{
 			((RepairStatusPanel)component).setSelected(((RepairStatusPanel)component).target.unit == unit);
 	}
 	
+	// Panels corresponding to each available unit that can be repaired, with options for rearming or recharging
+	// Panels can be selected so the targeted unit details can be displayed in the unitPanel
 	private class RepairStatusPanel extends StatusPanel{
 		
 		public RepairStatusPanel(RepairTarget target){
@@ -172,6 +179,8 @@ public class RepairPanel extends SidePanel{
 		}
 	}
 	
+	// Shows a graphical list of all units or components queued for repair, with the rightmost one
+	// currently in progress. Also displays the current hull value and ETA to completion
 	private class RepairQueue extends JPanel{
 		static final int SPACING = 7;
 		
@@ -233,6 +242,7 @@ public class RepairPanel extends SidePanel{
 			}
 		}
 		
+		// Graphical list component
 		private class IconQueue extends JComponent{
 			static final int NUM_ITEMS = 5;
 			
@@ -270,6 +280,7 @@ public class RepairPanel extends SidePanel{
 				}
 			}
 			
+			// Mouse listener for removing items from the queue
 			class ClickListener extends MouseAdapter{
 				public void mousePressed(MouseEvent e){
 					int mousePosX = e.getPoint().x;
@@ -293,6 +304,7 @@ public class RepairPanel extends SidePanel{
 		}
 	}
 	
+	// Displays the currently selected RepairTarget, so that individual components can be queued for repair
 	private class RepairUnitPanel extends UnitPanel{
 		
 		public RepairUnitPanel(){
@@ -320,6 +332,8 @@ public class RepairPanel extends SidePanel{
 		}
 	}
 	
+	// Displays the currently selected Repairable item, which can be either a ship, craft, or component.
+	// Contains a slider bar so that an order to either repair or scrap the targeted Repairable to the desired hull value
 	private class SelectedPanel extends JPanel{
 		Repairable repairable;
 		double currentHull;

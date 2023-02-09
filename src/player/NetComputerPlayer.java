@@ -1,5 +1,8 @@
 import java.util.*;
 
+// Computer player on the host side of networked game. Actions performed by the player are
+// performed locally and the corresponding network message is sent to all networked clients
+
 public class NetComputerPlayer extends ComputerPlayer{
 
 	public NetComputerPlayer(String name, int team, List<Ship> ships, int budget, Arena arena) {

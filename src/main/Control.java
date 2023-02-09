@@ -1,4 +1,6 @@
 
+// Configurable keyboard controls
+
 public enum Control{
 	SCROLL_UP("Scroll Camera Up"),
 	SCROLL_DOWN("Scroll Camera Down"),

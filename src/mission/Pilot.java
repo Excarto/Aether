@@ -2,6 +2,9 @@ import static java.lang.Math.*;
 import java.util.*;
 import java.io.*;
 
+// Pilot object that represents the state of the single-player campaign, including all choices made and mission results.
+// Can be written and read from a file. 
+
 public class Pilot{
 	
 	public final String name;

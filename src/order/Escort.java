@@ -1,9 +1,14 @@
 import static java.lang.Math.*;
 import java.awt.*;
 
+// Order to maintain a specific bearing and distance to target
+
 public class Escort extends MoveToTarget{
 	
 	final Sprite target;
+	
+	// If time to target escort position < slack, then use maneuvering thrusters to stay in place
+	// and face weapons
 	final int slack;
 	
 	private boolean isFacing;

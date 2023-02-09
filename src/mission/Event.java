@@ -1,4 +1,6 @@
 
+// Even in campaign mission
+
 public abstract class Event{
 	
 	public final Condition condition;
